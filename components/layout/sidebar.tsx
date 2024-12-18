@@ -16,6 +16,8 @@ import {
   LogOut,
   ChevronDown,
   Plus,
+  Podcast,
+  SquareCode,
   Folder,
 } from "lucide-react";
 import Link from "next/link";
@@ -35,12 +37,12 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -48,21 +50,21 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoAlt?: string;
 }
 
-export function Sidebar({ 
-  className, 
-  logoSrc = "/logo.svg", 
-  logoAlt = "Company Logo" 
+export function Sidebar({
+  className,
+  logoSrc = "/logo.svg",
+  logoAlt = "Company Logo",
 }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState([
-    { id: '1', name: 'Sales Team', role: 'Admin' },
-    { id: '2', name: 'Marketing Team', role: 'Member' }
+    { id: "1", name: "Sales Team", role: "Admin" },
+    { id: "2", name: "Marketing Team", role: "Member" },
   ]);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0]);
   const [newWorkspace, setNewWorkspace] = useState({
-    name: '',
-    type: 'sales'
+    name: "",
+    type: "sales",
   });
 
   const routes = [
@@ -78,14 +80,14 @@ export function Sidebar({
     },
     {
       label: "Leads",
-      icon: Users,
+      icon: SquareCode,
       href: "/leads",
     },
-    // {
-    //   label: "Messages",
-    //   icon: MessageSquare,
-    //   href: "/messages",
-    // },
+    {
+      label: "Audience",
+      icon: Podcast,
+      href: "/audience",
+    },
     // {
     //   label: "Calls",
     //   icon: Phone,
@@ -109,11 +111,11 @@ export function Sidebar({
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
-        role: 'Admin'
+        role: "Admin",
       };
       setWorkspaces([...workspaces, newWorkspaceItem]);
       setSelectedWorkspace(newWorkspaceItem);
-      setNewWorkspace({ name: '', type: 'sales' });
+      setNewWorkspace({ name: "", type: "sales" });
     }
   };
 
@@ -140,19 +142,19 @@ export function Sidebar({
       >
         {/* Logo Section */}
         <div className="flex items-center justify-center py-4">
-          <img 
-            src={logoSrc} 
-            alt={logoAlt} 
-            className="h-12 w-auto max-w-48 object-contain" 
+          <img
+            src={logoSrc}
+            alt={logoAlt}
+            className="h-12 w-auto max-w-48 object-contain"
           />
         </div>
 
         {/* Workspace Selector */}
         <div className="px-4 mb-4">
-          <Select 
+          <Select
             value={selectedWorkspace.id}
             onValueChange={(value) => {
-              const workspace = workspaces.find(w => w.id === value);
+              const workspace = workspaces.find((w) => w.id === value);
               if (workspace) setSelectedWorkspace(workspace);
             }}
           >
@@ -176,7 +178,7 @@ export function Sidebar({
                   </div>
                 </SelectItem>
               ))}
-              
+
               {/* Add Workspace Dialog */}
               <Dialog>
                 <DialogTrigger asChild>
@@ -192,13 +194,15 @@ export function Sidebar({
                   <form onSubmit={handleAddWorkspace} className="space-y-4">
                     <div>
                       <Label htmlFor="workspaceName">Workspace Name</Label>
-                      <Input 
+                      <Input
                         id="workspaceName"
                         value={newWorkspace.name}
-                        onChange={(e) => setNewWorkspace({
-                          ...newWorkspace, 
-                          name: e.target.value
-                        })}
+                        onChange={(e) =>
+                          setNewWorkspace({
+                            ...newWorkspace,
+                            name: e.target.value,
+                          })
+                        }
                         placeholder="Enter workspace name"
                         required
                       />
@@ -207,10 +211,12 @@ export function Sidebar({
                       <Label>Workspace Type</Label>
                       <Select
                         value={newWorkspace.type}
-                        onValueChange={(value) => setNewWorkspace({
-                          ...newWorkspace, 
-                          type: value
-                        })}
+                        onValueChange={(value) =>
+                          setNewWorkspace({
+                            ...newWorkspace,
+                            type: value,
+                          })
+                        }
                       >
                         <SelectTrigger>
                           <SelectValue placeholder="Select workspace type" />
@@ -257,8 +263,12 @@ export function Sidebar({
           <div className="flex items-center space-x-3">
             <UserCircle className="h-10 w-10 text-slate-600 dark:text-slate-300" />
             <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-white">John Doe</p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Sales Manager</p>
+              <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                John Doe
+              </p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                Sales Manager
+              </p>
             </div>
           </div>
 
@@ -269,11 +279,16 @@ export function Sidebar({
                 <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-300 outline-none focus:outline-none" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700">
-              <DropdownMenuItem className="dark:hover:bg-slate-700">
-                <UserCircle className="mr-2 h-4 w-4" />
-                <span>Profile</span>
-              </DropdownMenuItem>
+            <DropdownMenuContent
+              align="end"
+              className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
+            >
+              <Link href={"/profile"}>
+                <DropdownMenuItem className="dark:hover:bg-slate-700">
+                  <UserCircle className="mr-2 h-4 w-4" />
+                  <span>Profile</span>
+                </DropdownMenuItem>
+              </Link>
               <DropdownMenuItem className="dark:hover:bg-slate-700">
                 <Settings className="mr-2 h-4 w-4" />
                 <span>Account Settings</span>
