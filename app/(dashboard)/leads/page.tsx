@@ -35,14 +35,24 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, FileDown, FileUp, Phone, MessageCircle, Send } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  FileDown,
+  FileUp,
+  Phone,
+  MessageCircle,
+  Send,
+  Eye,
+} from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import * as XLSX from "xlsx";
-
+import { useRouter } from "next/navigation";
 // Zod validation schema for lead
 const leadSchema = z.object({
   firstName: z.string().min(2, { message: "First name is required" }),
@@ -60,6 +70,8 @@ const leadSchema = z.object({
 });
 
 const LeadManagement: React.FC = () => {
+  const router = useRouter();
+
   const [leads, setLeads] = useState([
     {
       id: 1,
@@ -253,25 +265,28 @@ const LeadManagement: React.FC = () => {
     reader.readAsText(file);
   };
   const initiateDirectContact = (lead: any, method: string) => {
-    const sanitizedPhone = lead.phone.replace(/\D/g, '');
-    
-    switch(method) {
-      case 'WhatsApp':
-        window.open(`https://wa.me/${sanitizedPhone}`, '_blank');
+    const sanitizedPhone = lead.phone.replace(/\D/g, "");
+
+    switch (method) {
+      case "WhatsApp":
+        window.open(`https://wa.me/${sanitizedPhone}`, "_blank");
         break;
-      case 'Call':
+      case "Call":
         window.location.href = `tel:${lead.phone}`;
         break;
-      case 'SMS':
+      case "SMS":
         window.location.href = `sms:${lead.phone}`;
         break;
       default:
-        // toast({
-        //   title: "Contact Method Error",
-        //   description: "Invalid contact method selected.",
-        //   variant: "destructive"
-        // });
+      // toast({
+      //   title: "Contact Method Error",
+      //   description: "Invalid contact method selected.",
+      //   variant: "destructive"
+      // });
     }
+  };
+  const handleView = (id: number) => {
+    router.push(`/leads/${id}`);
   };
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
@@ -324,7 +339,7 @@ const LeadManagement: React.FC = () => {
             </div>
           )}
 
-<div className="overflow-x-auto">
+          <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -364,13 +379,21 @@ const LeadManagement: React.FC = () => {
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => initiateDirectContact(lead, lead.contactMethod)}
+                          onClick={() =>
+                            initiateDirectContact(lead, lead.contactMethod)
+                          }
                           className="h-8 w-8"
                           title={`Contact via ${lead.contactMethod}`}
                         >
-                          {lead.contactMethod === 'WhatsApp' && <Send className="h-4 w-4" />}
-                          {lead.contactMethod === 'Call' && <Phone className="h-4 w-4" />}
-                          {lead.contactMethod === 'SMS' && <MessageCircle className="h-4 w-4" />}
+                          {lead.contactMethod === "WhatsApp" && (
+                            <Send className="h-4 w-4" />
+                          )}
+                          {lead.contactMethod === "Call" && (
+                            <Phone className="h-4 w-4" />
+                          )}
+                          {lead.contactMethod === "SMS" && (
+                            <MessageCircle className="h-4 w-4" />
+                          )}
                         </Button>
                         <Button
                           variant="outline"
@@ -379,6 +402,14 @@ const LeadManagement: React.FC = () => {
                           className="h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => handleView(lead.id)}
+                          className="h-8 w-8"
+                        >
+                          <Eye className="h-4 w-4" />
                         </Button>
                       </div>
                     </TableCell>
