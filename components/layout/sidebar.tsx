@@ -83,11 +83,11 @@ export function Sidebar({
       icon: SquareCode,
       href: "/leads",
     },
-    {
-      label: "Audience",
-      icon: Podcast,
-      href: "/audience",
-    },
+    // {
+    //   label: "Audience",
+    //   icon: Podcast,
+    //   href: "/audience",
+    // },
     // {
     //   label: "Calls",
     //   icon: Phone,
