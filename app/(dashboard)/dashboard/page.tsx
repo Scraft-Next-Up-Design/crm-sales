@@ -86,10 +86,6 @@ const SalesDashboard = () => {
 
   return (
     <div className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-6">
-      <h1 className="text-2xl font-bold text-center mb-6">
-        Sales CRM Dashboard
-      </h1>
-
       {/* Dashboard Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {dashboardStats.map((stat, index) => (
