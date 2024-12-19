@@ -19,6 +19,8 @@ import {
   Podcast,
   SquareCode,
   Folder,
+  Contact,
+  Bell
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -44,6 +46,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -66,6 +69,9 @@ export function Sidebar({
     name: "",
     type: "sales",
   });
+  
+  // Mock total leads count - in a real app, this would come from your data source
+  const totalLeads = 156;
 
   const routes = [
     {
@@ -82,17 +88,13 @@ export function Sidebar({
       label: "Leads",
       icon: SquareCode,
       href: "/leads",
+      badge: totalLeads,
     },
-    // {
-    //   label: "Audience",
-    //   icon: Podcast,
-    //   href: "/audience",
-    // },
-    // {
-    //   label: "Calls",
-    //   icon: Phone,
-    //   href: "/calls",
-    // },
+    {
+      label: "Contact",
+      icon: MessageSquare,
+      href: "/contact",
+    },
     {
       label: "Analytics",
       icon: BarChart,
@@ -135,8 +137,8 @@ export function Sidebar({
       <div
         className={cn(
           "fixed top-0 left-0 h-full w-64 bg-white dark:bg-slate-900 dark:text-white shadow-lg transform transition-transform duration-300 ease-in-out z-40",
-          "md:translate-x-0", // Always visible on medium and larger screens
-          isOpen ? "translate-x-0" : "-translate-x-full", // Slide in/out on mobile
+          "md:translate-x-0",
+          isOpen ? "translate-x-0" : "-translate-x-full",
           className
         )}
       >
@@ -246,12 +248,17 @@ export function Sidebar({
               <Button
                 key={route.href}
                 variant={pathname === route.href ? "secondary" : "ghost"}
-                className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-white dark:hover:text-white"
+                className="w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-white dark:hover:text-white relative"
                 asChild
               >
                 <Link href={route.href}>
                   <route.icon className="mr-2 h-4 w-4 text-slate-600 dark:text-slate-300" />
                   {route.label}
+                  {route.badge && (
+                    <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
+                      {route.badge}
+                    </Badge>
+                  )}
                 </Link>
               </Button>
             ))}
@@ -283,20 +290,24 @@ export function Sidebar({
               align="end"
               className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
-              <Link href={"/profile"}>
+              <Link href="/profile">
                 <DropdownMenuItem className="dark:hover:bg-slate-700">
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
               </Link>
-              <DropdownMenuItem className="dark:hover:bg-slate-700">
-                <Settings className="mr-2 h-4 w-4" />
-                <span>Account Settings</span>
-              </DropdownMenuItem>
-              <DropdownMenuItem className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700">
-                <LogOut className="mr-2 h-4 w-4" />
-                <span>Logout</span>
-              </DropdownMenuItem>
+              <Link href="/account-settings">
+                <DropdownMenuItem className="dark:hover:bg-slate-700">
+                  <Settings className="mr-2 h-4 w-4" />
+                  <span>Account Settings</span>
+                </DropdownMenuItem>
+              </Link>
+              <Link href="/logout">
+                <DropdownMenuItem className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700">
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
