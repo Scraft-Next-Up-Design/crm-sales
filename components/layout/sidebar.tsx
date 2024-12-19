@@ -20,7 +20,8 @@ import {
   SquareCode,
   Folder,
   Contact,
-  Bell
+  Bell,
+  Trash2
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -36,6 +37,8 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -53,6 +56,12 @@ interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoAlt?: string;
 }
 
+interface Workspace {
+  id: string;
+  name: string;
+  role: string;
+}
+
 export function Sidebar({
   className,
   logoSrc = "/logo.svg",
@@ -60,7 +69,7 @@ export function Sidebar({
 }: SidebarProps) {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState([
+  const [workspaces, setWorkspaces] = useState<Workspace[]>([
     { id: "1", name: "Sales Team", role: "Admin" },
     { id: "2", name: "Marketing Team", role: "Member" },
   ]);
@@ -69,8 +78,10 @@ export function Sidebar({
     name: "",
     type: "sales",
   });
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
   
-  // Mock total leads count - in a real app, this would come from your data source
+  // Mock total leads count
   const totalLeads = 156;
 
   const routes = [
@@ -119,6 +130,23 @@ export function Sidebar({
       setSelectedWorkspace(newWorkspaceItem);
       setNewWorkspace({ name: "", type: "sales" });
     }
+  };
+
+  const handleDeleteWorkspace = (workspace: Workspace) => {
+    setWorkspaceToDelete(workspace);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteWorkspace = () => {
+    if (workspaceToDelete) {
+      const updatedWorkspaces = workspaces.filter(w => w.id !== workspaceToDelete.id);
+      setWorkspaces(updatedWorkspaces);
+      if (selectedWorkspace.id === workspaceToDelete.id) {
+        setSelectedWorkspace(updatedWorkspaces[0]);
+      }
+    }
+    setIsDeleteDialogOpen(false);
+    setWorkspaceToDelete(null);
   };
 
   return (
@@ -171,12 +199,39 @@ export function Sidebar({
             <SelectContent>
               {workspaces.map((workspace) => (
                 <SelectItem key={workspace.id} value={workspace.id}>
-                  <div className="flex items-center">
-                    <Folder className="mr-2 h-4 w-4" />
-                    {workspace.name}
-                    <span className="text-xs text-slate-500 ml-2">
-                      ({workspace.role})
-                    </span>
+                  <div className="flex items-center justify-between w-full">
+                    <div className="flex items-center">
+                      <Folder className="mr-2 h-4 w-4" />
+                      {workspace.name}
+                      <span className="text-xs text-slate-500 ml-2">
+                        ({workspace.role})
+                      </span>
+                    </div>
+                    <div className="flex justify-end ml-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                        }}
+                      >
+                        <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 ml-1"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleDeleteWorkspace(workspace);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                      </Button>
+                    </div>
                   </div>
                 </SelectItem>
               ))}
@@ -241,6 +296,7 @@ export function Sidebar({
           </Select>
         </div>
 
+        {/* Rest of the component remains the same */}
         {/* Navigation Routes */}
         <div className="space-y-4 py-4 px-3">
           <div className="space-y-1">
@@ -265,7 +321,7 @@ export function Sidebar({
           </div>
         </div>
 
-        {/* User Profile Dropdown at Bottom */}
+        {/* User Profile Section */}
         <div className="absolute bottom-0 p-4 border-b flex items-center left-0 w-full border-t justify-between bg-slate-50 dark:bg-slate-800 dark:border-slate-700 py-4 px-4">
           <div className="flex items-center space-x-3">
             <UserCircle className="h-10 w-10 text-slate-600 dark:text-slate-300" />
@@ -296,7 +352,7 @@ export function Sidebar({
                   <span>Profile</span>
                 </DropdownMenuItem>
               </Link>
-              <Link href="/account-settings">
+              <Link href="/setting">
                 <DropdownMenuItem className="dark:hover:bg-slate-700">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
@@ -312,6 +368,32 @@ export function Sidebar({
           </DropdownMenu>
         </div>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Workspace</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete "{workspaceToDelete?.name}"? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmDeleteWorkspace}
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Mobile Overlay */}
       {isOpen && (
