@@ -53,6 +53,9 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+import { CRM_MESSAGES } from "@/lib/constant/crm";
+
 // Zod validation schema for lead
 const leadSchema = z.object({
   firstName: z.string().min(2, { message: "First name is required" }),
@@ -161,6 +164,7 @@ const LeadManagement: React.FC = () => {
           notes: data.notes || "",
         },
       ]);
+      toast.success(CRM_MESSAGES.LEAD_ADDED_SUCCESS);
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
       setLeads(
@@ -177,7 +181,9 @@ const LeadManagement: React.FC = () => {
         )
       );
     }
+    toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     resetDialog();
+    setDialogMode(null);
   };
 
   // Delete selected leads
@@ -185,6 +191,7 @@ const LeadManagement: React.FC = () => {
     setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
     setSelectedLeads([]);
     setDialogMode(null);
+    toast.success("Selected leads deleted successfully");
   };
 
   // Toggle lead selection
