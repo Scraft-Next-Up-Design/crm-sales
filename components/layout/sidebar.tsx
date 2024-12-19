@@ -21,7 +21,7 @@ import {
   Folder,
   Contact,
   Bell,
-  Trash2
+  Trash2,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -79,8 +79,10 @@ export function Sidebar({
     type: "sales",
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
-  
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
+    null
+  );
+
   // Mock total leads count
   const totalLeads = 156;
 
@@ -139,7 +141,9 @@ export function Sidebar({
 
   const confirmDeleteWorkspace = () => {
     if (workspaceToDelete) {
-      const updatedWorkspaces = workspaces.filter(w => w.id !== workspaceToDelete.id);
+      const updatedWorkspaces = workspaces.filter(
+        (w) => w.id !== workspaceToDelete.id
+      );
       setWorkspaces(updatedWorkspaces);
       if (selectedWorkspace.id === workspaceToDelete.id) {
         setSelectedWorkspace(updatedWorkspaces[0]);
@@ -311,7 +315,10 @@ export function Sidebar({
                   <route.icon className="mr-2 h-4 w-4 text-slate-600 dark:text-slate-300" />
                   {route.label}
                   {route.badge && (
-                    <Badge variant="secondary" className="ml-auto bg-blue-100 text-blue-800">
+                    <Badge
+                      variant="secondary"
+                      className="ml-auto bg-blue-100 text-blue-800"
+                    >
                       {route.badge}
                     </Badge>
                   )}
@@ -375,7 +382,8 @@ export function Sidebar({
           <DialogHeader>
             <DialogTitle>Delete Workspace</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{workspaceToDelete?.name}"? This action cannot be undone.
+              Are you sure you want to delete "{workspaceToDelete?.name}"? This
+              action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>
@@ -385,10 +393,7 @@ export function Sidebar({
             >
               Cancel
             </Button>
-            <Button
-              variant="destructive"
-              onClick={confirmDeleteWorkspace}
-            >
+            <Button variant="destructive" onClick={confirmDeleteWorkspace}>
               Delete
             </Button>
           </DialogFooter>
