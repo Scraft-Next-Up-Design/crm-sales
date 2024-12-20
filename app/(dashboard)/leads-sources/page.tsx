@@ -1,51 +1,37 @@
-'use client'
+"use client";
 
-import React, { useState } from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
-} from "@/components/ui/card";
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
+import React, { useState } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
   DialogTrigger,
   DialogFooter,
-  DialogClose 
+  DialogClose,
 } from "@/components/ui/dialog";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { 
-  Table, 
-  TableBody, 
-  TableCell, 
-  TableHead, 
-  TableHeader, 
-  TableRow 
+import { Textarea } from "@/components/ui/textarea";
+import { Switch } from "@/components/ui/switch";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
-import { 
-  Plus, 
-  Pencil, 
-  Trash2 
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -53,88 +39,122 @@ import * as z from "zod";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
-  type: z.enum(["Digital", "Personal", "Event"], { 
-    required_error: "Please select a source type" 
-  }),
-  webhook: z.string().url({ message: "Invalid webhook URL" }).optional()
+  type: z.string().min(2, { message: "Type must be at least 2 characters" }),
+  description: z.string().optional(),
 });
 
 const LeadSourceManager: React.FC = () => {
+  // Demo data with webhook URLs and status
   const [sources, setSources] = useState([
-    { id: 1, name: 'Website', type: 'Digital', webhook: 'https://example.com/website-webhook' },
-    { id: 2, name: 'Referral', type: 'Personal', webhook: '' },
-    { id: 3, name: 'Social Media', type: 'Digital', webhook: 'https://example.com/social-webhook' }
+    {
+      id: 1,
+      name: "Website",
+      type: "Digital",
+      description: "Main website leads",
+      webhook: "https://api.example.com/webhooks/1/abc123",
+      status: true, // enabled
+    },
+    {
+      id: 2,
+      name: "Referral",
+      type: "Personal",
+      description: "Partner referrals",
+      webhook: "https://api.example.com/webhooks/2/def456",
+      status: false, // disabled
+    },
   ]);
-  const [selectedSource, setSelectedSource] = useState<z.infer<typeof sourceSchema> & { id?: number } | null>(null);
-  const [dialogMode, setDialogMode] = useState<'create' | 'edit' | 'delete' | null>(null);
 
-  // Form setup
+  const [selectedSource, setSelectedSource] = useState<any>(null);
+  const [dialogMode, setDialogMode] = useState<
+    "create" | "edit" | "delete" | null
+  >(null);
+
   const form = useForm<z.infer<typeof sourceSchema>>({
     resolver: zodResolver(sourceSchema),
     defaultValues: {
       name: "",
-      type: undefined,
-      webhook: "",
-    }
+      type: "",
+      description: "",
+    },
   });
 
-  // Reset form and dialog state
   const resetDialog = () => {
     form.reset();
     setSelectedSource(null);
     setDialogMode(null);
   };
 
-  // Open create dialog
   const openCreateDialog = () => {
     resetDialog();
-    setDialogMode('create');
+    setDialogMode("create");
   };
 
-  // Open edit dialog
-  const openEditDialog = (source: typeof sources[number]) => {
+  const openEditDialog = (source: (typeof sources)[number]) => {
     form.reset({
       name: source.name,
-      type: source.type as any,
-      webhook: source.webhook
+      type: source.type,
+      description: source.description,
     });
-    setSelectedSource({ ...source, type: source.type as "Digital" | "Personal" | "Event" });
-    setDialogMode('edit');
+    setSelectedSource(source);
+    setDialogMode("edit");
   };
 
-  // Open delete confirmation dialog
-  const openDeleteDialog = (source: typeof sources[number]) => {
-    setSelectedSource({ ...source, type: source.type as "Digital" | "Personal" | "Event" });
-    setDialogMode('delete');
+  const openDeleteDialog = (source: (typeof sources)[number]) => {
+    setSelectedSource(source);
+    setDialogMode("delete");
   };
 
-  // Handle form submission
+  const copyWebhook = (webhook: string) => {
+    navigator.clipboard.writeText(webhook);
+    // You could add a toast notification here
+  };
+
+  // Function to toggle webhook status
+  const toggleWebhookStatus = (sourceId: number) => {
+    setSources(
+      sources.map((source) =>
+        source.id === sourceId ? { ...source, status: !source.status } : source
+      )
+    );
+  };
+
   const onSubmit = (data: z.infer<typeof sourceSchema>) => {
-    if (dialogMode === 'create') {
-      // Add new source
+    if (dialogMode === "create") {
+      // Simulate new webhook URL for demo
+      const newId = sources.length + 1;
+      const newWebhook = `https://api.example.com/webhooks/${newId}/${Math.random()
+        .toString(36)
+        .slice(2, 8)}`;
+
       setSources([
-        ...sources, 
-        { 
-          id: sources.length + 1, 
-          ...data, 
-          webhook: data.webhook || '' 
-        }
+        ...sources,
+        {
+          id: newId,
+          ...data,
+          webhook: newWebhook,
+          description: data.description || "",
+          status: true, // New sources are enabled by default
+        },
       ]);
-    } else if (dialogMode === 'edit' && selectedSource) {
-      // Update existing source
-      setSources(sources.map(source => 
-        source.id === selectedSource.id 
-          ? { id: selectedSource.id, ...data, webhook: data.webhook || '' }
-          : source
-      ));
+    } else if (dialogMode === "edit" && selectedSource) {
+      setSources(
+        sources.map((source) =>
+          source.id === selectedSource.id
+            ? {
+                ...source,
+                ...data,
+                description: data.description || "",
+              }
+            : source
+        )
+      );
     }
     resetDialog();
   };
 
-  // Handle delete source
   const handleDelete = () => {
     if (selectedSource) {
-      setSources(sources.filter(source => source.id !== selectedSource.id));
+      setSources(sources.filter((source) => source.id !== selectedSource.id));
       resetDialog();
     }
   };
@@ -143,11 +163,10 @@ const LeadSourceManager: React.FC = () => {
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <CardTitle className="text-lg md:text-xl lg:text-2xl">Lead Sources</CardTitle>
-          <Button 
-            onClick={openCreateDialog} 
-            className="w-full md:w-auto"
-          >
+          <CardTitle className="text-lg md:text-xl lg:text-2xl">
+            Lead Sources
+          </CardTitle>
+          <Button onClick={openCreateDialog} className="w-full md:w-auto">
             <Plus className="mr-2 h-4 w-4" /> Add Source
           </Button>
         </CardHeader>
@@ -156,40 +175,63 @@ const LeadSourceManager: React.FC = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="hidden md:table-cell">Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Type</TableHead>
-                  <TableHead className="hidden lg:table-cell">Webhook</TableHead>
+                  <TableHead>Name</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Description</TableHead>
+                  <TableHead>Webhook</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {sources.map((source) => (
-                  <TableRow key={source.id} className="flex flex-col md:table-row">
-                    <TableCell className="flex justify-between md:table-cell">
-                      <span className="md:hidden font-bold">Name:</span>
-                      {source.name}
-                    </TableCell>
-                    <TableCell className="flex justify-between md:table-cell">
-                      <span className="md:hidden font-bold">Type:</span>
-                      {source.type}
-                    </TableCell>
-                    <TableCell className="flex justify-between md:table-cell hidden lg:table-cell">
-                      <span className="md:hidden font-bold">Webhook:</span>
-                      {source.webhook || 'N/A'}
+                  <TableRow key={source.id}>
+                    <TableCell>{source.name}</TableCell>
+                    <TableCell>{source.type}</TableCell>
+                    <TableCell>{source.description}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center space-x-2">
+                        <span className="truncate max-w-xs">
+                          {source.webhook}
+                        </span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => copyWebhook(source.webhook)}
+                          className="h-8 w-8"
+                        >
+                          <Copy className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex space-x-2 justify-end">
-                        <Button 
-                          variant="outline" 
-                          size="icon" 
+                      <div className="flex items-center space-x-2">
+                        <Switch
+                          checked={source.status}
+                          onCheckedChange={() => toggleWebhookStatus(source.id)}
+                        />
+                        <span
+                          className={`text-sm ${
+                            source.status ? "text-green-600" : "text-red-600"
+                          }`}
+                        >
+                          {source.status ? "Enabled" : "Disabled"}
+                        </span>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        <Button
+                          variant="outline"
+                          size="icon"
                           onClick={() => openEditDialog(source)}
                           className="h-8 w-8"
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button 
-                          variant="destructive" 
-                          size="icon" 
+                        <Button
+                          variant="destructive"
+                          size="icon"
                           onClick={() => openDeleteDialog(source)}
                           className="h-8 w-8"
                         >
@@ -206,14 +248,16 @@ const LeadSourceManager: React.FC = () => {
       </Card>
 
       {/* Create/Edit Dialog */}
-      <Dialog 
-        open={dialogMode === 'create' || dialogMode === 'edit'} 
+      <Dialog
+        open={dialogMode === "create" || dialogMode === "edit"}
         onOpenChange={() => resetDialog()}
       >
         <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>
-              {dialogMode === 'create' ? 'Add New Lead Source' : 'Edit Lead Source'}
+              {dialogMode === "create"
+                ? "Add New Lead Source"
+                : "Edit Lead Source"}
             </DialogTitle>
           </DialogHeader>
           <Form {...form}>
@@ -237,33 +281,25 @@ const LeadSourceManager: React.FC = () => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Source Type</FormLabel>
-                    <Select 
-                      onValueChange={field.onChange} 
-                      defaultValue={field.value}
-                    >
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select source type" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="Digital">Digital</SelectItem>
-                        <SelectItem value="Personal">Personal</SelectItem>
-                        <SelectItem value="Event">Event</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <FormControl>
+                      <Input placeholder="Enter source type" {...field} />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <FormField
                 control={form.control}
-                name="webhook"
+                name="description"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Webhook URL (Optional)</FormLabel>
+                    <FormLabel>Description (Optional)</FormLabel>
                     <FormControl>
-                      <Input placeholder="Enter webhook URL" {...field} />
+                      <Textarea
+                        placeholder="Enter source description"
+                        className="resize-none"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -271,10 +307,16 @@ const LeadSourceManager: React.FC = () => {
               />
               <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <DialogClose asChild>
-                  <Button type="button" variant="ghost" className="w-full sm:w-auto">Cancel</Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="w-full sm:w-auto"
+                  >
+                    Cancel
+                  </Button>
                 </DialogClose>
                 <Button type="submit" className="w-full sm:w-auto">
-                  {dialogMode === 'create' ? 'Add Source' : 'Update Source'}
+                  {dialogMode === "create" ? "Add Source" : "Update Source"}
                 </Button>
               </DialogFooter>
             </form>
@@ -283,21 +325,27 @@ const LeadSourceManager: React.FC = () => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog 
-        open={dialogMode === 'delete'} 
-        onOpenChange={() => resetDialog()}
-      >
+      <Dialog open={dialogMode === "delete"} onOpenChange={() => resetDialog()}>
         <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
-          <p className="mb-4">Are you sure you want to delete the lead source "{selectedSource?.name}"?</p>
+          <p className="mb-4">
+            Are you sure you want to delete the lead source "
+            {selectedSource?.name}"?
+          </p>
           <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <DialogClose asChild>
-              <Button type="button" variant="ghost" className="w-full sm:w-auto">Cancel</Button>
+              <Button
+                type="button"
+                variant="ghost"
+                className="w-full sm:w-auto"
+              >
+                Cancel
+              </Button>
             </DialogClose>
-            <Button 
-              variant="destructive" 
+            <Button
+              variant="destructive"
               onClick={handleDelete}
               className="w-full sm:w-auto"
             >
