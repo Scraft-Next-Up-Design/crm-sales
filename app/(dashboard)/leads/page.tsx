@@ -1,5 +1,6 @@
 "use client";
-
+import { Filter } from "lucide-react";
+import FilterComponent from "./filter";
 import React, { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -72,23 +73,114 @@ const leadSchema = z.object({
   notes: z.string().optional(),
 });
 
+const initialFilters: any = {
+  owner: "",
+  status: "",
+  contactMethod: "",
+  contactType: "",
+  startDate: "",
+  endDate: "",
+  showDuplicates: false,
+};
+const initialLeads: any = [
+  {
+    id: 1,
+    firstName: "John",
+    lastName: "Doe",
+    email: "john@example.com",
+    phone: "+1234567890",
+    company: "Acme Inc",
+    position: "Manager",
+    contactMethod: "Email",
+    owner: "Alice Smith",
+    status: "Qualified",
+    createdAt: new Date().toISOString(),
+  },
+  // Add more sample leads as needed
+];
+
 const LeadManagement: React.FC = () => {
   const router = useRouter();
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState<any>(initialFilters);
+  const [leads, setLeads] = useState<any[]>(initialLeads);
+  // const [leads, setLeads] = useState([
+  //   {
+  //     id: 1,
+  //     firstName: "John",
+  //     lastName: "Doe",
+  //     email: "john.doe@example.com",
+  //     phone: "+15551234567",
+  //     company: "Acme Corp",
+  //     position: "Sales Manager",
+  //     contactMethod: "WhatsApp",
+  //     notes: "Potential big client",
+  //   },
+  // ]);
 
-  const [leads, setLeads] = useState([
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john.doe@example.com",
-      phone: "+15551234567",
-      company: "Acme Corp",
-      position: "Sales Manager",
-      contactMethod: "WhatsApp",
-      notes: "Potential big client",
-    },
-  ]);
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
+  };
 
+  const handleFilterReset = () => {
+    setFilters(initialFilters);
+  };
+
+  const filteredLeads = useMemo(() => {
+    return leads.filter((lead) => {
+      // Owner filter
+      if (
+        filters.owner &&
+        !lead.owner.toLowerCase().includes(filters.owner.toLowerCase())
+      ) {
+        return false;
+      }
+
+      // Status filter
+      if (filters.status && lead.status !== filters.status) {
+        return false;
+      }
+
+      // Contact Method filter
+      if (
+        filters.contactMethod &&
+        lead.contactMethod !== filters.contactMethod
+      ) {
+        return false;
+      }
+
+      // Contact Type filter
+      if (filters.contactType) {
+        if (filters.contactType === "phone" && !lead.phone) return false;
+        if (filters.contactType === "email" && !lead.email) return false;
+        if (filters.contactType === "id" && !lead.id) return false;
+      }
+
+      // Date range filter
+      if (
+        filters.startDate &&
+        new Date(lead.createdAt) < new Date(filters.startDate)
+      ) {
+        return false;
+      }
+      if (
+        filters.endDate &&
+        new Date(lead.createdAt) > new Date(filters.endDate)
+      ) {
+        return false;
+      }
+
+      // Duplicate check
+      if (filters.showDuplicates) {
+        const duplicates = leads.filter(
+          (l) => l.email === lead.email || l.phone === lead.phone
+        );
+        if (duplicates.length <= 1) return false;
+      }
+
+      return true;
+    });
+  }, [leads, filters]);
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
   const [dialogMode, setDialogMode] = useState<
     "create" | "edit" | "delete" | null
@@ -183,7 +275,6 @@ const LeadManagement: React.FC = () => {
     }
     toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     resetDialog();
-    setDialogMode(null);
   };
 
   // Delete selected leads
@@ -295,15 +386,31 @@ const LeadManagement: React.FC = () => {
   const handleView = (id: number) => {
     router.push(`/leads/${id}`);
   };
+
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
+      {showFilters && (
+        <FilterComponent
+          values={filters}
+          onChange={handleFilterChange}
+          onReset={handleFilterReset}
+        />
+      )}
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <CardTitle className="text-lg md:text-xl lg:text-2xl">
             Lead Management
           </CardTitle>
           <div className="flex space-x-2">
             {/* Import Button */}
+            <Button
+              variant="outline"
+              onClick={() => setShowFilters(!showFilters)}
+            >
+              <Filter className="mr-2 h-4 w-4" />
+              {showFilters ? "Hide Filters" : "Show Filters"}
+            </Button>
+       
             <input
               type="file"
               id="import-leads"
