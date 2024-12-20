@@ -1,5 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../lib/supabaseClient";
+import { AUTH_MESSAGES } from "@/lib/constant/auth";
 
 interface AuthRequestBody {
   email?: string;
@@ -16,7 +17,7 @@ export default async function handler(
   switch (method) {
     case "POST": {
       if (!action) {
-        return res.status(400).json({ error: "Missing action parameter" });
+        return res.status(400).json({ error: AUTH_MESSAGES.SIGNUP_FAILED });
       }
 
       const { email, password }: AuthRequestBody = body;
@@ -24,9 +25,7 @@ export default async function handler(
       switch (action) {
         case "signup": {
           if (!email || !password) {
-            return res
-              .status(400)
-              .json({ error: "Email and password are required" });
+            return res.status(400).json({ error: AUTH_MESSAGES.SIGNUP_FAILED });
           }
 
           const { data, error } = await supabase.auth.signUp({
@@ -38,14 +37,14 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
 
-          return res.status(200).json({ user: data.user });
+          return res
+            .status(200)
+            .json({ user: data.user, message: AUTH_MESSAGES.SIGNUP_SUCCESS });
         }
 
         case "signin": {
           if (!email || !password) {
-            return res
-              .status(400)
-              .json({ error: "Email and password are required" });
+            return res.status(400).json({ error: AUTH_MESSAGES.LOGIN_FAILED });
           }
 
           const { data, error } = await supabase.auth.signInWithPassword({
@@ -59,7 +58,9 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
 
-          return res.status(200).json({ user });
+          return res
+            .status(200)
+            .json({ user, message: AUTH_MESSAGES.LOGIN_SUCCESS });
         }
 
         case "signout": {
@@ -69,15 +70,17 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
 
-          return res.status(200).json({ message: "Signed out successfully" });
+          return res
+            .status(200)
+            .json({ message: AUTH_MESSAGES.LOGOUT_SUCCESS });
         }
 
         default:
-          return res.status(400).json({ error: "Invalid action" });
+          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
     }
 
     default:
-      return res.status(405).json({ error: "Method not allowed" });
+      return res.status(405).json({ error: AUTH_MESSAGES.API_ERROR });
   }
 }

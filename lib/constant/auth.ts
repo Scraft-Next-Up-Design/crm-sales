@@ -14,5 +14,6 @@ export const AUTH_MESSAGES = {
     ACCOUNT_NOT_FOUND: 'Account not found. Please sign up first.',
     ACCOUNT_ALREADY_EXISTS: 'An account with this email already exists.',
     AUTH_LOADING: 'Processing authentication...',
+    API_ERROR: 'Invalid Action or method not allowed.',
   };
   
