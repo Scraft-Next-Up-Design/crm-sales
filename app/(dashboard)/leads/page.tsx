@@ -390,13 +390,13 @@ const LeadManagement: React.FC = () => {
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
-      {showFilters && (
-        <FilterComponent
-          values={filters}
-          onChange={handleFilterChange}
-          onReset={handleFilterReset}
-        />
-      )}
+        {showFilters && (
+          <FilterComponent
+            values={filters}
+            onChange={handleFilterChange}
+            onReset={handleFilterReset}
+          />
+        )}
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <CardTitle className="text-lg md:text-xl lg:text-2xl">
             Lead Management
@@ -410,7 +410,7 @@ const LeadManagement: React.FC = () => {
               <Filter className="mr-2 h-4 w-4" />
               {showFilters ? "Hide Filters" : "Show Filters"}
             </Button>
-       
+
             <input
               type="file"
               id="import-leads"
@@ -473,6 +473,7 @@ const LeadManagement: React.FC = () => {
                   <TableHead>Phone</TableHead>
                   <TableHead>Contact Method</TableHead>
                   <TableHead>Actions</TableHead>
+                  <TableHead>Assign</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -674,6 +675,7 @@ const LeadManagement: React.FC = () => {
                         <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                         <SelectItem value="SMS">SMS</SelectItem>
                         <SelectItem value="Call">Call</SelectItem>
+                        <SelectItem value="Email">Call</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

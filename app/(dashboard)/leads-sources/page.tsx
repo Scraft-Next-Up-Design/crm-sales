@@ -136,6 +136,7 @@ const LeadSourceManager: React.FC = () => {
           status: true, // New sources are enabled by default
         },
       ]);
+      console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {
       setSources(
         sources.map((source) =>
