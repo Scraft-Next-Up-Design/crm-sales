@@ -1,4 +1,4 @@
-import { api } from '../api';
+import { api } from '../base/authapi';
 
 export interface Lead {
   id: string;

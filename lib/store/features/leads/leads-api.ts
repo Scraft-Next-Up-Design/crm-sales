@@ -1,4 +1,4 @@
-import { api } from '../../api';
+import { api } from '../../base/authapi';
 import type { Lead } from './types';
 
 export const leadsApi = api.injectEndpoints({

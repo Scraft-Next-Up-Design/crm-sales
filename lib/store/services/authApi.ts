@@ -1,4 +1,4 @@
-import { api } from "../api";
+import { api } from "../base/authapi";
 
 interface LoginRequest {
   email: string;
@@ -22,14 +22,14 @@ export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (credentials) => ({
-        url: "auth/login",
+        url: "?action=signin",
         method: "POST",
         body: credentials,
       }),
     }),
     signup: builder.mutation<AuthResponse, SignupRequest>({
       query: (credentials) => ({
-        url: "signup",
+        url: "?action=signup",
         method: "POST",
         body: credentials,
       }),
@@ -40,8 +40,5 @@ export const authApi = api.injectEndpoints({
   }),
 });
 
-export const {
-  useLoginMutation,
-  useSignupMutation,
-  useGetProfileQuery,
-} = authApi;
+export const { useLoginMutation, useSignupMutation, useGetProfileQuery } =
+  authApi;
