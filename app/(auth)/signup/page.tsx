@@ -18,14 +18,16 @@ import * as z from "zod";
 import { useSignupMutation } from "@/lib/store/services/authApi";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
-const signupSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(6),
-  confirmPassword: z.string().min(6),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+const signupSchema = z
+  .object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    confirmPassword: z.string().min(6),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 export default function SignupPage() {
   const router = useRouter();
@@ -85,7 +87,9 @@ export default function SignupPage() {
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -104,11 +108,7 @@ export default function SignupPage() {
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Creating account..." : "Sign up"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">

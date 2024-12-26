@@ -36,6 +36,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useWebhookMutation } from "@/lib/store/services/webhooks";
+import { v4 as uuidv4 } from "uuid";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -119,13 +120,11 @@ const LeadSourceManager: React.FC = () => {
     );
   };
 
-  const onSubmit = async(data: z.infer<typeof sourceSchema>) => {
+  const onSubmit = async (data: z.infer<typeof sourceSchema>) => {
     if (dialogMode === "create") {
       // Simulate new webhook URL for demo
-      const newId = sources.length + 1;
-      const newWebhook = `https://api.example.com/webhooks/${newId}/${Math.random()
-        .toString(36)
-        .slice(2, 8)}`;
+      const newId: any = uuidv4().toString();
+      const newWebhook = `https://${window.location.hostname}/webhooks/${newId}`;
 
       setSources([
         ...sources,
@@ -138,16 +137,13 @@ const LeadSourceManager: React.FC = () => {
         },
       ]);
       try {
-        await webhook({ 
-          status: true, 
-          type: data.type, 
-          name: data.name, 
-          webhook_url: newWebhook
+        await webhook({
+          status: true,
+          type: data.type,
+          name: data.name,
+          webhook_url: newWebhook,
         });
-
-      } catch (error) {
-        
-      }
+      } catch (error) {}
       console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {
       setSources(
