@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { supabase } from "../../lib/supabaseClient";
+// import { supabase } from "../../lib/supabaseServer";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
+import { supabase } from '../../lib/supabaseClient'
 
 interface AuthRequestBody {
   email?: string;
@@ -51,16 +52,15 @@ export default async function handler(
             email,
             password,
           });
-
-          const { user } = data;
-
+console.log(data)
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+          await supabase.auth.setSession(data.session);
 
           return res
             .status(200)
-            .json({ user, message: AUTH_MESSAGES.LOGIN_SUCCESS });
+            .json({ user: data.user, message: AUTH_MESSAGES.LOGIN_SUCCESS });
         }
 
         case "signout": {
@@ -74,7 +74,30 @@ export default async function handler(
             .status(200)
             .json({ message: AUTH_MESSAGES.LOGOUT_SUCCESS });
         }
+        case "verify": {
+          const token = req.headers.authorization?.split("Bearer ")[1]; // Extract token
 
+          if (!token) {
+            return res
+              .status(401)
+              .json({ error: AUTH_MESSAGES.INVALID_LOGIN_DATA });
+          }
+
+          try {
+            const { data, error } = await supabase.auth.getUser(token);
+
+            if (error) {
+              return res
+                .status(401)
+                .json({ error: AUTH_MESSAGES.INVALID_LOGIN_DATA });
+            }
+
+            return res.status(200).json({ user: data });
+          } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: AUTH_MESSAGES.API_ERROR });
+          }
+        }
         default:
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }

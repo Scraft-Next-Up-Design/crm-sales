@@ -85,18 +85,22 @@ const SalesDashboard = () => {
   ];
 
   return (
-    <div className="w-full px-4 sm:px-6 lg:px-8 py-4 space-y-6">
+    <div className="w-full p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
         {dashboardStats.map((stat, index) => (
           <Card key={index} className="hover:shadow-md transition-shadow">
-            <CardContent className="pt-6 flex items-center space-x-4">
-              {stat.icon}
-              <div>
-                <p className="text-sm text-muted-foreground truncate">
+            <CardContent className="p-3 sm:p-6 flex items-center space-x-2 sm:space-x-4">
+              <div className="shrink-0">
+                {stat.icon}
+              </div>
+              <div className="min-w-0">
+                <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {stat.title}
                 </p>
-                <p className="text-xl font-semibold truncate">{stat.value}</p>
+                <p className="text-lg sm:text-xl font-semibold truncate">
+                  {stat.value}
+                </p>
                 <p
                   className={`text-xs ${
                     stat.change.startsWith("+")
@@ -113,42 +117,46 @@ const SalesDashboard = () => {
       </div>
 
       {/* Sales Chart */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Monthly Sales Performance</CardTitle>
+      <Card className="w-full">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">Monthly Sales Performance</CardTitle>
         </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={salesData}>
-              <XAxis dataKey="month" />
-              <YAxis />
-              <Tooltip />
-              <Bar dataKey="sales" fill="#8884d8" />
-            </BarChart>
-          </ResponsiveContainer>
+        <CardContent className="p-2 sm:p-6">
+          <div className="w-full h-[250px] sm:h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={salesData} margin={{ top: 5, right: 5, bottom: 5, left: 0 }}>
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="sales" fill="#8884d8" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </CardContent>
       </Card>
 
       {/* Leads Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Active Leads</CardTitle>
+      <Card className="w-full">
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-base sm:text-lg">Active Leads</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
+        <CardContent className="p-2 sm:p-6">
+          <div className="overflow-x-auto -mx-2 sm:mx-0">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead className="w-1/4">Company</TableHead>
-                  <TableHead className="w-1/4">Status</TableHead>
-                  <TableHead className="w-1/4">Value</TableHead>
-                  <TableHead className="w-1/4">Owner</TableHead>
+                  <TableHead className="w-1/4 text-xs sm:text-sm">Company</TableHead>
+                  <TableHead className="w-1/4 text-xs sm:text-sm">Status</TableHead>
+                  <TableHead className="w-1/4 text-xs sm:text-sm">Value</TableHead>
+                  <TableHead className="w-1/4 text-xs sm:text-sm">Owner</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {leadsData.map((lead) => (
                   <TableRow key={lead.id}>
-                    <TableCell className="truncate">{lead.name}</TableCell>
+                    <TableCell className="truncate text-xs sm:text-sm">
+                      {lead.name}
+                    </TableCell>
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded-full text-xs inline-block 
@@ -163,8 +171,10 @@ const SalesDashboard = () => {
                         {lead.status}
                       </span>
                     </TableCell>
-                    <TableCell>{lead.value}</TableCell>
-                    <TableCell className="truncate">{lead.owner}</TableCell>
+                    <TableCell className="text-xs sm:text-sm">{lead.value}</TableCell>
+                    <TableCell className="truncate text-xs sm:text-sm">
+                      {lead.owner}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

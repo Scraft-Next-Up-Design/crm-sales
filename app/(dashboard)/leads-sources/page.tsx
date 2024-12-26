@@ -35,7 +35,7 @@ import { Plus, Pencil, Trash2, Copy } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-
+import { useWebhookMutation } from "@/lib/store/services/webhooks";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -44,6 +44,7 @@ const sourceSchema = z.object({
 });
 
 const LeadSourceManager: React.FC = () => {
+  const [webhook] = useWebhookMutation();
   // Demo data with webhook URLs and status
   const [sources, setSources] = useState([
     {
@@ -118,7 +119,7 @@ const LeadSourceManager: React.FC = () => {
     );
   };
 
-  const onSubmit = (data: z.infer<typeof sourceSchema>) => {
+  const onSubmit = async(data: z.infer<typeof sourceSchema>) => {
     if (dialogMode === "create") {
       // Simulate new webhook URL for demo
       const newId = sources.length + 1;
@@ -136,6 +137,17 @@ const LeadSourceManager: React.FC = () => {
           status: true, // New sources are enabled by default
         },
       ]);
+      try {
+        await webhook({ 
+          status: true, 
+          type: data.type, 
+          name: data.name, 
+          webhook_url: newWebhook
+        });
+
+      } catch (error) {
+        
+      }
       console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {
       setSources(
@@ -332,8 +344,8 @@ const LeadSourceManager: React.FC = () => {
             <DialogTitle>Confirm Deletion</DialogTitle>
           </DialogHeader>
           <p className="mb-4">
-            Are you sure you want to delete the lead source "
-            {selectedSource?.name}"?
+            Are you sure you want to delete the lead source &quot;
+            {selectedSource?.name}&quot;?
           </p>
           <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <DialogClose asChild>

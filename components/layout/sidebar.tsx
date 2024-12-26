@@ -382,7 +382,7 @@ export function Sidebar({
           <DialogHeader>
             <DialogTitle>Delete Workspace</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete "{workspaceToDelete?.name}"? This
+              Are you sure you want to delete &quot;{workspaceToDelete?.name}&quot;? This
               action cannot be undone.
             </DialogDescription>
           </DialogHeader>

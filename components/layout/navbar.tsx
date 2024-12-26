@@ -6,10 +6,30 @@ import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UserNav } from "@/components/layout/user-nav";
 import { useAppSelector } from "@/lib/store/hooks";
+import { supabase } from "@/lib/supabaseClient";
+import { useEffect, useState } from "react";
+import { User } from "@supabase/supabase-js";
 
 export function Navbar() {
   const pathname = usePathname();
-  const user = useAppSelector((state) => state.auth.user);
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    // Cleanup subscription
+    return () => subscription.unsubscribe();
+  }, []);
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
@@ -50,12 +70,6 @@ export function Navbar() {
         ) : (
           <div className="ml-auto flex items-center space-x-4">
             <ThemeToggle />
-            <Button variant="ghost" asChild>
-              <Link href="/login">Login</Link>
-            </Button>
-            <Button asChild>
-              <Link href="/signup">Sign up</Link>
-            </Button>
           </div>
         )}
       </div>

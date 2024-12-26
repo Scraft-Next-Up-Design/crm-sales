@@ -17,7 +17,9 @@ interface AuthResponse {
     role: "admin" | "sales_agent" | "manager";
   };
 }
-
+interface VerifyRequest {
+  token: string;
+}
 export const authApi = api.injectEndpoints({
   endpoints: (builder) => ({
     login: builder.mutation<AuthResponse, LoginRequest>({
@@ -34,11 +36,22 @@ export const authApi = api.injectEndpoints({
         body: credentials,
       }),
     }),
+    verify: builder.mutation<AuthResponse, VerifyRequest>({
+      query: (token) => ({
+        url: "?action=verify",
+        method: "POST",
+        body: { token },
+      }),
+    }),
     getProfile: builder.query<AuthResponse["user"], void>({
       query: () => "auth/profile",
     }),
   }),
 });
 
-export const { useLoginMutation, useSignupMutation, useGetProfileQuery } =
-  authApi;
+export const {
+  useLoginMutation,
+  useSignupMutation,
+  useGetProfileQuery,
+  useVerifyMutation,
+} = authApi;

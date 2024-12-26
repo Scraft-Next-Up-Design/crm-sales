@@ -5,6 +5,7 @@ import { store } from '@/lib/store/store';
 import { ThemeProvider } from 'next-themes';
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  
   return (
     <Provider store={store}>
       <ThemeProvider

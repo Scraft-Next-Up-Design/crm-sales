@@ -15,5 +15,6 @@ export const AUTH_MESSAGES = {
     ACCOUNT_ALREADY_EXISTS: 'An account with this email already exists.',
     AUTH_LOADING: 'Processing authentication...',
     API_ERROR: 'Invalid Action or method not allowed.',
+    UNAUTHORIZED: 'Unauthorized access. Please log in to continue.',
   };
   

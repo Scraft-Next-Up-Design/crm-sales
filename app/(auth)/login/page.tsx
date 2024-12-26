@@ -17,7 +17,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useLoginMutation } from "@/lib/store/services/authApi";
 import { useRouter } from "next/navigation";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabaseClient";
 const loginSchema = z.object({
   email: z.string().email(),
   password: z.string().min(6),
@@ -25,7 +26,6 @@ const loginSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const [login] = useLoginMutation();
 
   const {
@@ -38,14 +38,14 @@ export default function LoginPage() {
 
   const onSubmit = async (data: z.infer<typeof loginSchema>) => {
     try {
-      await login(data).unwrap();
-      router.push("/dashboard");
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Invalid credentials",
-        variant: "destructive",
+      await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
       });
+      // await login(data).unwrap();
+      router.push("/dashboard");
+    } catch (error: any) {
+      toast.error(error.data.error);
     }
   };
 
@@ -81,16 +81,14 @@ export default function LoginPage() {
                 placeholder="••••••••"
               />
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
               )}
             </div>
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
-            <Button
-              type="submit"
-              className="w-full"
-              disabled={isSubmitting}
-            >
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "Logging in..." : "Login"}
             </Button>
             <p className="text-sm text-center text-muted-foreground">

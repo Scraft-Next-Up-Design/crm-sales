@@ -104,20 +104,6 @@ const LeadManagement: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<any>(initialFilters);
   const [leads, setLeads] = useState<any[]>(initialLeads);
-  // const [leads, setLeads] = useState([
-  //   {
-  //     id: 1,
-  //     firstName: "John",
-  //     lastName: "Doe",
-  //     email: "john.doe@example.com",
-  //     phone: "+15551234567",
-  //     company: "Acme Corp",
-  //     position: "Sales Manager",
-  //     contactMethod: "WhatsApp",
-  //     notes: "Potential big client",
-  //   },
-  // ]);
-
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
   };
@@ -255,6 +241,7 @@ const LeadManagement: React.FC = () => {
           position: data.position || "",
           notes: data.notes || "",
         },
+        // console.log(leads),
       ]);
       toast.success(CRM_MESSAGES.LEAD_ADDED_SUCCESS);
     } else if (dialogMode === "edit" && editingLead) {
