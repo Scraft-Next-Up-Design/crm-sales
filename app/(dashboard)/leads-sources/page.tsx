@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -36,6 +36,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { useWebhookMutation } from "@/lib/store/services/webhooks";
+import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
 // Zod validation schema
 const sourceSchema = z.object({
@@ -46,7 +47,13 @@ const sourceSchema = z.object({
 
 const LeadSourceManager: React.FC = () => {
   const [webhook] = useWebhookMutation();
+  const hii = useGetWebhooksQuery();
+  console.log("Webhooks:", hii);
+  useEffect(() => {
+  hii.refetch();
+  }, []); 
   // Demo data with webhook URLs and status
+
   const [sources, setSources] = useState([
     {
       id: 1,

@@ -3,15 +3,16 @@ import { setupListeners } from '@reduxjs/toolkit/query';
 import { api } from './base/authapi';
 import authReducer from './slices/authSlice';
 import leadsReducer from './slices/leadsSlice';
-
+import { webhookApi } from './base/webhooks';
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
+    [webhookApi.reducerPath]: webhookApi.reducer,
     auth: authReducer,
     leads: leadsReducer,
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(api.middleware),
+    getDefaultMiddleware().concat(api.middleware).concat(webhookApi.middleware),
 });
 
 setupListeners(store.dispatch);

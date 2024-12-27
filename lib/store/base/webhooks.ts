@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { supabase } from "../../supabaseClient";
 export const webhookApi = createApi({
-  reducerPath: "api",
+  reducerPath: "/api/webhooks/",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api/webhooks",
+    baseUrl: "/api/webhooks/webhooks",
     prepareHeaders: async (headers) => {
       const {
         data: { session },
