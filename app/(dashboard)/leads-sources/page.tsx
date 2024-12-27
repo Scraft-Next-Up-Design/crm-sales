@@ -47,31 +47,9 @@ const sourceSchema = z.object({
 
 const LeadSourceManager: React.FC = () => {
   const [webhook] = useWebhookMutation();
-  const hii = useGetWebhooksQuery();
-  console.log("Webhooks:", hii);
-  useEffect(() => {
-  hii.refetch();
-  }, []); 
-  // Demo data with webhook URLs and status
+  const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery();
 
-  const [sources, setSources] = useState([
-    {
-      id: 1,
-      name: "Website",
-      type: "Digital",
-      description: "Main website leads",
-      webhook: "https://api.example.com/webhooks/1/abc123",
-      status: true, // enabled
-    },
-    {
-      id: 2,
-      name: "Referral",
-      type: "Personal",
-      description: "Partner referrals",
-      webhook: "https://api.example.com/webhooks/2/def456",
-      status: false, // disabled
-    },
-  ]);
+  const [sources, setSources] = useState(webhooks || []);
 
   const [selectedSource, setSelectedSource] = useState<any>(null);
   const [dialogMode, setDialogMode] = useState<
@@ -174,7 +152,7 @@ const LeadSourceManager: React.FC = () => {
       resetDialog();
     }
   };
-
+if(isLoading) return <div>Loading...</div>
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">

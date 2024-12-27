@@ -8,10 +8,7 @@ interface WebhookRequest {
 }
 
 interface WebhookResponse {
-  status: boolean;
-  type: string;
-  name: string;
-  webhook_url?: string;
+ [key: string]: any;
 }
 
 export const webhookApis = webhookApi.injectEndpoints({
