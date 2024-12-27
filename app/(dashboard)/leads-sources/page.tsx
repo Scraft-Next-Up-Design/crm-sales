@@ -71,7 +71,7 @@ const LeadSourceManager: React.FC = () => {
       setSources(webhooks.data);
     }
   }, [webhooks]);
-
+  console.log(webhooksData);
   const form = useForm<z.infer<typeof sourceSchema>>({
     resolver: zodResolver(sourceSchema),
     defaultValues: {
@@ -203,12 +203,12 @@ const LeadSourceManager: React.FC = () => {
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span className="truncate max-w-xs">
-                          {source.webhook}
+                          {source.webhook_url}
                         </span>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => copyWebhook(source.webhook ?? "")}
+                          onClick={() => copyWebhook(source.webhook_url ?? "")}
                           className="h-8 w-8"
                         >
                           <Copy className="h-4 w-4" />
