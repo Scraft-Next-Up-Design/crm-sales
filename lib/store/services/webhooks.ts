@@ -41,7 +41,7 @@ export const webhookApis = webhookApi.injectEndpoints({
     }),
 
     // Fetch webhooks
-    getWebhooks: builder.query<WebhookResponse[], void>({
+    getWebhooks: builder.query<any, void>({
       query: () => ({
         url: "?action=getWebhooks",
         method: "GET",

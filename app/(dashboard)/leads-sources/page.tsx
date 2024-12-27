@@ -43,18 +43,34 @@ const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
   type: z.string().min(2, { message: "Type must be at least 2 characters" }),
   description: z.string().optional(),
+  status: z.boolean().optional(),
 });
-
+export type Source = {
+  webhook?: string; // URL as a string
+  created_at?: string; // ISO 8601 formatted date string
+  description?: string; // String, can be empty
+  id: string; // UUID
+  name: string; // Name of the source
+  status: boolean; // True or false, indicates the status
+  type: string; // Type of the source (e.g., 'ded')
+  user_id?: string; // User UUID associated with the source
+  webhook_url?: string; // URL as a string
+  workspace_id?: string | null; // Can be a string or null
+};
 const LeadSourceManager: React.FC = () => {
   const [webhook] = useWebhookMutation();
   const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery();
-
-  const [sources, setSources] = useState(webhooks || []);
-
+  const webhooksData = webhooks?.data;
+  const [sources, setSources] = useState<Source[]>(webhooksData || []);
   const [selectedSource, setSelectedSource] = useState<any>(null);
   const [dialogMode, setDialogMode] = useState<
     "create" | "edit" | "delete" | null
   >(null);
+  useEffect(() => {
+    if (webhooks?.data) {
+      setSources(webhooks.data);
+    }
+  }, [webhooks]);
 
   const form = useForm<z.infer<typeof sourceSchema>>({
     resolver: zodResolver(sourceSchema),
@@ -97,7 +113,7 @@ const LeadSourceManager: React.FC = () => {
   };
 
   // Function to toggle webhook status
-  const toggleWebhookStatus = (sourceId: number) => {
+  const toggleWebhookStatus = (sourceId: string) => {
     setSources(
       sources.map((source) =>
         source.id === sourceId ? { ...source, status: !source.status } : source
@@ -152,7 +168,8 @@ const LeadSourceManager: React.FC = () => {
       resetDialog();
     }
   };
-if(isLoading) return <div>Loading...</div>
+  if (isLoading) return <div>Loading...</div>;
+
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
@@ -191,7 +208,7 @@ if(isLoading) return <div>Loading...</div>
                         <Button
                           variant="ghost"
                           size="icon"
-                          onClick={() => copyWebhook(source.webhook)}
+                          onClick={() => copyWebhook(source.webhook ?? "")}
                           className="h-8 w-8"
                         >
                           <Copy className="h-4 w-4" />
