@@ -15,7 +15,6 @@ export default async function handler(
 ) {
   const { method, body, query, headers } = req;
   const action = query.action as string;
-
   switch (method) {
     case "POST": {
       if (!action) {
@@ -29,7 +28,6 @@ export default async function handler(
       }
 
       const token = authHeader.split(" ")[1];
-      console.log("Token:", token);
       switch (action) {
         case "createWebhook": {
           // Validate request body
@@ -60,7 +58,6 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-
         //         case "updateWebhook": {
         //           const { webhook_id, status, type, name, webhook_url }: WebhookRequest = body;
 
@@ -161,16 +158,17 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error });
           }
-console.log("Data:", data);
           return res.status(200).json({ data });
         }
-
+      
         default:
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
+      
     }
 
     default:
       return res.status(405).json({ error: AUTH_MESSAGES.API_ERROR });
   }
 }
+

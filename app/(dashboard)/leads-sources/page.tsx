@@ -125,7 +125,9 @@ const LeadSourceManager: React.FC = () => {
     if (dialogMode === "create") {
       // Simulate new webhook URL for demo
       const newId: any = uuidv4().toString();
-      const newWebhook = `https://${window.location.hostname}/webhooks/${newId}`;
+      const newWebhook = `${
+        process.env.NEXT_PUBLIC_BASE_URL
+      }/webhooks/webhooks?action=${"getLeads"}&sourceId=${newId}`;
 
       setSources([
         ...sources,
