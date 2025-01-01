@@ -58,41 +58,6 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-        //         case "updateWebhook": {
-        //           const { webhook_id, status, type, name, webhook_url }: WebhookRequest = body;
-
-        //           // Validate request body
-        //           if (!webhook_id || status === undefined || !type || !name || !webhook_url) {
-        //             return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
-        //           }
-
-        //           // Retrieve session and user details
-        //           const {
-        //             data: { user },
-        //           } = await supabase.auth.getUser(token);
-        //           if (!user) {
-        //             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-        //           }
-        // console.log("User:", user);
-        //           // Update webhook if it belongs to the user
-        //           const { data, error } = await supabase
-        //             .from("webhooks")
-        //             .update({
-        //               status,
-        //               type,
-        //               name,
-        //               webhook_url,
-        //             })
-        //             .eq("user_id", user.id)
-        //             .eq("id", webhook_id);
-
-        //           if (error) {
-        //             return res.status(400).json({ error });
-        //           }
-
-        //           return res.status(200).json({ data });
-        //         }
-
         case "deleteWebhook": {
           const { webhook_id }: { webhook_id: number } = body;
 
@@ -160,15 +125,13 @@ export default async function handler(
           }
           return res.status(200).json({ data });
         }
-      
+
         default:
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
-      
     }
 
     default:
       return res.status(405).json({ error: AUTH_MESSAGES.API_ERROR });
   }
 }
-

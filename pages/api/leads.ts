@@ -173,11 +173,18 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  
+  const { method, body, query, headers } = req;
+  const action = query.action as string;
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
+    const sourceWebhook = `${
+      process.env.NEXT_PUBLIC_BASE_URL
+    }/leads?action=${"getLeads"}&sourceId=${req.query.sourceId}`;
     const data = req.body;
     const customData = req.body.custom_data;
     if (!data) {
@@ -209,12 +216,26 @@ export default async function handler(
         data: processedData,
       });
     }
-
+    const { data: webhookMatch, error: webhookError } = await supabase
+      .from("webhooks")
+      .select("user_id,status")
+      .eq("webhook_url", sourceWebhook)
+      .single(); // `single()` ensures a single record is returned
+    if (webhookError) {
+      console.error("Error fetching webhook:", webhookError.message);
+      throw new Error("Failed to fetch webhook details.");
+    }
+    if (!webhookMatch || webhookMatch.status !== true) {
+      console.error("Webhook deactivated or not found.");
+      throw new Error("Webhook deactivated.");
+    }
     // Add metadata
     const leadData = {
       ...processedData,
       created_at: new Date().toISOString(),
       source: req.headers["origin"] || "unknown",
+      lead_source_id: req.query.sourceId,
+      user_id: webhookMatch?.user_id,
     };
 
     // Save to database

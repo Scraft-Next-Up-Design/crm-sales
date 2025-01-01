@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -50,7 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-
+import { useCreateWorkspaceMutation, useGetWorkspacesByOwnerIdQuery, useGetWorkspacesQuery, useUpdateWorkspaceStatusMutation } from "@/lib/store/services/workspace";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -60,6 +60,9 @@ interface Workspace {
   id: string;
   name: string;
   role: string;
+  industry?: string;
+  status?: boolean;
+  type?: string;
 }
 
 export function Sidebar({
@@ -68,15 +71,28 @@ export function Sidebar({
   logoAlt = "Company Logo",
 }: SidebarProps) {
   const pathname = usePathname();
+  const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
+  const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
+  const [isDialogOpen, setDialogOpen] = useState(false);
+  console.log(workspacesData?.data);
+  const [createWorkspace] = useCreateWorkspaceMutation();
   const [isOpen, setIsOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>([
-    { id: "1", name: "Sales Team", role: "Admin" },
-    { id: "2", name: "Marketing Team", role: "Member" },
-  ]);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0]);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
+  const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
+  console.log(workspaces)
+
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
+    industry: "",
     type: "sales",
+    companySize: "",
+    companyType: "",
+    timezone: "",
+    notifications: {
+      email: true,
+      sms: true,
+      inApp: true,
+    },
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
@@ -128,10 +144,36 @@ export function Sidebar({
         name: newWorkspace.name,
         role: "Admin",
       };
+      createWorkspace({
+        name: newWorkspace.name,
+        status: true,
+        companyType: newWorkspace.companyType,
+        companySize: newWorkspace.companySize,
+        industry: newWorkspace.industry,
+        type: newWorkspace.type,
+        timezone: newWorkspace.timezone,
+        notifications: newWorkspace.notifications,
+      });
       setWorkspaces([...workspaces, newWorkspaceItem]);
       setSelectedWorkspace(newWorkspaceItem);
-      setNewWorkspace({ name: "", type: "sales" });
+      setNewWorkspace({
+        name: "",
+        industry: "",
+        type: "sales",
+        companySize: "",
+        companyType: "",
+        timezone: "",
+        notifications: {
+          email: true,
+          sms: true,
+          inApp: true,
+        },
+
+      })
+      refetch();
+      ;
     }
+    setDialogOpen(false);
   };
 
   const handleDeleteWorkspace = (workspace: Workspace) => {
@@ -152,10 +194,32 @@ export function Sidebar({
     setIsDeleteDialogOpen(false);
     setWorkspaceToDelete(null);
   };
-
+  useEffect(() => {
+    if (workspacesData?.data) {
+      setWorkspaces(workspacesData.data);
+      const activeWorkspace = workspacesData.data.find((workspace: Workspace) => workspace.status === true);
+      if (activeWorkspace) {
+        setSelectedWorkspace(activeWorkspace);
+      } else if (workspacesData.data.length > 0) {
+        const fallbackWorkspace = workspacesData.data[0];
+        setSelectedWorkspace(fallbackWorkspace);
+      }
+    }
+  }, [workspacesData?.data]);
+  const handleWorkspaceChange = async (workspaceId: string) => {
+    try {
+      console.log(workspaceId)
+      const workspace = workspaces.find(w => w.id === workspaceId);
+      if (!workspace) return;
+      await updateWorkspaceStatus({ id: workspaceId, status: true });
+      setSelectedWorkspace(workspace);
+      refetch();
+    } catch (error) {
+      console.error("Failed to change workspace:", error);
+    }
+  };
   return (
     <>
-      {/* Mobile Hamburger Button */}
       <Button
         variant="outline"
         size="icon"
@@ -187,10 +251,7 @@ export function Sidebar({
         <div className="px-4 mb-4">
           <Select
             value={selectedWorkspace.id}
-            onValueChange={(value) => {
-              const workspace = workspaces.find((w) => w.id === value);
-              if (workspace) setSelectedWorkspace(workspace);
-            }}
+            onValueChange={handleWorkspaceChange}
           >
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Workspace">
@@ -201,15 +262,15 @@ export function Sidebar({
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
-              {workspaces.map((workspace) => (
+              {workspaces?.map((workspace) => (
                 <SelectItem key={workspace.id} value={workspace.id}>
                   <div className="flex items-center justify-between w-full">
                     <div className="flex items-center">
                       <Folder className="mr-2 h-4 w-4" />
                       {workspace.name}
-                      <span className="text-xs text-slate-500 ml-2">
+                      {/* <span className="text-xs text-slate-500 ml-2">
                         ({workspace.role})
-                      </span>
+                      </span> */}
                     </div>
                     <div className="flex justify-end ml-2">
                       <Button
@@ -219,6 +280,7 @@ export function Sidebar({
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
+                          handleWorkspaceChange(workspace.id)
                         }}
                       >
                         <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
@@ -241,7 +303,7 @@ export function Sidebar({
               ))}
 
               {/* Add Workspace Dialog */}
-              <Dialog>
+              <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
                   <div className="flex items-center p-2 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer">
                     <Plus className="mr-2 h-4 w-4" />
@@ -286,6 +348,66 @@ export function Sidebar({
                           <SelectItem value="sales">Sales</SelectItem>
                           <SelectItem value="marketing">Marketing</SelectItem>
                           <SelectItem value="support">Support</SelectItem>
+                          <SelectItem value="other">Other</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="companySize">Company Size</Label>
+                      <Input
+                        id="companySize"
+                        value={newWorkspace.companySize}
+                        onChange={(e) =>
+                          setNewWorkspace({
+                            ...newWorkspace,
+                            companySize: e.target.value,
+                          })
+                        }
+                        placeholder="Enter company size (e.g., 10-50, 50-100)"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="companyType">Company Type</Label>
+                      <Select
+                        value={newWorkspace.companyType}
+                        onValueChange={(value) =>
+                          setNewWorkspace({
+                            ...newWorkspace,
+                            companyType: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select company type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="startup">Startup</SelectItem>
+                          <SelectItem value="enterprise">Enterprise</SelectItem>
+                          <SelectItem value="agency">Agency</SelectItem>
+                          <SelectItem value="nonprofit">Nonprofit</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label htmlFor="industry">Industry</Label>
+                      <Select
+                        value={newWorkspace.industry}
+                        onValueChange={(value) =>
+                          setNewWorkspace({
+                            ...newWorkspace,
+                            industry: value,
+                          })
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select industry" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="technology">Technology</SelectItem>
+                          <SelectItem value="finance">Finance</SelectItem>
+                          <SelectItem value="healthcare">Healthcare</SelectItem>
+                          <SelectItem value="education">Education</SelectItem>
                           <SelectItem value="other">Other</SelectItem>
                         </SelectContent>
                       </Select>
@@ -382,8 +504,8 @@ export function Sidebar({
           <DialogHeader>
             <DialogTitle>Delete Workspace</DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete &quot;{workspaceToDelete?.name}&quot;? This
-              action cannot be undone.
+              Are you sure you want to delete &quot;{workspaceToDelete?.name}
+              &quot;? This action cannot be undone.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

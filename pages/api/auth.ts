@@ -1,5 +1,4 @@
 import { NextApiRequest, NextApiResponse } from "next";
-// import { supabase } from "../../lib/supabaseServer";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from '../../lib/supabaseClient'
 

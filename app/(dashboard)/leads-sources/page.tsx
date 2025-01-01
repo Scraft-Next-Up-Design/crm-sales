@@ -127,7 +127,7 @@ const LeadSourceManager: React.FC = () => {
       const newId: any = uuidv4().toString();
       const newWebhook = `${
         process.env.NEXT_PUBLIC_BASE_URL
-      }/webhooks/webhooks?action=${"getLeads"}&sourceId=${newId}`;
+      }/leads?action=${"getLeads"}&sourceId=${newId}`;
 
       setSources([
         ...sources,
