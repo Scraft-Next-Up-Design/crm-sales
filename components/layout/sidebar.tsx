@@ -24,7 +24,7 @@ import {
   Trash2,
 } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { redirect, usePathname } from "next/navigation";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -52,6 +52,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useCreateWorkspaceMutation, useGetWorkspacesByOwnerIdQuery, useGetWorkspacesQuery, useUpdateWorkspaceStatusMutation } from "@/lib/store/services/workspace";
 import { supabase } from "@/lib/supabaseClient";
+import { toast } from "sonner";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -71,24 +72,17 @@ export function Sidebar({
   logoSrc = "/logo.svg",
   logoAlt = "Company Logo",
 }: SidebarProps) {
+
   const pathname = usePathname();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
   const [isDialogOpen, setDialogOpen] = useState(false);
-  console.log(workspacesData?.data);
   const [createWorkspace] = useCreateWorkspaceMutation();
   const [user, setUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data) setUser(data.user);
-      if (error) console.error("Error fetching user data:", error);
-    };
-    fetchUser();
-  }, []);
+  
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -143,7 +137,24 @@ export function Sidebar({
       href: "/setting",
     },
   ];
-
+  const handleLogout = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) throw error;
+      toast.success("logout completed");
+      // redirect("/login"); // Redirect to login page
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data) setUser(data.user);
+      if (error) toast.error("Error fetching user data:", error.message as any);
+    };
+    fetchUser();
+  }, []);
   const handleAddWorkspace = (e: React.FormEvent) => {
     e.preventDefault();
     if (newWorkspace.name.trim()) {
@@ -506,12 +517,13 @@ export function Sidebar({
                   <span>Account Settings</span>
                 </DropdownMenuItem>
               </Link>
-              <Link href="/logout">
-                <DropdownMenuItem className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700">
+                <DropdownMenuItem
+                  className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700 cursor-pointer"
+                  onClick={handleLogout} // Attach logout function here
+                >
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Logout</span>
                 </DropdownMenuItem>
-              </Link>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
