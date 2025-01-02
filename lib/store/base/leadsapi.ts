@@ -1,18 +1,18 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { RootState } from "../store";
-
-export const api = createApi({
-  reducerPath: 'api',
+import { supabase } from "../../supabaseClient";
+export const leadsApi = createApi({
+  reducerPath: "/api/leads/",
   baseQuery: fetchBaseQuery({
-    baseUrl: "/api/leads",
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
+    baseUrl: "/api/leads/leads",
+    prepareHeaders: async (headers) => {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.access_token) {
+        headers.set("authorization", `Bearer ${session.access_token}`);
       }
       return headers;
     },
   }),
-  tagTypes: ["Leads", "User", "Messages", "Calls"],
   endpoints: () => ({}),
 });

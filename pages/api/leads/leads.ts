@@ -6,22 +6,38 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { method, query } = req;
+  const { method, query ,headers} = req;
   const action = query.action as string;
+  const authHeader = headers.authorization;
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+  }
 
+  const token = authHeader.split(" ")[1];
   switch (method) {
     case "GET":
       switch (action) {
         case "getLeads": {
           const sourceId = query.sourceId as string;
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
           if (!sourceId) {
             return res.status(400).json({ error: "Source ID is required" });
+          }
+
+          if (!user) {
+            return res.status(400).json({ error: "User ID is required" });
           }
 
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("source_id", sourceId);
+            .eq("source_id", sourceId)
+            .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -31,6 +47,7 @@ export default async function handler(
 
         case "getLeadsByUser": {
           const userId = query.userId as string;
+
           if (!userId) {
             return res.status(400).json({ error: "User ID is required" });
           }
@@ -48,14 +65,25 @@ export default async function handler(
 
         case "getLeadsByWorkspace": {
           const workspaceId = query.workspaceId as string;
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          if (! user) {
+            return res.status(400).json({ error: "User ID is required" });
           }
 
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("workspace_id", workspaceId);
+            .eq("work_id", workspaceId)
+            .eq("user_id",  user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });

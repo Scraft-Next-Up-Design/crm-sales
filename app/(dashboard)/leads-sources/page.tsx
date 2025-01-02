@@ -38,6 +38,7 @@ import * as z from "zod";
 import { useWebhookMutation } from "@/lib/store/services/webhooks";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -58,6 +59,8 @@ export type Source = {
   workspace_id?: string | null; // Can be a string or null
 };
 const LeadSourceManager: React.FC = () => {
+  const { data: workspacesData } = useGetActiveWorkspaceQuery();
+  console.log(workspacesData);
   const [webhook] = useWebhookMutation();
   const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery();
   const webhooksData = webhooks?.data;
@@ -125,9 +128,8 @@ const LeadSourceManager: React.FC = () => {
     if (dialogMode === "create") {
       // Simulate new webhook URL for demo
       const newId: any = uuidv4().toString();
-      const newWebhook = `${
-        process.env.NEXT_PUBLIC_BASE_URL
-      }/leads?action=${"getLeads"}&sourceId=${newId}`;
+      const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
+        }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.id}`;
 
       setSources([
         ...sources,
@@ -146,17 +148,17 @@ const LeadSourceManager: React.FC = () => {
           name: data.name,
           webhook_url: newWebhook,
         });
-      } catch (error) {}
+      } catch (error) { }
       console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {
       setSources(
         sources.map((source) =>
           source.id === selectedSource.id
             ? {
-                ...source,
-                ...data,
-                description: data.description || "",
-              }
+              ...source,
+              ...data,
+              description: data.description || "",
+            }
             : source
         )
       );
@@ -224,9 +226,8 @@ const LeadSourceManager: React.FC = () => {
                           onCheckedChange={() => toggleWebhookStatus(source.id)}
                         />
                         <span
-                          className={`text-sm ${
-                            source.status ? "text-green-600" : "text-red-600"
-                          }`}
+                          className={`text-sm ${source.status ? "text-green-600" : "text-red-600"
+                            }`}
                         >
                           {source.status ? "Enabled" : "Disabled"}
                         </span>

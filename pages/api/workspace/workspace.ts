@@ -107,6 +107,31 @@ export default async function handler(
             return res.status(500).json({ error: "An error occurred" });
           }
         }
+        case "getActiveWorkspace": {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          } // Extract userId from the query
+          if (!user) {
+            return res.status(400).json({ error: "User ID is required" });
+          }
+
+          const { data, error } = await supabase
+            .from("workspaces")
+            .select("*")
+            .eq("status", true)
+            .eq("owner_id", user.id) // Match user_id
+            .limit(1)
+            .single(); // Expect only one active workspace
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
         default:
           return res.status(400).json({ error: "Invalid action" });
       }

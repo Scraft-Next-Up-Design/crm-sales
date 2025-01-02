@@ -55,7 +55,12 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
-
+    getActiveWorkspace: builder.query<any, void>({
+      query: () => ({
+        url: `?action=getActiveWorkspace`,
+        method: "GET",
+      }),
+    }),
     // Update the status of a workspace
     updateWorkspaceStatus: builder.mutation<
       { id: string; status: boolean },
@@ -72,6 +77,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
 
 // Export hooks for the workspace mutations and queries
 export const {
+  useGetActiveWorkspaceQuery,
   useCreateWorkspaceMutation,
   useUpdateWorkspaceMutation,
   useDeleteWorkspaceMutation,

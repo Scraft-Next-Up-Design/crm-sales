@@ -1,4 +1,4 @@
-import { api } from '../base/authapi';
+import { leadsApi } from "../base/leadsapi";
 
 export interface Lead {
   id: string;
@@ -6,50 +6,66 @@ export interface Lead {
   email: string;
   phone: string;
   company: string;
-  status: 'new' | 'in_progress' | 'closed';
+  status: "new" | "in_progress" | "closed";
   createdAt: string;
 }
 
-export const leadsApi = api.injectEndpoints({
+export const leadsApis = leadsApi.injectEndpoints({
   endpoints: (builder) => ({
-    getLeads: builder.query<Lead[], void>({
-      query: () => 'leads',
-      providesTags: ['Leads'],
+    getLeads: builder.query<Lead[], { userId: string; sourceId: string }>({
+      query: ({ userId, sourceId }) => ({
+        url: `?action=getLeads&userId=${userId}&sourceId=${sourceId}`,
+      }),
     }),
-    getLead: builder.query<Lead, string>({
-      query: (id) => `leads/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Leads', id }],
+    getLeadsByUser: builder.query<Lead[], { userId: string }>({
+      query: ({ userId }) => ({
+        url: `?action=getLeadsByUser&userId=${userId}`,
+      }),
     }),
-    createLead: builder.mutation<Lead, Partial<Lead>>({
-      query: (body) => ({
-        url: 'leads',
-        method: 'POST',
+    getLeadsByWorkspace: builder.query<Lead[], { workspaceId: string }>({
+      query: ({ workspaceId }) => ({
+        url: `?action=getLeadsByWorkspace&workspaceId=${workspaceId}`,
+      }),
+    }),
+    getLead: builder.query<Lead, { id: string; userId: string }>({
+      query: ({ id, userId }) => ({
+        url: `/${id}?userId=${userId}`,
+      }),
+    }),
+    createLead: builder.mutation<Lead, { userId: string; body: Partial<Lead> }>(
+      {
+        query: ({ userId, body }) => ({
+          url: `?userId=${userId}`,
+          method: "POST",
+          body,
+        }),
+      }
+    ),
+    updateLead: builder.mutation<
+      Lead,
+      { id: string; userId: string; body: Partial<Lead> }
+    >({
+      query: ({ id, userId, body }) => ({
+        url: `${id}?userId=${userId}`,
+        method: "PATCH",
         body,
       }),
-      invalidatesTags: ['Leads'],
     }),
-    updateLead: builder.mutation<Lead, { id: string; body: Partial<Lead> }>({
-      query: ({ id, body }) => ({
-        url: `leads/${id}`,
-        method: 'PATCH',
-        body,
+    deleteLead: builder.mutation<void, { id: string; userId: string }>({
+      query: ({ id, userId }) => ({
+        url: `${id}?userId=${userId}`,
+        method: "DELETE",
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Leads', id }],
-    }),
-    deleteLead: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `leads/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Leads'],
     }),
   }),
 });
 
 export const {
   useGetLeadsQuery,
+  useGetLeadsByUserQuery,
+  useGetLeadsByWorkspaceQuery,
   useGetLeadQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
-} = leadsApi;
+} = leadsApis;

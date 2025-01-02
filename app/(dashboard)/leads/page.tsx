@@ -1,7 +1,7 @@
 "use client";
 import { Filter } from "lucide-react";
 import FilterComponent from "./filter";
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -56,7 +56,8 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 // Zod validation schema for lead
 const leadSchema = z.object({
   firstName: z.string().min(2, { message: "First name is required" }),
@@ -82,28 +83,63 @@ const initialFilters: any = {
   endDate: "",
   showDuplicates: false,
 };
-const initialLeads: any = [
-  {
-    id: 1,
-    firstName: "John",
-    lastName: "Doe",
-    email: "john@example.com",
-    phone: "+1234567890",
-    company: "Acme Inc",
-    position: "Manager",
-    contactMethod: "Email",
-    owner: "Alice Smith",
-    status: "Qualified",
-    createdAt: new Date().toISOString(),
-  },
-  // Add more sample leads as needed
-];
 
 const LeadManagement: React.FC = () => {
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
+  console.log(activeWorkspace);
+  const workspaceId = activeWorkspace?.data.id;
+
+  const { data: workspaceData, isLoading: isLoadingLeads }:any = useGetLeadsByWorkspaceQuery(
+    workspaceId ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) : ({} as { workspaceId: string }),
+    {
+      skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
+    }
+  );
+
+  useEffect(() => {
+    if (!isLoadingLeads && workspaceData?.data) {
+      // Assuming workspaceData.data contains the leads array
+      const fetchedLeads = workspaceData?.data.map((lead: any, index: number) => ({
+        id: lead.id || index + 1, // Ensure each lead has a unique ID
+        firstName: lead.name || "",
+        lastName: lead.lastName || "",
+        email: lead.email || "",
+        phone: lead.phone || "",
+        company: lead.company || "",
+        position: lead.position || "",
+        contactMethod: lead.contactMethod || "Email", // Default value if not provided
+        notes: lead.notes || "",
+        owner: lead.owner || "Unknown", // Adjust according to your data schema
+        status: lead.status || "New", // Default status
+        createdAt: lead.createdAt || new Date().toISOString(), // Default to current date
+      }));
+  
+      setLeads(fetchedLeads);
+    }
+  }, [workspaceData, isLoadingLeads]);
+  console.log(workspaceId, isLoadingWorkspace, workspaceData, "workspaceData");
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
+  const initialLeads: any = [
+    {
+      id: 1,
+      firstName: "John",
+      lastName: "Doe",
+      email: "john@example.com",
+      phone: "+1234567890",
+      company: "Acme Inc",
+      position: "Manager",
+      contactMethod: "Email",
+      owner: "Alice Smith",
+      status: "Qualified",
+      createdAt: new Date().toISOString(),
+    },
+    // Add more sample leads as needed
+  ];
+
   const [filters, setFilters] = useState<any>(initialFilters);
   const [leads, setLeads] = useState<any[]>(initialLeads);
+
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
   };
@@ -250,12 +286,12 @@ const LeadManagement: React.FC = () => {
         leads.map((lead) =>
           lead.id === editingLead.id
             ? {
-                id: editingLead.id,
-                ...data,
-                company: data.company || "",
-                position: data.position || "",
-                notes: data.notes || "",
-              }
+              id: editingLead.id,
+              ...data,
+              company: data.company || "",
+              position: data.position || "",
+              notes: data.notes || "",
+            }
             : lead
         )
       );

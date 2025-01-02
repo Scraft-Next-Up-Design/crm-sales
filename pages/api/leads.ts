@@ -173,18 +173,20 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  
+  console.log(req)
   const { method, body, query, headers } = req;
   const action = query.action as string;
-
+  console.log("", query, headers, body);
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
-
+  console.log(req.query.workspaceId);
   try {
     const sourceWebhook = `${
       process.env.NEXT_PUBLIC_BASE_URL
-    }/leads?action=${"getLeads"}&sourceId=${req.query.sourceId}`;
+    }/leads?action=${"getLeads"}&sourceId=${req.query.sourceId}&workspaceId=${
+      req.query.workspaceId
+    }`;
     const data = req.body;
     const customData = req.body.custom_data;
     if (!data) {
