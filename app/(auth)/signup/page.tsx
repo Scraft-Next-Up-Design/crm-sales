@@ -15,9 +15,10 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useSignupMutation } from "@/lib/store/services/authApi";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/lib/supabaseClient";
+
 const signupSchema = z
   .object({
     email: z.string().email(),
@@ -32,7 +33,6 @@ const signupSchema = z
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const [signup] = useSignupMutation();
 
   const {
     register,
@@ -44,12 +44,25 @@ export default function SignupPage() {
 
   const onSubmit = async (data: z.infer<typeof signupSchema>) => {
     try {
-      await signup(data).unwrap();
+      const { error } = await supabase.auth.signUp({
+        email: data.email,
+        password: data.password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      toast({
+        title: "Success",
+        description: "Account created successfully!",
+      });
+
       router.push("/dashboard");
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: "Error",
-        description: "Failed to create account",
+        description: error.message || "Failed to create account.",
         variant: "destructive",
       });
     }
@@ -73,6 +86,7 @@ export default function SignupPage() {
                 type="email"
                 {...register("email")}
                 placeholder="john@example.com"
+                disabled={isSubmitting}
               />
               {errors.email && (
                 <p className="text-sm text-red-500">{errors.email.message}</p>
@@ -85,6 +99,7 @@ export default function SignupPage() {
                 type="password"
                 {...register("password")}
                 placeholder="••••••••"
+                disabled={isSubmitting}
               />
               {errors.password && (
                 <p className="text-sm text-red-500">
@@ -99,6 +114,7 @@ export default function SignupPage() {
                 type="password"
                 {...register("confirmPassword")}
                 placeholder="••••••••"
+                disabled={isSubmitting}
               />
               {errors.confirmPassword && (
                 <p className="text-sm text-red-500">
