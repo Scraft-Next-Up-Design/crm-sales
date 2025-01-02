@@ -48,7 +48,7 @@ export default function SignupPage() {
         email: data.email,
         password: data.password,
         options: {
-          emailRedirectTo: window.location.origin,
+          emailRedirectTo: process.env.PUBLIC_URL,
         },
       });
 
