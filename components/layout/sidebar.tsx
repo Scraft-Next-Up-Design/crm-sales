@@ -264,40 +264,37 @@ export function Sidebar({
             <SelectContent>
               {workspaces?.map((workspace) => (
                 <SelectItem key={workspace.id} value={workspace.id}>
-                  <div className="flex items-center justify-between w-full">
-                    <div className="flex items-center">
-                      <Folder className="mr-2 h-4 w-4" />
-                      {workspace.name}
-                      {/* <span className="text-xs text-slate-500 ml-2">
-                        ({workspace.role})
-                      </span> */}
+                  <div className="grid grid-cols-[1fr,auto,auto] items-center w-full gap-2">
+                    <div className="flex items-center min-w-0">
+                      <Folder className="shrink-0 mr-2 h-4 w-4" />
+                      <span className="truncate">
+                        {workspace.name}
+                      </span>
                     </div>
-                    <div className="flex justify-end ml-2">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleWorkspaceChange(workspace.id)
-                        }}
-                      >
-                        <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-6 ml-1"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleDeleteWorkspace(workspace);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
-                      </Button>
-                    </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleWorkspaceChange(workspace.id);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-6 w-6"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDeleteWorkspace(workspace);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
+                    </Button>
                   </div>
                 </SelectItem>
               ))}
