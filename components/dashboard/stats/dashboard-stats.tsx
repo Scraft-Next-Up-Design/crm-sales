@@ -1,24 +1,30 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { useGetLeadsQuery } from "@/lib/store/services/leadsApi";
 import { DashboardStat } from "./dashboard-stat";
 
 export function DashboardStats() {
-  const { data: leads } = useGetLeadsQuery();
+  // Static data simulating leads
+  const leads = [
+    { status: "in_progress" },
+    { status: "closed" },
+    { status: "in_progress" },
+    { status: "closed" },
+    { status: "in_progress" },
+  ];
 
   const stats = [
     {
       title: "Total Leads",
-      value: leads?.length || 0,
+      value: leads.length,
     },
     {
       title: "Active Leads",
-      value: leads?.filter((lead) => lead.status === "in_progress").length || 0,
+      value: leads.filter((lead) => lead.status === "in_progress").length,
     },
     {
       title: "Closed Leads",
-      value: leads?.filter((lead) => lead.status === "closed").length || 0,
+      value: leads.filter((lead) => lead.status === "closed").length,
     },
   ];
 
