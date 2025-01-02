@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Copy } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, Loader } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -129,7 +129,7 @@ const LeadSourceManager: React.FC = () => {
       // Simulate new webhook URL for demo
       const newId: any = uuidv4().toString();
       const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
-        }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.id}`;
+        }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.data.id}`;
 
       setSources([
         ...sources,
@@ -166,13 +166,14 @@ const LeadSourceManager: React.FC = () => {
     resetDialog();
   };
 
+
   const handleDelete = () => {
     if (selectedSource) {
       setSources(sources.filter((source) => source.id !== selectedSource.id));
       resetDialog();
     }
   };
-  if (isLoading) return <div>Loading...</div>;
+  if (!workspacesData?.data?.id) return <div><Loader /></div>;
 
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
