@@ -51,6 +51,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useCreateWorkspaceMutation, useGetWorkspacesByOwnerIdQuery, useGetWorkspacesQuery, useUpdateWorkspaceStatusMutation } from "@/lib/store/services/workspace";
+import { supabase } from "@/lib/supabaseClient";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -76,11 +77,18 @@ export function Sidebar({
   const [isDialogOpen, setDialogOpen] = useState(false);
   console.log(workspacesData?.data);
   const [createWorkspace] = useCreateWorkspaceMutation();
+  const [user, setUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
-  console.log(workspaces)
-
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data) setUser(data.user);
+      if (error) console.error("Error fetching user data:", error);
+    };
+    fetchUser();
+  }, []);
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -180,7 +188,14 @@ export function Sidebar({
     setWorkspaceToDelete(workspace);
     setIsDeleteDialogOpen(true);
   };
-
+  useEffect(() => {
+    const fetchUser = async () => {
+      const { data, error } = await supabase.auth.getUser();
+      if (data) setUser(data.user?.user_metadata);
+      if (error) console.error("Error fetching user data:", error);
+    };
+    fetchUser();
+  }, []);
   const confirmDeleteWorkspace = () => {
     if (workspaceToDelete) {
       const updatedWorkspaces = workspaces.filter(
@@ -449,17 +464,24 @@ export function Sidebar({
 
         {/* User Profile Section */}
         <div className="absolute bottom-0 p-4 border-b flex items-center left-0 w-full border-t justify-between bg-slate-50 dark:bg-slate-800 dark:border-slate-700 py-4 px-4">
-          <div className="flex items-center space-x-3">
-            <UserCircle className="h-10 w-10 text-slate-600 dark:text-slate-300" />
-            <div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                John Doe
-              </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400">
-                Sales Manager
-              </p>
+          {user ? (
+            <div className="flex items-center space-x-3">
+              <UserCircle className="h-10 w-10 text-slate-600 dark:text-slate-300" />
+              <div>
+                <p className="text-sm font-semibold text-slate-800 dark:text-white">
+                  {user?.name}
+                </p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  {user?.role}
+                </p>
+              </div>
             </div>
-          </div>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              Loading user data...
+            </p>
+          )}
+
 
           {/* User Dropdown */}
           <DropdownMenu>
@@ -493,10 +515,10 @@ export function Sidebar({
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
-      </div>
+      </div >
 
       {/* Delete Confirmation Dialog */}
-      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      < Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Workspace</DialogTitle>
@@ -520,12 +542,14 @@ export function Sidebar({
       </Dialog>
 
       {/* Mobile Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 md:hidden"
-          onClick={() => setIsOpen(false)}
-        />
-      )}
+      {
+        isOpen && (
+          <div
+            className="fixed inset-0 bg-black/50 z-30 md:hidden"
+            onClick={() => setIsOpen(false)}
+          />
+        )
+      }
     </>
   );
 }
