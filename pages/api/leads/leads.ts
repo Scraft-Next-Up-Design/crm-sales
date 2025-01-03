@@ -6,7 +6,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { method, query ,headers} = req;
+  const { method, query, headers } = req;
   const action = query.action as string;
   const authHeader = headers.authorization;
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
@@ -75,7 +75,7 @@ export default async function handler(
             return res.status(400).json({ error: "Workspace ID is required" });
           }
 
-          if (! user) {
+          if (!user) {
             return res.status(400).json({ error: "User ID is required" });
           }
 
@@ -83,11 +83,38 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("work_id", workspaceId)
-            .eq("user_id",  user.id);
+            .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+          return res.status(200).json({ data });
+        }
+        case "getLeadById": {
+          const id = query.id as string;
+          console.log(query);
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          if (!user) {
+            return res.status(400).json({ error: "User ID is required" });
+          }
+
+          const { data, error } = await supabase
+            .from("leads")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("id", id);
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
           return res.status(200).json({ data });
         }
 

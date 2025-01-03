@@ -27,9 +27,9 @@ export const leadsApis = leadsApi.injectEndpoints({
         url: `?action=getLeadsByWorkspace&workspaceId=${workspaceId}`,
       }),
     }),
-    getLead: builder.query<Lead, { id: string; userId: string }>({
-      query: ({ id, userId }) => ({
-        url: `/${id}?userId=${userId}`,
+    getLeadById: builder.query<Lead, { id: string }>({
+      query: ({ id }) => ({
+        url: `?action=getLeadById&id=${id}`,
       }),
     }),
     createLead: builder.mutation<Lead, { userId: string; body: Partial<Lead> }>(
@@ -64,7 +64,7 @@ export const {
   useGetLeadsQuery,
   useGetLeadsByUserQuery,
   useGetLeadsByWorkspaceQuery,
-  useGetLeadQuery,
+  useGetLeadByIdQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,

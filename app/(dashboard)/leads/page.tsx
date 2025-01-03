@@ -89,7 +89,7 @@ const LeadManagement: React.FC = () => {
   console.log(activeWorkspace);
   const workspaceId = activeWorkspace?.data.id;
 
-  const { data: workspaceData, isLoading: isLoadingLeads }:any = useGetLeadsByWorkspaceQuery(
+  const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
     workspaceId ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) : ({} as { workspaceId: string }),
     {
       skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
@@ -113,7 +113,7 @@ const LeadManagement: React.FC = () => {
         status: lead.status || "New", // Default status
         createdAt: lead.createdAt || new Date().toISOString(), // Default to current date
       }));
-  
+
       setLeads(fetchedLeads);
     }
   }, [workspaceData, isLoadingLeads]);
