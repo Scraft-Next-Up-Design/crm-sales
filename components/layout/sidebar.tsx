@@ -54,6 +54,7 @@ import { useCreateWorkspaceMutation, useGetWorkspacesByOwnerIdQuery, useGetWorks
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -76,7 +77,6 @@ export function Sidebar({
 
   const pathname = usePathname();
   const router = useRouter();
-
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -85,7 +85,7 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
-
+  const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery({ workspaceId: selectedWorkspace.id });
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -105,7 +105,7 @@ export function Sidebar({
   );
 
   // Mock total leads count
-  const totalLeads = 156;
+  const totalLeads = workspaceData?.data?.length;
 
   const routes = [
     {
