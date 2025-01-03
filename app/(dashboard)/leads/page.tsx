@@ -146,6 +146,7 @@ const LeadManagement: React.FC = () => {
 
   const handleFilterReset = () => {
     setFilters(initialFilters);
+    setShowFilters(false);
   };
 
   const filteredLeads = useMemo(() => {
