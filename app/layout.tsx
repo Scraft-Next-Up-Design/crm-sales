@@ -20,6 +20,7 @@ export default function RootLayout({
       <body className={inter.className}>
         <Providers>
           <Toaster />
+          
           {children}
         </Providers>
       </body>

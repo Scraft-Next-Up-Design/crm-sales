@@ -169,7 +169,6 @@ export function Sidebar({
       };
 
       try {
-        // Call createWorkspace mutation and handle success
         await createWorkspace({
           name: newWorkspace.name,
           status: true,
@@ -180,11 +179,7 @@ export function Sidebar({
           timezone: newWorkspace.timezone,
           notifications: newWorkspace.notifications,
         }).unwrap();
-
-        // After successful creation, refetch the data (if necessary)
         refetch();
-
-        // Add the new workspace to local state
         setWorkspaces([...workspaces, newWorkspaceItem]);
         setSelectedWorkspace(newWorkspaceItem);
 
@@ -202,8 +197,6 @@ export function Sidebar({
             inApp: true,
           },
         });
-
-        // Close the dialog after successful submission
         setDialogOpen(false);
 
       } catch (error: any) {
@@ -211,11 +204,11 @@ export function Sidebar({
       }
     }
   };
+  const handleEditWorkspace = (workspace: Workspace) => {
+    console.log(workspace.name)
+    router.push(`/workspace/${workspace.id}`);
 
-  const handleDeleteWorkspace = (workspace: Workspace) => {
-    setWorkspaceToDelete(workspace);
-    setIsDeleteDialogOpen(true);
-  };
+  }
   useEffect(() => {
     const fetchUser = async () => {
       const { data, error } = await supabase.auth.getUser();
@@ -224,19 +217,19 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-  const confirmDeleteWorkspace = () => {
-    if (workspaceToDelete) {
-      const updatedWorkspaces = workspaces.filter(
-        (w) => w.id !== workspaceToDelete.id
-      );
-      setWorkspaces(updatedWorkspaces);
-      if (selectedWorkspace.id === workspaceToDelete.id) {
-        setSelectedWorkspace(updatedWorkspaces[0]);
-      }
-    }
-    setIsDeleteDialogOpen(false);
-    setWorkspaceToDelete(null);
-  };
+  // const confirmDeleteWorkspace = () => {
+  //   if (workspaceToDelete) {
+  //     const updatedWorkspaces = workspaces.filter(
+  //       (w) => w.id !== workspaceToDelete.id
+  //     );
+  //     setWorkspaces(updatedWorkspaces);
+  //     if (selectedWorkspace.id === workspaceToDelete.id) {
+  //       setSelectedWorkspace(updatedWorkspaces[0]);
+  //     }
+  //   }
+  //   setIsDeleteDialogOpen(false);
+  //   setWorkspaceToDelete(null);
+  // };
   useEffect(() => {
     if (workspacesData?.data) {
       setWorkspaces(workspacesData.data);
@@ -322,12 +315,12 @@ export function Sidebar({
                       onClick={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
-                        handleWorkspaceChange(workspace.id);
+                        handleEditWorkspace(workspace);
                       }}
                     >
                       <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
                     </Button>
-                    <Button
+                    {/* <Button
                       variant="ghost"
                       size="icon"
                       className="h-6 w-6"
@@ -338,7 +331,7 @@ export function Sidebar({
                       }}
                     >
                       <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
-                    </Button>
+                    </Button> */}
                   </div>
                 </SelectItem>
               ))}
@@ -548,7 +541,7 @@ export function Sidebar({
       </div >
 
       {/* Delete Confirmation Dialog */}
-      < Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} >
+      {/* < Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen} >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Delete Workspace</DialogTitle>
@@ -569,7 +562,7 @@ export function Sidebar({
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog> */}
 
       {/* Mobile Overlay */}
       {
