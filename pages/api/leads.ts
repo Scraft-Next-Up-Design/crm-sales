@@ -235,6 +235,7 @@ export default async function handler(
       source: req.headers["origin"] || "unknown",
       lead_source_id: req.query.sourceId,
       user_id: webhookMatch?.user_id,
+      contact_method: "phone",
       work_id: req.query.workspaceId,
     };
 
