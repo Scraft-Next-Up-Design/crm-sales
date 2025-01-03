@@ -299,9 +299,12 @@ import {
   Tag,
   Calendar,
   MessageSquare,
+  Loader,
+  Database,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGetLeadByIdQuery } from "@/lib/store/services/leadsApi";
+import { formatDate } from "@/utils/date";
 
 // Comprehensive Lead Interface
 interface Lead {
@@ -346,8 +349,8 @@ const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
   const leadId = params?.id as string;
-  const { data, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
-  console.log(data);
+  const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
+  const leads = leadsData?.data
   // Mock Lead Data - Replace with actual data fetching
   const lead: Lead = {
     id: "LEAD-001",
@@ -395,21 +398,23 @@ const IndividualLeadPage: React.FC = () => {
     createdAt: new Date("2024-01-10"),
     lastUpdated: new Date("2024-02-05"),
   };
-
+  if (!leads) {
+    return <Loader />
+  }
   const handleGoBack = () => {
     router.push("/leads");
   };
-
+  console.log(leads[0])
   return (
     <div className="container mx-auto p-6">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>
-              {lead.personalInfo.firstName} {lead.personalInfo.lastName}
+              {leads[0]?.name}
             </CardTitle>
-            <CardDescription>
-              {lead.companyInfo.position} at {lead.companyInfo.name}
+            <CardDescription className="my-4">
+              <Badge>{leads[0]?.lead_source_id}</Badge>
             </CardDescription>
           </div>
           <div className="flex space-x-2">
@@ -439,15 +444,15 @@ const IndividualLeadPage: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex items-center">
                         <Mail className="mr-2 text-gray-500" size={20} />
-                        <span>{lead.personalInfo.email}</span>
+                        <span>{leads[0]?.email}</span>
                       </div>
                       <div className="flex items-center">
                         <Phone className="mr-2 text-gray-500" size={20} />
-                        <span>{lead.personalInfo.phone}</span>
+                        <span>{leads[0]?.phone}</span>
                       </div>
                       <div className="flex items-center">
                         <Calendar className="mr-2 text-gray-500" size={20} />
-                        <span>{lead.personalInfo.dateOfBirth}</span>
+                        <span>{formatDate(leads[0]?.created_at)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -456,7 +461,7 @@ const IndividualLeadPage: React.FC = () => {
                 {/* Company Information */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Company Details</CardTitle>
+                    <CardTitle>Additional Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
@@ -469,12 +474,23 @@ const IndividualLeadPage: React.FC = () => {
                         <span>{lead.companyInfo.position}</span>
                       </div>
                       <div className="flex items-center">
-                        <MapPin className="mr-2 text-gray-500" size={20} />
-                        <span>
+                        <Database className="mr-2 text-gray-500" size={20} />
+                        {/* <span>
                           {lead.contactDetails.address},{" "}
                           {lead.contactDetails.city},{lead.contactDetails.state}{" "}
                           {lead.contactDetails.postalCode}
-                        </span>
+                        </span> */}
+
+                        {leads[0]?.custom_data?.data?.length > 0 && (
+                          <div>
+                            {leads[0]?.custom_data?.data?.map((field: any, index: number) => (
+                              <div key={index} className="flex items-center">
+                                <span className="font-semibold mr-2">{field.name}:</span>
+                                <span>{field.value}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </CardContent>

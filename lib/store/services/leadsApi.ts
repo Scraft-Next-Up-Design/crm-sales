@@ -1,13 +1,7 @@
 import { leadsApi } from "../base/leadsapi";
 
 export interface Lead {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  company: string;
-  status: "new" | "in_progress" | "closed";
-  createdAt: string;
+  [key: string]: any;
 }
 
 export const leadsApis = leadsApi.injectEndpoints({
