@@ -244,8 +244,7 @@ export function Sidebar({
   }, [workspacesData?.data]);
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
-      console.log(workspaceId)
-      window.location.reload();
+
       const workspace = workspaces.find(w => w.id === workspaceId);
       if (!workspace) return;
       await updateWorkspaceStatus({ id: workspaceId, status: true });
@@ -286,10 +285,7 @@ export function Sidebar({
 
         {/* Workspace Selector */}
         <div className="px-4 mb-4">
-          <Select
-            value={selectedWorkspace.id}
-            onValueChange={handleWorkspaceChange}
-          >
+          <Select value={selectedWorkspace.id} onValueChange={handleWorkspaceChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select Workspace">
                 <div className="flex items-center">
@@ -300,42 +296,27 @@ export function Sidebar({
             </SelectTrigger>
             <SelectContent>
               {workspaces?.map((workspace) => (
-                <SelectItem key={workspace.id} value={workspace.id}>
+                <SelectItem key={workspace.id} value={workspace.id} className="cursor-pointer">
                   <div className="grid grid-cols-[1fr,auto,auto] items-center w-full gap-2">
                     <div className="flex items-center min-w-0">
                       <Folder className="shrink-0 mr-2 h-4 w-4" />
-                      <span className="truncate">
-                        {workspace.name}
-                      </span>
+                      <span className="truncate">{workspace.name}</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-6"
-                      onClick={(e) => {
+                      className="h-6 w-20 absolute right-0 ml-2"
+                      onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
                         handleEditWorkspace(workspace);
                       }}
                     >
-                      <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
+                      <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800 ml-30" />
                     </Button>
-                    {/* <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-6 w-6"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        handleDeleteWorkspace(workspace);
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500 hover:text-red-700" />
-                    </Button> */}
                   </div>
                 </SelectItem>
               ))}
-
               {/* Add Workspace Dialog */}
               <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
