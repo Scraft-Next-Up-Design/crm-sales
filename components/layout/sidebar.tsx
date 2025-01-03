@@ -105,7 +105,7 @@ export function Sidebar({
   );
 
   // Mock total leads count
-  const totalLeads = workspaceData?.data?.length;
+  const totalLeads = workspaceData?.data?.length || "NA";
 
   const routes = [
     {
@@ -158,44 +158,58 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-  const handleAddWorkspace = (e: React.FormEvent) => {
+  const handleAddWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (newWorkspace.name.trim()) {
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
-        role: "Admin",
+        role: 'Admin',
       };
-      createWorkspace({
-        name: newWorkspace.name,
-        status: true,
-        companyType: newWorkspace.companyType,
-        companySize: newWorkspace.companySize,
-        industry: newWorkspace.industry,
-        type: newWorkspace.type,
-        timezone: newWorkspace.timezone,
-        notifications: newWorkspace.notifications,
-      });
-      setWorkspaces([...workspaces, newWorkspaceItem]);
-      setSelectedWorkspace(newWorkspaceItem);
-      setNewWorkspace({
-        name: "",
-        industry: "",
-        type: "sales",
-        companySize: "",
-        companyType: "",
-        timezone: "",
-        notifications: {
-          email: true,
-          sms: true,
-          inApp: true,
-        },
 
-      })
-      refetch();
-      ;
+      try {
+        // Call createWorkspace mutation and handle success
+        await createWorkspace({
+          name: newWorkspace.name,
+          status: true,
+          companyType: newWorkspace.companyType,
+          companySize: newWorkspace.companySize,
+          industry: newWorkspace.industry,
+          type: newWorkspace.type,
+          timezone: newWorkspace.timezone,
+          notifications: newWorkspace.notifications,
+        }).unwrap();
+
+        // After successful creation, refetch the data (if necessary)
+        refetch();
+
+        // Add the new workspace to local state
+        setWorkspaces([...workspaces, newWorkspaceItem]);
+        setSelectedWorkspace(newWorkspaceItem);
+
+        // Reset newWorkspace state
+        setNewWorkspace({
+          name: '',
+          industry: '',
+          type: 'sales',
+          companySize: '',
+          companyType: '',
+          timezone: '',
+          notifications: {
+            email: true,
+            sms: true,
+            inApp: true,
+          },
+        });
+
+        // Close the dialog after successful submission
+        setDialogOpen(false);
+
+      } catch (error: any) {
+        toast.error(error.data.error);
+      }
     }
-    setDialogOpen(false);
   };
 
   const handleDeleteWorkspace = (workspace: Workspace) => {
@@ -238,6 +252,7 @@ export function Sidebar({
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
       console.log(workspaceId)
+      window.location.reload();
       const workspace = workspaces.find(w => w.id === workspaceId);
       if (!workspace) return;
       await updateWorkspaceStatus({ id: workspaceId, status: true });

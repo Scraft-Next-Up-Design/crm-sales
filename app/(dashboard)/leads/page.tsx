@@ -86,7 +86,6 @@ const initialFilters: any = {
 
 const LeadManagement: React.FC = () => {
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
-  console.log(activeWorkspace);
   const workspaceId = activeWorkspace?.data.id;
 
   const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
@@ -400,11 +399,6 @@ const LeadManagement: React.FC = () => {
         window.location.href = `sms:${lead.phone}`;
         break;
       default:
-      // toast({
-      //   title: "Contact Method Error",
-      //   description: "Invalid contact method selected.",
-      //   variant: "destructive"
-      // });
     }
   };
   const handleView = (id: number) => {
