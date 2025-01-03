@@ -1,4 +1,5 @@
 "use client";
+import React from "react";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
@@ -47,16 +48,15 @@ export default function SignupPage() {
       role: "admin"
     }
   });
-  useEffect(() => {
-    // Check if the user is already logged in
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      console.log(data);
-      if (data.session && data.session.user.email_confirmed_at) {
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const session = await supabase.auth.getSession();
+      if (session.data.session) {
+        // If there's an active session, redirect to the dashboard
         router.push("/dashboard");
       }
     };
-    checkSession();
+    checkUser();
   }, [router]);
 
   const onSubmit = async (data: z.infer<typeof signupSchema>) => {
