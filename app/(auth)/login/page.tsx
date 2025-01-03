@@ -1,5 +1,5 @@
 "use client";
-
+import React from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -26,8 +26,6 @@ const loginSchema = z.object({
 
 export default function LoginPage() {
   const router = useRouter();
-  const [login] = useLoginMutation();
-
   const {
     register,
     handleSubmit,
@@ -42,12 +40,21 @@ export default function LoginPage() {
         email: data.email,
         password: data.password,
       });
-      // await login(data).unwrap();
       router.push("/dashboard");
     } catch (error: any) {
       toast.error(error.data.error);
     }
   };
+  React.useEffect(() => {
+    const checkUser = async () => {
+      const session = await supabase.auth.getSession();
+      if (session.data.session) {
+        // If there's an active session, redirect to the dashboard
+        router.push("/dashboard");
+      }
+    };
+    checkUser();
+  }, [router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center">

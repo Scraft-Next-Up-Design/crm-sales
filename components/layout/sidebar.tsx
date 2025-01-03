@@ -53,6 +53,7 @@ import { Badge } from "@/components/ui/badge";
 import { useCreateWorkspaceMutation, useGetWorkspacesByOwnerIdQuery, useGetWorkspacesQuery, useUpdateWorkspaceStatusMutation } from "@/lib/store/services/workspace";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -74,6 +75,8 @@ export function Sidebar({
 }: SidebarProps) {
 
   const pathname = usePathname();
+  const router = useRouter();
+
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
   const [isDialogOpen, setDialogOpen] = useState(false);
@@ -82,7 +85,7 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
-  
+
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -142,7 +145,7 @@ export function Sidebar({
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
       toast.success("logout completed");
-      // redirect("/login"); // Redirect to login page
+      router.push("/login");
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -517,13 +520,13 @@ export function Sidebar({
                   <span>Account Settings</span>
                 </DropdownMenuItem>
               </Link>
-                <DropdownMenuItem
-                  className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700 cursor-pointer"
-                  onClick={handleLogout} // Attach logout function here
-                >
-                  <LogOut className="mr-2 h-4 w-4" />
-                  <span>Logout</span>
-                </DropdownMenuItem>
+              <DropdownMenuItem
+                className="text-red-600 dark:text-red-400 dark:hover:bg-slate-700 cursor-pointer"
+                onClick={handleLogout} // Attach logout function here
+              >
+                <LogOut className="mr-2 h-4 w-4" />
+                <span>Logout</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
