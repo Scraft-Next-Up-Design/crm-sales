@@ -166,17 +166,17 @@ const LeadManagement: React.FC = () => {
 
       // Contact Method filter
       if (
-        filters.contactMethod &&
-        lead.contactMethod !== filters.contactMethod
+        filters.contact_method &&
+        lead.contact_method !== filters.contact_method
       ) {
         return false;
       }
 
       // Contact Type filter
-      if (filters.contactType) {
-        if (filters.contactType === "phone" && !lead.phone) return false;
-        if (filters.contactType === "email" && !lead.email) return false;
-        if (filters.contactType === "id" && !lead.id) return false;
+      if (filters.contact_method) {
+        if (filters.contact_method === "phone" && !lead.phone) return false;
+        if (filters.contact_method === "email" && !lead.email) return false;
+        if (filters.contact_method === "id" && !lead.id) return false;
       }
 
       // Date range filter
