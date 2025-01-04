@@ -135,11 +135,11 @@ export function Sidebar({
       icon: BarChart,
       href: "/analytics",
     },
-    {
-      label: "Setting",
-      icon: Settings,
-      href: "/setting",
-    },
+    // {
+    //   label: "Setting",
+    //   icon: Settings,
+    //   href: "/setting",
+    // },
   ];
   const handleLogout = async () => {
     try {
