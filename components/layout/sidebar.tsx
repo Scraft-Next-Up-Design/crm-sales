@@ -55,6 +55,7 @@ import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { useParams } from "next/navigation";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -74,7 +75,7 @@ export function Sidebar({
   logoSrc = "/logo.svg",
   logoAlt = "Company Logo",
 }: SidebarProps) {
-
+  const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
@@ -103,10 +104,9 @@ export function Sidebar({
   const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
     null
   );
-
   // Mock total leads count
   const totalLeads = workspaceData?.data?.length || "NA";
-
+  console.log(params)
   const routes = [
     {
       label: "Dashboard",
@@ -246,10 +246,17 @@ export function Sidebar({
     try {
       const workspace = workspaces.find(w => w.id === workspaceId);
       if (!workspace) return;
+
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
       refetch();
-      router.push(`/dashboard`);
+
+      if (window.location.href.includes('workspace')) {
+        router.push(`/workspace/${workspaceId}`);
+      }
+
+      // Ensure the page reloads after navigation or by default
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
