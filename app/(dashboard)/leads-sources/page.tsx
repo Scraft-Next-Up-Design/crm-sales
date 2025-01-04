@@ -195,7 +195,9 @@ const LeadSourceManager: React.FC = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Description</TableHead>
+                  <TableHead>Count</TableHead>
+                  <TableHead>Processing Rate</TableHead>
+                  <TableHead>Qualification Rate</TableHead>
                   <TableHead>Webhook</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Actions</TableHead>
@@ -207,6 +209,8 @@ const LeadSourceManager: React.FC = () => {
                     <TableCell>{source.name}</TableCell>
                     <TableCell>{source.type}</TableCell>
                     <TableCell>{source.description}</TableCell>
+                    <TableCell>N/A</TableCell>
+                    <TableCell>N/A</TableCell>
                     <TableCell>
                       <div className="flex items-center space-x-2">
                         <span className="truncate max-w-xs">
