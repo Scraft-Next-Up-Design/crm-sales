@@ -17,6 +17,7 @@ Format Rules:
   "name": "",
   "email": "",
   "phone": "",
+  "message": "",
   "custom_data": {}
 }
 
@@ -102,7 +103,7 @@ function fallbackProcess(data: any) {
     name: "",
     email: "",
     phone: "",
-    // message: "",
+    message: "",
     custom_data: {},
   };
 
@@ -164,6 +165,7 @@ function fallbackProcess(data: any) {
       name: "",
       email: "",
       phone: "",
+      message: "",
       custom_data: { original_data: data },
     };
   }
