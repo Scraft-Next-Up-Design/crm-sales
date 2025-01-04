@@ -1,5 +1,5 @@
 "use client";
-import { Filter } from "lucide-react";
+import { Filter, Loader2 } from "lucide-react";
 import FilterComponent from "./filter";
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -116,28 +116,12 @@ const LeadManagement: React.FC = () => {
       setLeads(fetchedLeads);
     }
   }, [workspaceData, isLoadingLeads]);
-  console.log(workspaceId, isLoadingWorkspace, workspaceData, "workspaceData");
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
-  const initialLeads: any = [
-    {
-      id: 1,
-      firstName: "John",
-      lastName: "Doe",
-      email: "john@example.com",
-      phone: "+1234567890",
-      company: "Acme Inc",
-      position: "Manager",
-      contact_method: "Email",
-      owner: "Alice Smith",
-      status: "Qualified",
-      createdAt: new Date().toISOString(),
-    },
-    // Add more sample leads as needed
-  ];
+
 
   const [filters, setFilters] = useState<any>(initialFilters);
-  const [leads, setLeads] = useState<any[]>(initialLeads);
+  const [leads, setLeads] = useState<any[]>([]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -385,6 +369,7 @@ const LeadManagement: React.FC = () => {
     };
     reader.readAsText(file);
   };
+  
   const initiateDirectContact = (lead: any, method: string) => {
     const sanitizedPhone = lead.phone.replace(/\D/g, "");
 
@@ -404,6 +389,7 @@ const LeadManagement: React.FC = () => {
   const handleView = (id: number) => {
     router.push(`/leads/${id}`);
   };
+
 
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">

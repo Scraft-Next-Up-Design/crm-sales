@@ -31,7 +31,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Copy, Loader } from "lucide-react";
+import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -173,7 +173,9 @@ const LeadSourceManager: React.FC = () => {
       resetDialog();
     }
   };
-  if (!workspacesData?.data?.id) return <div><Loader /></div>;
+  if (!workspacesData?.data?.id) return <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="h-8 w-8 animate-spin" />
+  </div>
 
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">

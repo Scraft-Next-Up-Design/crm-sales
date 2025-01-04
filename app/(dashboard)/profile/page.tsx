@@ -1,22 +1,33 @@
 'use client';
 import React from 'react';
-import { 
-  Card, 
-  CardContent, 
-  CardHeader, 
-  CardTitle 
+import { useEffect, useState } from 'react';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { 
-  User, 
-  Mail, 
-  Phone, 
-  Calendar, 
-  Briefcase 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  User,
+  Mail,
+  Phone,
+  Calendar,
+  Briefcase,
+  Loader2
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { supabase } from '@/lib/supabaseClient';
 
-// Profile Interface
 interface ProfileDetails {
   personalInfo: {
     firstName: string;
@@ -39,52 +50,322 @@ interface ProfileDetails {
   };
 }
 
+function EditProfileDialog({
+  profileData,
+  onProfileUpdate,
+  open,
+  onOpenChange
+}: {
+  profileData: ProfileDetails;
+  onProfileUpdate: (data: any) => Promise<void>;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+}) {
+  const [formData, setFormData] = useState({
+    firstName: profileData.personalInfo.firstName,
+    lastName: profileData.personalInfo.lastName,
+    phone: profileData.personalInfo.phone,
+    dateOfBirth: profileData.personalInfo.dateOfBirth,
+    title: profileData.professionalInfo.title,
+    department: profileData.professionalInfo.department,
+    company: profileData.professionalInfo.company,
+    startDate: profileData.professionalInfo.startDate,
+    linkedin: profileData.socialLinks.linkedin || '',
+    twitter: profileData.socialLinks.twitter || '',
+    github: profileData.socialLinks.github || ''
+  });
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      await onProfileUpdate(formData);
+      onOpenChange(false);
+    } catch (error) {
+      console.error('Error updating profile:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Edit Profile</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="firstName">First Name</Label>
+              <Input
+                id="firstName"
+                value={formData.firstName}
+                onChange={(e) => setFormData(prev => ({ ...prev, firstName: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="lastName">Last Name</Label>
+              <Input
+                id="lastName"
+                value={formData.lastName}
+                onChange={(e) => setFormData(prev => ({ ...prev, lastName: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="phone">Phone</Label>
+            <Input
+              id="phone"
+              value={formData.phone}
+              onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Input
+              id="dateOfBirth"
+              type="date"
+              value={formData.dateOfBirth}
+              onChange={(e) => setFormData(prev => ({ ...prev, dateOfBirth: e.target.value }))}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="title">Job Title</Label>
+              <Input
+                id="title"
+                value={formData.title}
+                onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="department">Department</Label>
+              <Input
+                id="department"
+                value={formData.department}
+                onChange={(e) => setFormData(prev => ({ ...prev, department: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="company">Company</Label>
+              <Input
+                id="company"
+                value={formData.company}
+                onChange={(e) => setFormData(prev => ({ ...prev, company: e.target.value }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="startDate">Start Date</Label>
+              <Input
+                id="startDate"
+                type="date"
+                value={formData.startDate}
+                onChange={(e) => setFormData(prev => ({ ...prev, startDate: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="linkedin">LinkedIn URL</Label>
+            <Input
+              id="linkedin"
+              value={formData.linkedin}
+              onChange={(e) => setFormData(prev => ({ ...prev, linkedin: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="twitter">Twitter URL</Label>
+            <Input
+              id="twitter"
+              value={formData.twitter}
+              onChange={(e) => setFormData(prev => ({ ...prev, twitter: e.target.value }))}
+            />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="github">GitHub URL</Label>
+            <Input
+              id="github"
+              value={formData.github}
+              onChange={(e) => setFormData(prev => ({ ...prev, github: e.target.value }))}
+            />
+          </div>
+
+          <div className="flex justify-end gap-4 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={loading}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={loading}>
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Changes
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 export default function ProfileDetailsPage() {
-  // Mock Profile Data - Replace with actual data fetching
-  const profileData: ProfileDetails = {
+  const [loading, setLoading] = useState(true);
+  const [user, setUser] = useState<any | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [profileData, setProfileData] = useState<ProfileDetails>({
     personalInfo: {
-      firstName: 'John',
-      lastName: 'Doe',
-      email: 'john.doe@example.com',
-      phone: '+1 (555) 123-4567',
+      firstName: 'N/A',
+      lastName: 'N/A',
+      email: 'N/A',
+      phone: 'N/A',
       avatar: '/api/placeholder/200/200',
-      dateOfBirth: '1990-05-15'
+      dateOfBirth: 'N/A'
     },
     professionalInfo: {
-      title: 'Senior Product Manager',
-      department: 'Product Development',
-      company: 'Tech Innovations Inc.',
-      startDate: '2020-03-01'
+      title: 'N/A',
+      department: 'N/A',
+      company: 'N/A',
+      startDate: 'N/A'
     },
-    socialLinks: {
-      linkedin: 'https://linkedin.com/in/johndoe',
-      twitter: 'https://twitter.com/johndoe',
-      github: 'https://github.com/johndoe'
+    socialLinks: {}
+  });
+
+  useEffect(() => {
+    async function fetchUserData() {
+      try {
+        setLoading(true);
+        const { data: { user }, error } = await supabase.auth.getUser();
+
+        if (error) throw error;
+
+        if (user) {
+          setUser(user);
+          const metadata = user.user_metadata;
+
+          setProfileData({
+            personalInfo: {
+              firstName: metadata.firstName || 'N/A',
+              lastName: metadata.lastName || 'N/A',
+              email: user.email || 'N/A',
+              phone: metadata.phone || 'N/A',
+              avatar: metadata.avatar || '/api/placeholder/200/200',
+              dateOfBirth: metadata.dateOfBirth || 'N/A'
+            },
+            professionalInfo: {
+              title: metadata.title || 'N/A',
+              department: metadata.department || 'N/A',
+              company: metadata.company || 'N/A',
+              startDate: metadata.startDate || 'N/A'
+            },
+            socialLinks: {
+              linkedin: metadata.linkedin,
+              twitter: metadata.twitter,
+              github: metadata.github
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching user data:', error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchUserData();
+  }, []);
+
+  const handleProfileUpdate = async (formData: any) => {
+    try {
+      const { data, error } = await supabase.auth.updateUser({
+        data: formData
+      });
+
+      if (error) throw error;
+
+      // Update local state with new data
+      setProfileData({
+        personalInfo: {
+          firstName: formData.firstName,
+          lastName: formData.lastName,
+          email: user.email,
+          phone: formData.phone,
+          avatar: profileData.personalInfo.avatar,
+          dateOfBirth: formData.dateOfBirth
+        },
+        professionalInfo: {
+          title: formData.title,
+          department: formData.department,
+          company: formData.company,
+          startDate: formData.startDate
+        },
+        socialLinks: {
+          linkedin: formData.linkedin,
+          twitter: formData.twitter,
+          github: formData.github
+        }
+      });
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
     }
   };
 
   const calculateYearsOfExperience = (startDate: string) => {
-    const start = new Date(startDate);
-    const today = new Date();
-    const years = today.getFullYear() - start.getFullYear();
-    return years;
+    if (startDate === 'N/A') return 'N/A';
+    try {
+      const start = new Date(startDate);
+      const today = new Date();
+      const years = today.getFullYear() - start.getFullYear();
+      return `${years} Years`;
+    } catch {
+      return 'N/A';
+    }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Profile Details</h1>
-        <Button variant="outline">Edit Profile</Button>
+    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold">Profile Details</h1>
+        <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+          Edit Profile
+        </Button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <EditProfileDialog
+        profileData={profileData}
+        onProfileUpdate={handleProfileUpdate}
+        open={isEditDialogOpen}
+        onOpenChange={setIsEditDialogOpen}
+      />
+
+      <div className="grid md:grid-cols-3 gap-4 md:gap-6">
         {/* Personal Information Card */}
         <Card className="md:col-span-1">
           <CardContent className="pt-6 flex flex-col items-center">
-            <Avatar className="h-32 w-32 mb-4">
-              <AvatarImage 
-                src={profileData.personalInfo.avatar} 
-                alt="Profile Picture" 
+            <Avatar className="h-24 md:h-32 w-24 md:w-32 mb-4">
+              <AvatarImage
+                src={profileData.personalInfo.avatar}
+                alt="Profile Picture"
               />
               <AvatarFallback>
                 {profileData.personalInfo.firstName[0]}
@@ -92,24 +373,24 @@ export default function ProfileDetailsPage() {
               </AvatarFallback>
             </Avatar>
 
-            <h2 className="text-2xl font-bold">
-              {profileData.personalInfo.firstName} {profileData.personalInfo.lastName}
+            <h2 className="text-xl md:text-2xl font-bold text-center">
+              {`${profileData.personalInfo.firstName} ${profileData.personalInfo.lastName}`}
             </h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-center">
               {profileData.professionalInfo.title}
             </p>
 
             <div className="mt-4 space-y-2 w-full">
               <div className="flex items-center">
-                <Mail className="mr-2 h-4 w-4 text-muted-foreground" />
-                <span>{profileData.personalInfo.email}</span>
+                <Mail className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
+                <span className="break-all">{profileData.personalInfo.email}</span>
               </div>
               <div className="flex items-center">
-                <Phone className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Phone className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
                 <span>{profileData.personalInfo.phone}</span>
               </div>
               <div className="flex items-center">
-                <Calendar className="mr-2 h-4 w-4 text-muted-foreground" />
+                <Calendar className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
                 <span>Born on {profileData.personalInfo.dateOfBirth}</span>
               </div>
             </div>
@@ -124,7 +405,7 @@ export default function ProfileDetailsPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid md:grid-cols-2 gap-4">
+            <div className="grid sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-muted-foreground">Company</p>
                 <p className="font-semibold">
@@ -146,7 +427,7 @@ export default function ProfileDetailsPage() {
               <div>
                 <p className="text-muted-foreground">Experience</p>
                 <p className="font-semibold">
-                  {calculateYearsOfExperience(profileData.professionalInfo.startDate)} Years
+                  {calculateYearsOfExperience(profileData.professionalInfo.startDate)}
                 </p>
               </div>
             </div>
@@ -160,30 +441,33 @@ export default function ProfileDetailsPage() {
           <CardTitle>Connect with Me</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-4">
+          <div className="flex flex-wrap gap-4">
             {profileData.socialLinks.linkedin && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => window.open(profileData.socialLinks.linkedin, '_blank')}
               >
                 LinkedIn
               </Button>
             )}
             {profileData.socialLinks.twitter && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => window.open(profileData.socialLinks.twitter, '_blank')}
               >
                 Twitter
               </Button>
             )}
             {profileData.socialLinks.github && (
-              <Button 
-                variant="outline" 
+              <Button
+                variant="outline"
                 onClick={() => window.open(profileData.socialLinks.github, '_blank')}
               >
                 GitHub
               </Button>
+            )}
+            {!Object.values(profileData.socialLinks).some(Boolean) && (
+              <p className="text-muted-foreground">No social links added</p>
             )}
           </div>
         </CardContent>

@@ -494,12 +494,13 @@ export function Sidebar({
               {/* User Information */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                  {user?.name || "Name not available"}
+                  {user?.name || user.firstName + " " + user.lastName || "User"}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                   {user?.email || "Email not available"}
                 </p>
               </div>
+              <ThemeToggle />
             </div>
           ) : (
             <p className="text-sm text-slate-500 dark:text-slate-400">

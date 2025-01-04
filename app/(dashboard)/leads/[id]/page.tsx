@@ -301,6 +301,7 @@ import {
   MessageSquare,
   Loader,
   Database,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useGetLeadByIdQuery } from "@/lib/store/services/leadsApi";
@@ -399,7 +400,9 @@ const IndividualLeadPage: React.FC = () => {
     lastUpdated: new Date("2024-02-05"),
   };
   if (!leads) {
-    return <Loader />
+    return <div className="flex items-center justify-center min-h-screen">
+      <Loader2 className="h-8 w-8 animate-spin" />
+    </div>
   }
   const handleGoBack = () => {
     router.push("/leads");
