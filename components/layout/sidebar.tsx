@@ -249,7 +249,7 @@ export function Sidebar({
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
       refetch();
-      window.location.reload();
+      router.push(`/dashboard`);
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
