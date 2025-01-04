@@ -509,7 +509,7 @@ export function Sidebar({
 
           {/* User Dropdown */}
           <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+            <DropdownMenuTrigger asChild className="outline-none focus:outline-none cursor-pointer">
               <Button variant="ghost" size="icon">
                 <ChevronDown className="h-4 w-4 text-slate-600 dark:text-slate-300 outline-none focus:outline-none" />
               </Button>
@@ -519,13 +519,13 @@ export function Sidebar({
               className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
               <Link href="/profile">
-                <DropdownMenuItem className="dark:hover:bg-slate-700">
+                <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
               </Link>
               <Link href="/setting">
-                <DropdownMenuItem className="dark:hover:bg-slate-700">
+                <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
                 </DropdownMenuItem>
