@@ -519,13 +519,13 @@ export function Sidebar({
               align="end"
               className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
             >
-              <Link href="/profile">
+              {/* <Link href="/profile">
                 <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Profile</span>
                 </DropdownMenuItem>
-              </Link>
-              <Link href="/setting">
+              </Link> */}
+              <Link href="/profile">
                 <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
                   <Settings className="mr-2 h-4 w-4" />
                   <span>Account Settings</span>
