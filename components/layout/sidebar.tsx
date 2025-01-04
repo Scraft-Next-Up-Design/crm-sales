@@ -244,12 +244,12 @@ export function Sidebar({
   }, [workspacesData?.data]);
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
-
       const workspace = workspaces.find(w => w.id === workspaceId);
       if (!workspace) return;
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
       refetch();
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
