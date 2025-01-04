@@ -1,5 +1,5 @@
 "use client";
-
+import Image from "next/image";
 import React, { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -56,6 +56,7 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 import { useParams } from "next/navigation";
+import { ThemeToggle } from "../theme-toggle";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -473,16 +474,30 @@ export function Sidebar({
         </div>
 
         {/* User Profile Section */}
-        <div className="absolute bottom-0 p-4 border-b flex items-center left-0 w-full border-t justify-between bg-slate-50 dark:bg-slate-800 dark:border-slate-700 py-4 px-4">
+        <div className="absolute bottom-0 p-4 border-b flex items-center left-0 w-full border-t justify-between bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
           {user ? (
-            <div className="flex items-center space-x-3">
-              <UserCircle className="h-10 w-10 text-slate-600 dark:text-slate-300" />
-              <div>
-                <p className="text-sm font-semibold text-slate-800 dark:text-white">
-                  {user?.name}
+            <div className="flex items-center space-x-3 overflow-hidden">
+              {/* User Image - Modified for full rounded appearance */}
+              <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
+                <Image
+                  src={
+                    user?.image ||
+                    "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
+                  }
+                  alt={`${user?.name || "User"}'s profile`}
+                  width={40}
+                  height={40}
+                  className="object-cover w-full h-full rounded-full"
+                />
+              </div>
+
+              {/* User Information */}
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
+                  {user?.name || "Name not available"}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
-                  {user?.role}
+                <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
+                  {user?.email || "Email not available"}
                 </p>
               </div>
             </div>
@@ -491,7 +506,6 @@ export function Sidebar({
               Loading user data...
             </p>
           )}
-
 
           {/* User Dropdown */}
           <DropdownMenu>
