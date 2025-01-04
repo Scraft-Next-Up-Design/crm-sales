@@ -255,7 +255,9 @@ export function Sidebar({
       if (window.location.href.includes('workspace')) {
         router.push(`/workspace/${workspaceId}`);
       }
-
+      else {
+        router.push(`/dashboard`);
+      }
       // Ensure the page reloads after navigation or by default
       window.location.reload();
     } catch (error) {
