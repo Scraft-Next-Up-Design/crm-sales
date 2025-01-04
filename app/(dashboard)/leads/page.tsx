@@ -369,7 +369,7 @@ const LeadManagement: React.FC = () => {
     };
     reader.readAsText(file);
   };
-  
+
   const initiateDirectContact = (lead: any, method: string) => {
     const sanitizedPhone = lead.phone.replace(/\D/g, "");
 
@@ -390,6 +390,21 @@ const LeadManagement: React.FC = () => {
     router.push(`/leads/${id}`);
   };
 
+  const handleStatusChange = (id: number, status: string) => {
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead.id === id ? { ...lead, status } : lead
+      )
+    );
+  };
+
+  const handleAssignChange = (id: number, assign: string) => {
+    setLeads((prevLeads) =>
+      prevLeads.map((lead) =>
+        lead.id === id ? { ...lead, assign } : lead
+      )
+    );
+  };
 
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
@@ -477,6 +492,7 @@ const LeadManagement: React.FC = () => {
                   <TableHead>Phone</TableHead>
                   <TableHead>Contact Method</TableHead>
                   <TableHead>Actions</TableHead>
+                  <TableHead>Status</TableHead>
                   <TableHead>Assign</TableHead>
                 </TableRow>
               </TableHeader>
@@ -492,6 +508,7 @@ const LeadManagement: React.FC = () => {
                     <TableCell>{`${lead.firstName} ${lead.lastName}`}</TableCell>
                     <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.phone}</TableCell>
+
                     <TableCell>{lead.contact_method}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
@@ -531,6 +548,38 @@ const LeadManagement: React.FC = () => {
                           <Eye className="h-4 w-4" />
                         </Button>
                       </div>
+                    </TableCell>
+
+                    <TableCell className="border-none">
+                      <Select
+                        value={lead.status || "Pending"}
+                        onValueChange={(value) => handleStatusChange(lead.id, value)} // Uncomment and use for status change handler
+                      >
+                        <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="In Progress">In Progress</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+
+                    <TableCell className="border-none">
+                      <Select
+                        value={lead.assigne || "Pending"}
+                        onValueChange={(value) => handleAssignChange(lead.id, value)} // Uncomment and use for status change handler
+                      >
+                        <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
+                          <SelectValue placeholder="Select Status" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
+                          <SelectItem value="Pending">Pending</SelectItem>
+                          <SelectItem value="In Progress">In Progress</SelectItem>
+                          <SelectItem value="Completed">Completed</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </TableCell>
                   </TableRow>
                 ))}
