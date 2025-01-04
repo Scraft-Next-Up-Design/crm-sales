@@ -68,7 +68,7 @@ const leadSchema = z.object({
     .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number" }),
   company: z.string().optional(),
   position: z.string().optional(),
-  contactMethod: z.enum(["WhatsApp", "SMS", "Call"], {
+  contact_method: z.enum(["WhatsApp", "SMS", "Call"], {
     required_error: "Please select a contact method",
   }),
   notes: z.string().optional(),
@@ -77,7 +77,7 @@ const leadSchema = z.object({
 const initialFilters: any = {
   owner: "",
   status: "",
-  contactMethod: "",
+  contact_method: "",
   contactType: "",
   startDate: "",
   endDate: "",
@@ -106,7 +106,7 @@ const LeadManagement: React.FC = () => {
         phone: lead.phone || "",
         company: lead.company || "",
         position: lead.position || "",
-        contactMethod: lead.contactMethod || "Email", // Default value if not provided
+        contact_method: lead.contact_method, // Default value if not provided
         notes: lead.notes || "",
         owner: lead.owner || "Unknown", // Adjust according to your data schema
         status: lead.status || "New", // Default status
@@ -128,7 +128,7 @@ const LeadManagement: React.FC = () => {
       phone: "+1234567890",
       company: "Acme Inc",
       position: "Manager",
-      contactMethod: "Email",
+      contact_method: "Email",
       owner: "Alice Smith",
       status: "Qualified",
       createdAt: new Date().toISOString(),
@@ -230,7 +230,7 @@ const LeadManagement: React.FC = () => {
       phone: "",
       company: "",
       position: "",
-      contactMethod: undefined,
+      contact_method: undefined,
       notes: "",
     },
   });
@@ -257,7 +257,7 @@ const LeadManagement: React.FC = () => {
       phone: lead.phone,
       company: lead.company,
       position: lead.position,
-      contactMethod: lead.contactMethod,
+      contact_method: lead.contact_method,
       notes: lead.notes,
     });
     setEditingLead(lead);
@@ -506,25 +506,25 @@ const LeadManagement: React.FC = () => {
                     <TableCell>{`${lead.firstName} ${lead.lastName}`}</TableCell>
                     <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.phone}</TableCell>
-                    <TableCell>{lead.contactMethod}</TableCell>
+                    <TableCell>{lead.contact_method}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() =>
-                            initiateDirectContact(lead, lead.contactMethod)
+                            initiateDirectContact(lead, lead.contact_method)
                           }
                           className="h-8 w-8"
-                          title={`Contact via ${lead.contactMethod}`}
+                          title={`Contact via ${lead.contact_method}`}
                         >
-                          {lead.contactMethod === "WhatsApp" && (
+                          {lead.contact_method === "WhatsApp" && (
                             <Send className="h-4 w-4" />
                           )}
-                          {lead.contactMethod === "Call" && (
+                          {lead.contact_method === "Call" && (
                             <Phone className="h-4 w-4" />
                           )}
-                          {lead.contactMethod === "SMS" && (
+                          {lead.contact_method === "SMS" && (
                             <MessageCircle className="h-4 w-4" />
                           )}
                         </Button>
@@ -676,7 +676,7 @@ const LeadManagement: React.FC = () => {
               </div>
               <FormField
                 control={form.control}
-                name="contactMethod"
+                name="contact_method"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Contact Method</FormLabel>

@@ -93,8 +93,8 @@ export const FilterComponent: React.FC<FilterComponentProps> = ({
                 Contact Method
               </Label>
               <Select
-                value={values.contactMethod}
-                onValueChange={(value) => updateFilter("contactMethod", value)}
+                value={values.contact_method}
+                onValueChange={(value) => updateFilter("contact_method", value)}
               >
                 <SelectTrigger className="w-full">
                   <SelectValue placeholder="Select method" />
