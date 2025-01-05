@@ -9,11 +9,11 @@ interface Status {
 }
 
 interface NewStatus {
-    id?: string;
-    name: string;
-    color: string;
-    countInStatistics: boolean;
-    showInWorkspace: boolean;
+  id?: string;
+  name: string;
+  color: string;
+  countInStatistics: boolean;
+  showInWorkspace: boolean;
 }
 
 interface UpdatedStatus extends Partial<NewStatus> {
@@ -46,9 +46,9 @@ export const statusApis = statusApi.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    etchStatus: builder.query<Status, string>({
+    getStatus: builder.query<Status, any>({
       query: (workspaceId) => ({
-        url: `?action=getStatus/${workspaceId}`,
+        url: `?action=getStatus&workspaceId=${workspaceId}`,
         method: "GET",
       }),
     }),
@@ -60,5 +60,5 @@ export const {
   useAddStatusMutation,
   useUpdateStatusMutation,
   useDeleteStatusMutation,
-  useEtchStatusQuery,
+  useGetStatusQuery,
 } = statusApis;

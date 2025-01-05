@@ -129,9 +129,9 @@ export default async function handler(
 
         // Retrieve statuses from the database
         const { data, error } = await supabase
-          .from("statuses")
+          .from("status")
           .select("*")
-          .eq("workspace_id", workspaceId)
+          .eq("work_id", workspaceId)
           .eq("user_id", user.id);
 
         if (error) {

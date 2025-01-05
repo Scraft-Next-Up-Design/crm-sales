@@ -58,6 +58,8 @@ import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
 import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import { Badge } from "@/components/ui/badge";
 // Zod validation schema for lead
 const leadSchema = z.object({
   firstName: z.string().min(2, { message: "First name is required" }),
@@ -94,7 +96,8 @@ const LeadManagement: React.FC = () => {
       skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
     }
   );
-
+  const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
+  console.log(statusData);
   useEffect(() => {
     if (!isLoadingLeads && workspaceData?.data) {
       // Assuming workspaceData.data contains the leads array
@@ -390,12 +393,15 @@ const LeadManagement: React.FC = () => {
     router.push(`/leads/${id}`);
   };
 
-  const handleStatusChange = (id: number, status: string) => {
+  const handleStatusChange = (id: number, value: string) => {
+    const { name, color } = JSON.parse(value);
+
     setLeads((prevLeads) =>
       prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, status } : lead
+        lead.id === id ? { ...lead, status: { name, color } } : lead
       )
     );
+    console.log(leads)
   };
 
   const handleAssignChange = (id: number, assign: string) => {
@@ -405,7 +411,7 @@ const LeadManagement: React.FC = () => {
       )
     );
   };
-
+  console.log(statusData);
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
@@ -552,19 +558,34 @@ const LeadManagement: React.FC = () => {
 
                     <TableCell className="border-none">
                       <Select
-                        value={lead.status || "Pending"}
+                        defaultValue={JSON.stringify({
+                          name: statusData.data[0].name,
+                          color: statusData.data[0].color
+                        })}
                         onValueChange={(value) => handleStatusChange(lead.id, value)} // Uncomment and use for status change handler
                       >
-                        <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
-                          <SelectValue placeholder="Select Status" />
+                        <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
+                          <SelectValue placeholder="Select status">
+                            {/* {({ value }) => {
+                              const status = JSON.parse(value);
+                              return <Badge style={{ backgroundColor: status.color }}>{status.name}</Badge>
+
+                            }} */}
+                          </SelectValue>
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="In Progress">In Progress</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
+                        <SelectContent>
+                          {statusData.data.map((status: any) => (
+                            <SelectItem
+                              key={status.id}
+                              value={JSON.stringify({ name: status.name, color: status.color })}
+                              className="focus:bg-gray-100 dark:focus:bg-gray-800"
+                            >
+                              <Badge style={{ backgroundColor: status.color }}>{status.name}</Badge> </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </TableCell>
+
 
                     <TableCell className="border-none">
                       <Select

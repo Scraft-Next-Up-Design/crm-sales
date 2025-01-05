@@ -279,6 +279,7 @@ export default function WorkspaceSettingsPage() {
       ...newStatus,
     };
     const response = await addStatus({ statusData: status, workspaceId })
+    console.log(response);
     console.log(status);
     setNewStatus({
       name: "",
