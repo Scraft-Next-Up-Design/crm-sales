@@ -56,7 +56,7 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { Badge } from "@/components/ui/badge";
@@ -87,6 +87,7 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
+  const [updateLead] = useUpdateLeadMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data.id;
 
@@ -393,7 +394,7 @@ const LeadManagement: React.FC = () => {
     router.push(`/leads/${id}`);
   };
 
-  const handleStatusChange = (id: number, value: string) => {
+  const handleStatusChange = async (id: number, value: string) => {
     const { name, color } = JSON.parse(value);
 
     setLeads((prevLeads) =>
@@ -401,7 +402,9 @@ const LeadManagement: React.FC = () => {
         lead.id === id ? { ...lead, status: { name, color } } : lead
       )
     );
-    console.log(leads)
+    updateLead({ id, leads: { name, color } });
+    console.log(id, { status: { name, color } });
+    toast.success(`Lead status updated to ${name}`);
   };
 
   const handleAssignChange = (id: number, assign: string) => {

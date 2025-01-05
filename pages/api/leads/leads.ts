@@ -15,6 +15,45 @@ export default async function handler(
 
   const token = authHeader.split(" ")[1];
   switch (method) {
+    case "PUT":
+      switch (action) {
+        case "updateLeadById": {
+          const { id } = query;
+          const body = req.body;
+          console.log(body, id);
+          if (!id) {
+            return res.status(400).json({ error: "Lead ID is required" });
+          }
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          if (!body) {
+            return res.status(400).json({ error: "Update data is required" });
+          }
+
+          const { data, error } = await supabase
+            .from("leads")
+            .update({ status: body })
+            .eq("id", id)
+            .eq("user_id", user.id);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
+
+        default:
+          return res.status(400).json({ error: `Unknown action: ${action}` });
+      }
+
     case "GET":
       switch (action) {
         case "getLeads": {
