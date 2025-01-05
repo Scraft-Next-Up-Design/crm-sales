@@ -414,6 +414,9 @@ const LeadManagement: React.FC = () => {
       )
     );
   };
+  if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen">
+    <Loader2 className="h-8 w-8 animate-spin" />
+  </div>;
   console.log(statusData);
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
@@ -562,8 +565,8 @@ const LeadManagement: React.FC = () => {
                     <TableCell className="border-none">
                       <Select
                         defaultValue={JSON.stringify({
-                          name: statusData.data[0].name,
-                          color: statusData.data[0].color
+                          name: lead.status?.name || "Pending",
+                          color: lead.status?.color || "#ea1212",
                         })}
                         onValueChange={(value) => handleStatusChange(lead.id, value)} // Uncomment and use for status change handler
                       >
@@ -583,9 +586,31 @@ const LeadManagement: React.FC = () => {
                               value={JSON.stringify({ name: status.name, color: status.color })}
                               className="focus:bg-gray-100 dark:focus:bg-gray-800"
                             >
-                              <Badge style={{ backgroundColor: status.color }}>{status.name}</Badge> </SelectItem>
+                              <Badge
+                                style={{
+                                  backgroundColor: status.color,
+                                  color: '#fff',
+                                  border: '1px solid transparent',
+                                  display: 'flex',
+                                  alignItems: 'center', // Align dot and text
+                                  gap: '4px', // Add spacing between dot and text
+                                }}
+                              >
+                                <span
+                                  style={{
+                                    width: '8px', // Adjust size of the dot
+                                    height: '8px',
+                                    backgroundColor: '#fff', // White dot
+                                    borderRadius: '50%',
+                                    display: 'inline-block',
+                                  }}
+                                ></span>
+                                {status.name}
+                              </Badge>
+                            </SelectItem>
                           ))}
                         </SelectContent>
+
                       </Select>
                     </TableCell>
 
