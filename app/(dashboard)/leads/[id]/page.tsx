@@ -163,7 +163,7 @@ const IndividualLeadPage: React.FC = () => {
 
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto pt-2">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
