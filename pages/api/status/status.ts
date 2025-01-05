@@ -3,9 +3,7 @@ import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
 
 interface StatusRequest {
-  name: string;
-  description?: string;
-  workspaceId: string;
+  [key: string]: string;
 }
 
 interface UpdatedStatusRequest extends Partial<StatusRequest> {
@@ -41,17 +39,25 @@ export default async function handler(
   switch (method) {
     case "POST": {
       if (action === "createStatus") {
-        const { name, description, workspaceId }: StatusRequest = body;
-
-        if (!name || !workspaceId) {
+        const { workspaceId } = query;
+        const { name, color, countInStatistics, showInWorkspace } = body;
+        if (
+          !name ||
+          !workspaceId ||
+          !color ||
+          !countInStatistics ||
+          !showInWorkspace
+        ) {
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
         }
 
         // Insert status into the database
-        const { data, error } = await supabase.from("statuses").insert({
+        const { data, error } = await supabase.from("status").insert({
           name,
-          description: description || "",
-          workspace_id: workspaceId,
+          color,
+          count_statistics: countInStatistics,
+          workspace_show: showInWorkspace,
+          work_id: workspaceId,
           user_id: user.id,
         });
 
@@ -66,7 +72,8 @@ export default async function handler(
 
     case "PUT": {
       if (action === "updateStatus") {
-        const { id, name, description, workspaceId }: UpdatedStatusRequest = body;
+        const { id, name, description, workspaceId }: UpdatedStatusRequest =
+          body;
 
         if (!id) {
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });

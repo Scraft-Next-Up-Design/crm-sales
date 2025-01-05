@@ -9,9 +9,11 @@ interface Status {
 }
 
 interface NewStatus {
-  name: string;
-  description?: string;
-  workspaceId: string;
+    id?: string;
+    name: string;
+    color: string;
+    countInStatistics: boolean;
+    showInWorkspace: boolean;
 }
 
 interface UpdatedStatus extends Partial<NewStatus> {

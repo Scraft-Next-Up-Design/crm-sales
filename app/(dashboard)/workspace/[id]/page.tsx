@@ -53,7 +53,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-
+import { useAddStatusMutation } from "@/lib/store/services/status";
 interface WorkspaceMember {
   id: string;
   email: string;
@@ -146,6 +146,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
 );
 
 export default function WorkspaceSettingsPage() {
+  const [addStatus] = useAddStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "Acme Corporation",
@@ -197,7 +198,7 @@ export default function WorkspaceSettingsPage() {
     ],
   });
   const searchParams = useParams();
-
+  const { id: workspaceId }: any = searchParams
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
@@ -271,24 +272,19 @@ export default function WorkspaceSettingsPage() {
   };
 
   // Status Management Functions
-  const handleAddStatus = () => {
+  const handleAddStatus = async () => {
     if (!newStatus.name) return;
-
-    const status: Status = {
-      id: Math.random().toString(36).substr(2, 9),
+    const status: any = {
+      id: "",
       ...newStatus,
     };
-
-    setSettings({
-      ...settings,
-      statuses: [...settings.statuses, status],
-    });
-
+    const response = await addStatus({ statusData: status, workspaceId })
+    console.log(status);
     setNewStatus({
       name: "",
       color: "#0ea5e9",
-      countInStatistics: true,
-      showInWorkspace: true,
+      countInStatistics: false,
+      showInWorkspace: false,
     });
     setIsAddingStatus(false);
   };
@@ -803,17 +799,18 @@ export default function WorkspaceSettingsPage() {
         </div>
 
         {/* Save Button */}
-        <div className="flex justify-end pt-6">
-          <Button
-            onClick={handleSave}
-            disabled={isSaving}
-            className="w-full sm:w-auto"
-          >
-            {isSaving ? "Saving..." : "Save Changes"}
-          </Button>
-        </div>
+        {activeTab !== "status" && (
+          <div className="flex justify-end pt-6">
+            <Button
+              onClick={handleSave}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              {isSaving ? "Saving..." : "Save Changes"}
+            </Button>
+          </div>
+        )}
       </div>
-
       {/* Delete Member Confirmation Dialog */}
       <AlertDialog
         open={!!memberToDelete}

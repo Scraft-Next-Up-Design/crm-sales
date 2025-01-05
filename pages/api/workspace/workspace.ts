@@ -28,7 +28,6 @@ export default async function handler(
             companyType,
             companySize,
             industry,
-            type,
             timezone,
             notifications,
           } = body;
