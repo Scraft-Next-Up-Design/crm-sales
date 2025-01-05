@@ -1,0 +1,62 @@
+import { statusApi } from "../base/status";
+
+// Define types for the API
+interface Status {
+  id: string; // or number, depending on your backend
+  name: string;
+  description?: string;
+  workspaceId: string; // Include workspaceId if applicable
+}
+
+interface NewStatus {
+  name: string;
+  description?: string;
+  workspaceId: string;
+}
+
+interface UpdatedStatus extends Partial<NewStatus> {
+  id: string; // `id` is required for update
+}
+
+// Define the RTK Query API
+export const statusApis = statusApi.injectEndpoints({
+  endpoints: (builder) => ({
+    addStatus: builder.mutation<
+      Status,
+      { statusData: NewStatus; workspaceId: string }
+    >({
+      query: ({ statusData, workspaceId }) => ({
+        url: `?action=createStatus&workspaceId=${workspaceId}`,
+        method: "POST",
+        body: statusData,
+      }),
+    }),
+    updateStatus: builder.mutation<Status, UpdatedStatus>({
+      query: ({ id, ...updatedStatus }) => ({
+        url: `?action=updateStatus/${id}`,
+        method: "PUT",
+        body: updatedStatus,
+      }),
+    }),
+    deleteStatus: builder.mutation<void, string>({
+      query: (id) => ({
+        url: `?action=deleteStatus/${id}`,
+        method: "DELETE",
+      }),
+    }),
+    etchStatus: builder.query<Status, string>({
+      query: (workspaceId) => ({
+        url: `?action=getStatus/${workspaceId}`,
+        method: "GET",
+      }),
+    }),
+  }),
+});
+
+// Export hooks for usage in components
+export const {
+  useAddStatusMutation,
+  useUpdateStatusMutation,
+  useDeleteStatusMutation,
+  useEtchStatusQuery,
+} = statusApis;

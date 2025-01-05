@@ -1,5 +1,4 @@
-
-"use client"
+'use client'
 import React, { useState, useRef } from "react";
 import {
   Card,
@@ -8,6 +7,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -30,25 +30,28 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Building,
   Users,
-  Settings,
   Lock,
-  UserPlus,
   Mail,
   Trash2,
   Upload,
   UserCircle,
-  Info,
   Bell,
-  CheckCircleIcon,
-  Pencil,
+  Tag,
+  Edit2,
   Plus
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 
 interface WorkspaceMember {
@@ -58,6 +61,14 @@ interface WorkspaceMember {
   status: "active" | "pending";
   profileImage?: string;
   name?: string;
+}
+
+interface Status {
+  id: string;
+  name: string;
+  color: string;
+  countInStatistics: boolean;
+  showInWorkspace: boolean;
 }
 
 interface WorkspaceSettings {
@@ -75,15 +86,64 @@ interface WorkspaceSettings {
     ipRestriction: boolean;
   };
   members: WorkspaceMember[];
+  statuses: Status[];
 }
 
-interface Status {
-  id: string;
-  label: string;
-  color: string;
-  showInWorkspace: boolean;
-  countInStats: boolean;
-}
+// Status Form Component
+const StatusForm = ({ status, onSubmit }: any) => (
+  <div className="grid gap-4">
+    <div className="flex flex-col sm:flex-row gap-4">
+      <Input
+        placeholder="Status name"
+        value={status.name}
+        onChange={(e) =>
+          onSubmit({ ...status, name: e.target.value })
+        }
+        className="flex-1"
+      />
+      <div className="flex items-center gap-2">
+        <Label htmlFor="color" className="whitespace-nowrap">Pick Color:</Label>
+        <Input
+          id="color"
+          type="color"
+          value={status.color}
+          onChange={(e) =>
+            onSubmit({ ...status, color: e.target.value })
+          }
+          className="w-20 h-10 p-1 bg-transparent"
+        />
+      </div>
+    </div>
+    <div className="flex flex-col sm:flex-row gap-4">
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="countInStatistics"
+          checked={status.countInStatistics}
+          onCheckedChange={(checked) =>
+            onSubmit({
+              ...status,
+              countInStatistics: checked as boolean,
+            })
+          }
+        />
+        <Label htmlFor="countInStatistics">Count in statistics</Label>
+      </div>
+      <div className="flex items-center space-x-2">
+        <Checkbox
+          id="showInWorkspace"
+          checked={status.showInWorkspace}
+          onCheckedChange={(checked) =>
+            onSubmit({
+              ...status,
+              showInWorkspace: checked as boolean,
+            })
+          }
+        />
+        <Label htmlFor="showInWorkspace">Show in workspace</Label>
+      </div>
+    </div>
+  </div>
+);
 
 export default function WorkspaceSettingsPage() {
   const [activeTab, setActiveTab] = useState("general");
@@ -119,38 +179,41 @@ export default function WorkspaceSettingsPage() {
         profileImage: "/api/placeholder/32/32",
       },
     ],
+    statuses: [
+      {
+        id: "1",
+        name: "In Progress",
+        color: "#0ea5e9",
+        countInStatistics: true,
+        showInWorkspace: true,
+      },
+      {
+        id: "2",
+        name: "Completed",
+        color: "#22c55e",
+        countInStatistics: true,
+        showInWorkspace: true,
+      },
+    ],
   });
-
-  const colorOptions = [
-    { value: 'bg-red-500 dark:bg-red-600', label: 'Red' },
-    { value: 'bg-green-500 dark:bg-green-600', label: 'Green' },
-    { value: 'bg-blue-500 dark:bg-blue-600', label: 'Blue' },
-    { value: 'bg-yellow-500 dark:bg-yellow-600', label: 'Yellow' },
-    { value: 'bg-purple-500 dark:bg-purple-600', label: 'Purple' },
-    { value: 'bg-pink-500 dark:bg-pink-600', label: 'Pink' },
-    { value: 'bg-gray-500 dark:bg-gray-600', label: 'Gray' }
-  ];
+  const searchParams = useParams();
 
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
-  const [statuses, setStatuses] = useState<Status[]>([
-    { id: "1", label: "Active", color: "bg-green-500 dark:bg-green-600", showInWorkspace: true, countInStats: true },
-    { id: "2", label: "Pending", color: "bg-yellow-500 dark:bg-yellow-600", showInWorkspace: true, countInStats: true },
-    { id: "3", label: "Inactive", color: "bg-red-500 dark:bg-red-600", showInWorkspace: false, countInStats: false },
-  ]);
-
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
-  const [isEditing, setIsEditing] = useState<boolean>(false);
-  const [editingStatus, setEditingStatus] = useState<Status | null>(null);
-  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
-  const [newStatus, setNewStatus] = useState<Omit<Status, "id">>({
-    label: "",
-    color: "bg-gray-500 dark:bg-gray-600",
+
+  // Status Management States
+  const [newStatus, setNewStatus] = useState({
+    name: "",
+    color: "#0ea5e9",
+    countInStatistics: true,
     showInWorkspace: true,
-    countInStats: true,
   });
+  const [statusToDelete, setStatusToDelete] = useState<Status | null>(null);
+  const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
+  const [isAddingStatus, setIsAddingStatus] = useState(false);
 
   const handleInviteMember = () => {
     if (!newInviteEmail) return;
@@ -185,59 +248,14 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  const handleEditStatus = (status: Status) => {
-    setEditingStatus(status);
-    setNewStatus({
-      label: status.label,
-      color: status.color,
-      showInWorkspace: status.showInWorkspace,
-      countInStats: status.countInStats,
-    });
-    setIsEditing(true);
-    setIsStatusDialogOpen(true);
-  };
-
-  const handleDeleteStatus = (id: string) => {
-    setStatuses(statuses.filter(status => status.id !== id));
-  };
-
-  const handleDragEnd = (result: any) => {
-    if (!result.destination) return;
-
-    const items = Array.from(statuses);
-    const [reorderedItem] = items.splice(result.source.index, 1);
-    items.splice(result.destination.index, 0, reorderedItem);
-    setStatuses(items);
-  };
-
-  const handleSubmitStatus = () => {
-    if (isEditing && editingStatus) {
-      setStatuses(statuses.map(status =>
-        status.id === editingStatus.id
-          ? { ...newStatus, id: status.id }
-          : status
-      ));
-    } else {
-      setStatuses([...statuses, { ...newStatus, id: Date.now().toString() }]);
-    }
-
-    setIsEditing(false);
-    setEditingStatus(null);
-    setNewStatus({
-      label: '',
-      color: 'bg-gray-500 dark:bg-gray-600',
-      showInWorkspace: true,
-      countInStats: true
-    });
-    setIsStatusDialogOpen(false);
-  };
-
   const handleProfileImageUpload = async (
     memberId: string,
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // In a real app, you would upload to your server here
     const imageUrl = "/api/placeholder/32/32";
 
     setSettings({
@@ -252,9 +270,64 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  // Status Management Functions
+  const handleAddStatus = () => {
+    if (!newStatus.name) return;
+
+    const status: Status = {
+      id: Math.random().toString(36).substr(2, 9),
+      ...newStatus,
+    };
+
+    setSettings({
+      ...settings,
+      statuses: [...settings.statuses, status],
+    });
+
+    setNewStatus({
+      name: "",
+      color: "#0ea5e9",
+      countInStatistics: true,
+      showInWorkspace: true,
+    });
+    setIsAddingStatus(false);
+  };
+
+  const handleEditStatus = (status: Status) => {
+    setStatusToEdit({ ...status });
+  };
+
+  const handleUpdateStatus = () => {
+    if (!statusToEdit) return;
+
+    const updatedStatuses = settings.statuses.map((status) =>
+      status.id === statusToEdit.id ? statusToEdit : status
+    );
+
+    setSettings({
+      ...settings,
+      statuses: updatedStatuses,
+    });
+    setStatusToEdit(null);
+  };
+
+  const confirmDeleteStatus = () => {
+    if (statusToDelete) {
+      const updatedStatuses = settings.statuses.filter(
+        (s) => s.id !== statusToDelete.id
+      );
+      setSettings({
+        ...settings,
+        statuses: updatedStatuses,
+      });
+      setStatusToDelete(null);
+    }
+  };
+
   const handleSave = async () => {
     setIsSaving(true);
     try {
+      // Simulate API call
       await new Promise((resolve) => setTimeout(resolve, 1000));
       console.log("Settings saved:", settings);
     } finally {
@@ -285,135 +358,19 @@ export default function WorkspaceSettingsPage() {
     </button>
   );
 
-  const StatusDialog = () => (
-    <Dialog open={isStatusDialogOpen} onOpenChange={setIsStatusDialogOpen}>
-      <DialogContent className="sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Status" : "Add New Status"}</DialogTitle>
-        </DialogHeader>
-        <div className="space-y-4 pt-4">
-          <div className="space-y-2">
-            <Label>Status Label</Label>
-            <Input
-              placeholder="Enter status label"
-              value={newStatus.label}
-              onChange={(e) => setNewStatus({ ...newStatus, label: e.target.value })}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Color</Label>
-            <div className="grid grid-cols-4 gap-2">
-              {colorOptions.map((color) => (
-                <button
-                  key={color.value}
-                  className={cn(
-                    "w-full h-8 rounded-md transition-all",
-                    color.value,
-                    newStatus.color === color.value
-                      ? "ring-2 ring-offset-2 ring-offset-background ring-ring"
-                      : "hover:ring-2 hover:ring-offset-2 hover:ring-offset-background hover:ring-ring/50"
-                  )}
-                  onClick={() => setNewStatus({ ...newStatus, color: color.value })}
-                  title={color.label}
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="workspace"
-                checked={newStatus.showInWorkspace}
-                onCheckedChange={(checked) =>
-                  setNewStatus({ ...newStatus, showInWorkspace: checked as boolean })
-                }
-              />
-              <Label htmlFor="workspace">Show in workspace</Label>
-            </div>
-
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="stats"
-                checked={newStatus.countInStats}
-                onCheckedChange={(checked) =>
-                  setNewStatus({ ...newStatus, countInStats: checked as boolean })
-                }
-              />
-              <Label htmlFor="stats">Count in statistics</Label>
-            </div>
-          </div>
-
-          <Button onClick={handleSubmitStatus} className="w-full">
-            {isEditing ? "Update Status" : "Add Status"}
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-
-  const StatusCard = ({ status, index }: { status: Status; index: number }) => (
-    <Draggable draggableId={status.id} index={index}>
-      {(provided) => (
-        <div
-          ref={provided.innerRef}
-          {...provided.draggableProps}
-          {...provided.dragHandleProps}
-          className="bg-card p-4 rounded-lg shadow-sm border flex items-center justify-between"
-        >
-          <div className="flex items-center gap-4">
-            <Badge className={cn(status.color, "text-white")}>
-              {status.label}
-            </Badge>
-            <div className="flex gap-2 text-sm text-muted-foreground">
-              {status.showInWorkspace && (
-                <span className="flex items-center gap-1">
-                  <Users className="w-3 h-3" />
-                  Workspace
-                </span>
-              )}
-              {status.countInStats && (
-                <span className="flex items-center gap-1">
-                  <CheckCircleIcon className="w-3 h-3" />
-                  Statistics
-                </span>
-              )}
-            </div>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleEditStatus(status)}
-            >
-              <Pencil className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => handleDeleteStatus(status.id)}
-            >
-              <Trash2 className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      )}
-    </Draggable>
-  );
-
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
           <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
 
+          {/* Responsive Tab Navigation */}
           <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
             <TabButton id="general" icon={Building} label="General" />
             <TabButton id="members" icon={Users} label="Members" />
             <TabButton id="notifications" icon={Bell} label="Notifications" />
             <TabButton id="security" icon={Lock} label="Security" />
-            <TabButton id="status" icon={CheckCircleIcon} label="Status" />
+            <TabButton id="status" icon={Tag} label="Status" />
           </div>
         </div>
 
@@ -521,6 +478,7 @@ export default function WorkspaceSettingsPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
+                {/* Invite Form */}
                 <div className="space-y-4">
                   <Label>Invite New Member</Label>
                   <div className="flex flex-col sm:flex-row gap-2">
@@ -553,6 +511,7 @@ export default function WorkspaceSettingsPage() {
                   </div>
                 </div>
 
+                {/* Members List */}
                 <div className="space-y-4">
                   <Label>Current Members & Pending Invites</Label>
                   <div className="space-y-2">
@@ -701,53 +660,6 @@ export default function WorkspaceSettingsPage() {
             </Card>
           )}
 
-          {/* Status Management */}
-          {activeTab === "status" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Status Management</CardTitle>
-                <CardDescription>Manage custom statuses for your workspace</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="flex justify-end mb-6">
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2"
-                    onClick={() => {
-                      setIsEditing(false);
-                      setEditingStatus(null);
-                      setNewStatus({
-                        label: '',
-                        color: 'bg-gray-500 dark:bg-gray-600',
-                        showInWorkspace: true,
-                        countInStats: true
-                      });
-                      setIsStatusDialogOpen(true);
-                    }}
-                  >
-                    <Plus className="w-4 h-4" />
-                    Add Status
-                  </Button>
-                </div>
-
-                <DragDropContext onDragEnd={handleDragEnd}>
-                  <Droppable droppableId="statuses">
-                    {(provided) => (
-                      <div {...provided.droppableProps} ref={provided.innerRef} className="space-y-2">
-                        {statuses.map((status, index) => (
-                          <StatusCard key={status.id} status={status} index={index} />
-                        ))}
-                        {provided.placeholder}
-                      </div>
-                    )}
-                  </Droppable>
-                </DragDropContext>
-
-                <StatusDialog />
-              </CardContent>
-            </Card>
-          )}
-
           {/* Security Settings */}
           {activeTab === "security" && (
             <Card>
@@ -803,6 +715,91 @@ export default function WorkspaceSettingsPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Status Management */}
+          <div>
+            {activeTab === "status" && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Status Management</CardTitle>
+                  <CardDescription>
+                    Create and manage status options for your workspace
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {/* Add Status Button */}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={() => setIsAddingStatus(true)}
+                      className="flex items-center gap-2"
+                    >
+                      <Plus className="w-4 h-4" />
+                      Add New Status
+                    </Button>
+                  </div>
+
+                  {/* Status List */}
+                  <div className="space-y-4">
+                    <div className="grid gap-4">
+                      {settings.statuses.map((status) => (
+                        <div
+                          key={status.id}
+                          className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
+                        >
+                          <div className="flex items-center gap-4 flex-1">
+                            <Badge
+                              className="flex items-center gap-2"
+                              style={{
+                                backgroundColor: status.color,
+                                color: '#fff',
+                                border: '1px solid transparent'
+                              }}
+                            >
+                              <span className="w-2 h-2 rounded-full bg-current" />
+                              {status.name}
+                            </Badge>
+                          </div>
+                          <div className="flex items-center gap-4 flex-wrap justify-end">
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={status.countInStatistics}
+                                disabled
+                              />
+                              <Label className="text-sm">Count in statistics</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={status.showInWorkspace}
+                                disabled
+                              />
+                              <Label className="text-sm">Show in workspace</Label>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Button
+                                variant="outline"
+                                size="icon"
+                                onClick={() => handleEditStatus(status)}
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="text-destructive hover:text-destructive/90"
+                                onClick={() => setStatusToDelete(status)}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
 
         {/* Save Button */}
@@ -836,6 +833,89 @@ export default function WorkspaceSettingsPage() {
             <AlertDialogAction
               onClick={confirmDeleteMember}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Add Status Dialog */}
+      <Dialog open={isAddingStatus} onOpenChange={setIsAddingStatus}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Status</DialogTitle>
+            <DialogDescription>
+              Create a new status for your workspace
+            </DialogDescription>
+          </DialogHeader>
+          <StatusForm
+            status={newStatus}
+            onSubmit={setNewStatus}
+          // onCancel={() => setIsAddingStatus(false)}
+          />
+          <DialogFooter className="gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setIsAddingStatus(false)}
+            >
+              Cancel
+            </Button>
+            <Button onClick={handleAddStatus}>Add Status</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Status Dialog */}
+      <Dialog
+        open={!!statusToEdit}
+        onOpenChange={(open) => !open && setStatusToEdit(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Status</DialogTitle>
+            <DialogDescription>
+              Modify the status settings
+            </DialogDescription>
+          </DialogHeader>
+          {statusToEdit && (
+            <>
+              <StatusForm
+                status={statusToEdit}
+                onSubmit={setStatusToEdit}
+              // onCancel={() => setStatusToEdit(null)}
+              />
+              <DialogFooter className="gap-2">
+                <Button
+                  variant="outline"
+                  onClick={() => setStatusToEdit(null)}
+                >
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateStatus}>Save Changes</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Status Confirmation Dialog */}
+      <AlertDialog
+        open={!!statusToDelete}
+        onOpenChange={() => setStatusToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Status</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the status &quot;{statusToDelete?.name}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteStatus}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
             </AlertDialogAction>
