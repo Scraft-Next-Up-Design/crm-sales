@@ -136,7 +136,7 @@ const LeadSourceManager: React.FC = () => {
         {
           id: newId,
           ...data,
-          webhook: newWebhook,
+          webhook_url: newWebhook,
           description: data.description || "",
           status: true, // New sources are enabled by default
         },
