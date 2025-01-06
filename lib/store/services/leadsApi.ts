@@ -49,6 +49,12 @@ export const leadsApis = leadsApi.injectEndpoints({
         body: Note, // Pass the body with name and color
       }),
     }),
+    getNotes: builder.query<any, { id: any }>({
+      query: ({ id }) => ({
+        url: `?action=getNotesById&id=${id}`,
+        method: "GET",
+      }),
+    }),
 
     deleteLead: builder.mutation<void, { id: string; userId: string }>({
       query: ({ id, userId }) => ({
@@ -65,6 +71,7 @@ export const {
   useGetLeadsByWorkspaceQuery,
   useGetLeadByIdQuery,
   useAddNotesMutation,
+  useGetNotesQuery,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,

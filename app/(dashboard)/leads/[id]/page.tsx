@@ -34,7 +34,7 @@ import {
   Check
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGetLeadByIdQuery, useAddNotesMutation } from "@/lib/store/services/leadsApi";
+import { useGetLeadByIdQuery, useAddNotesMutation, useGetNotesQuery } from "@/lib/store/services/leadsApi";
 import { formatDate } from "@/utils/date";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
@@ -84,6 +84,7 @@ const IndividualLeadPage: React.FC = () => {
   const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
   const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
+  const { data: notesData, isLoading: notesLoading, error: notesError } = useGetLeadByIdQuery({ id: leadId });
   const leads = leadsData?.data
   const [notes, setNotes] = useState(leads?.notes || []);
   const [newNote, setNewNote] = useState("");
@@ -118,8 +119,7 @@ const IndividualLeadPage: React.FC = () => {
       addNotes({ id: leadId, Note: updatedNotes });
     }
   };
-
-  console.log()
+console.log(notesData)
   // Mock Lead Data - Replace with actual data fetching
   const lead: Lead = {
     id: "LEAD-001",
@@ -167,7 +167,7 @@ const IndividualLeadPage: React.FC = () => {
     createdAt: new Date("2024-01-10"),
     lastUpdated: new Date("2024-02-05"),
   };
-  if (!leads) {
+  if (isLoading || notesLoading) {
     return <div className="flex items-center justify-center min-h-screen">
       <Loader2 className="h-8 w-8 animate-spin" />
     </div>
@@ -185,7 +185,6 @@ const IndividualLeadPage: React.FC = () => {
   //   setCopiedIndex(index);
   //   setTimeout(() => setCopiedIndex(null), 2000);
   // };
-
 
   return (
     <div className="container mx-auto pt-2">

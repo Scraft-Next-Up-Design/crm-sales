@@ -82,7 +82,7 @@ export default async function handler(
           // Update the `leads` table
           const { data, error } = await supabase
             .from("leads")
-            .update({ text_area: body.text_area }) // Update the `text_area` field
+            .update({ text_area: body }) // Update the `text_area` field
             .eq("id", id) // Match the ID
             .eq("user_id", user.id); // Ensure the user owns the record
 
@@ -202,7 +202,39 @@ export default async function handler(
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
-
+      case "getNotesById": {
+        const id = query.id as string;
+        console.log(query);
+      
+        const {
+          data: { user },
+        } = await supabase.auth.getUser(token);
+      
+        if (!user) {
+          return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+        }
+      
+        if (!id) {
+          return res.status(400).json({ error: "Lead ID is required" });
+        }
+      
+        // Fetching only the 'text_area' column from the 'leads' table
+        const { data, error } = await supabase
+          .from("leads")
+          .select("text_area")  // Select only the 'text_area' field
+          .eq("user_id", user.id)
+          .eq("id", id);
+      
+        if (error) {
+          return res.status(400).json({ error: error.message });
+        }
+      
+        if (!data || data.length === 0) {
+          return res.status(404).json({ error: "No notes found for this lead" });
+        }
+      
+        return res.status(200).json({ data });
+      }
     default:
       return res.status(405).json({
         error: AUTH_MESSAGES.API_ERROR,
