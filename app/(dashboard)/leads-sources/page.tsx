@@ -116,7 +116,7 @@ const LeadSourceManager: React.FC = () => {
 
   const copyWebhook = (webhook: string) => {
     navigator.clipboard.writeText(webhook);
-    // You could add a toast notification here
+    toast.success("Webhook URL copied to clipboard");
   };
 
   // Function to toggle webhook status
