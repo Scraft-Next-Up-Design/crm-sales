@@ -23,11 +23,11 @@ export const webhookApis = webhookApi.injectEndpoints({
     }),
 
     // Update an existing webhook
-    updateWebhook: builder.mutation<WebhookRequest, WebhookResponse>({
-      query: (credentials) => ({
-        url: "?action=updateWebhook",
+    updateWebhook: builder.mutation<WebhookRequest, { data: any; id: string }>({
+      query: ({ data, id }) => ({
+        url: `?action=updateWebhook&id=${id}`,
         method: "PUT",
-        body: credentials,
+        body: data,
       }),
     }),
 
@@ -47,7 +47,10 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "GET",
       }),
     }),
-    changeWebhookStatus: builder.mutation<{ id: string; status: boolean }, { id: string; status: boolean }>({
+    changeWebhookStatus: builder.mutation<
+      { id: string; status: boolean },
+      { id: string; status: boolean }
+    >({
       query: ({ id, status }) => ({
         url: `?action=changeWebhookStatus`,
         method: "PUT",

@@ -35,7 +35,7 @@ import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useDeleteWebhookMutation, useWebhookMutation, useChangeWebhookStatusMutation } from "@/lib/store/services/webhooks";
+import { useDeleteWebhookMutation, useWebhookMutation, useChangeWebhookStatusMutation, useUpdateWebhookMutation } from "@/lib/store/services/webhooks";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
@@ -66,6 +66,7 @@ const LeadSourceManager: React.FC = () => {
   const [changeWebhookStatus] = useChangeWebhookStatusMutation()
   const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
   const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] = useDeleteWebhookMutation();
+  const [updateWebhook, { isLoading: isUpdated, error: updateError }] = useUpdateWebhookMutation();
   const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery({ id: workspacesData?.data.id });
   const webhooksData = webhooks?.data;
   const [sources, setSources] = useState<Source[]>(webhooksData || []);
@@ -107,6 +108,7 @@ const LeadSourceManager: React.FC = () => {
     });
     setSelectedSource(source);
     setDialogMode("edit");
+
   };
 
   const openDeleteDialog = (source: (typeof sources)[number]) => {
@@ -160,17 +162,18 @@ const LeadSourceManager: React.FC = () => {
         ]);
       } catch (error) { }
     } else if (dialogMode === "edit" && selectedSource) {
-      setSources(
-        sources.map((source) =>
-          source.id === selectedSource.id
-            ? {
-              ...source,
-              ...data,
-              description: data.description || "",
-            }
-            : source
-        )
+      const updatedSources = sources.map((source) =>
+        source.id === selectedSource.id
+          ? {
+            ...source,
+            ...data,
+            description: data.description || "",
+          }
+          : source
       );
+      setSources(updatedSources);
+      await updateWebhook({ data, id: selectedSource.id });
+      toast.success("Webhook updated successfully");
     }
     resetDialog();
   };
@@ -342,20 +345,29 @@ const LeadSourceManager: React.FC = () => {
                     className="w-full sm:w-auto"
                   >
                     Cancel
-                  </Button>
+                  </Button >
                 </DialogClose>
                 <Button type="submit" className="w-full sm:w-auto">
-                  {isWebhookAdded ? (
+                  {isWebhookAdded || isUpdated ? (
                     <>
                       <Loader2 className="h-5 w-5" />
                       <span className="ml-2">
-                        {dialogMode === "create" ? "Adding..." : "Updating..."}
+                        {dialogMode === "create"
+                          ? "Adding..."
+                          : isUpdated
+                            ? "Updating..."
+                            : "Updating..."}
                       </span>
                     </>
                   ) : (
-                    dialogMode === "create" ? "Add Source" : "Update Source"
+                    <>
+                      <span className="ml-2">
+                        {dialogMode === "create" ? "Add Source" : "Update Source"}
+                      </span>
+                    </>
                   )}
                 </Button>
+
 
               </DialogFooter>
             </form>

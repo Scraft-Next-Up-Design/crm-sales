@@ -201,7 +201,43 @@ export default async function handler(
               .json({ error: "Server error", details: err.message });
           }
         }
+        case "updateWebhook": {
+          const { name, description, type } = body;
+          const { id: webhook_id } = query;
+          // Validate request body
+          if (!webhook_id || !name || !type || !description) {
+            return res.status(400).json({ error: "Invalid request body" });
+          }
+          try {
+            // Retrieve session and user details
+            const { data: session, error: userError } =
+              await supabase.auth.getUser(token);
 
+            if (userError || !session?.user) {
+              return res.status(401).json({ error: "User not authorized" });
+            }
+
+            const user = session.user;
+
+            // Update webhook fields if it belongs to the user
+            const { data, error } = await supabase
+              .from("webhooks")
+              .update({ name, type, description })
+              .eq("user_id", user.id)
+              .eq("id", webhook_id)
+              .single();
+
+            if (error) {
+              return res.status(400).json({ error: error.message });
+            }
+
+            return res.status(200).json({ data });
+          } catch (err: any) {
+            return res
+              .status(500)
+              .json({ error: "Server error", details: err.message });
+          }
+        }
         default:
           return res.status(400).json({ error: "Invalid action" });
       }
