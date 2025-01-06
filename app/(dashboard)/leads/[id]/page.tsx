@@ -292,7 +292,7 @@ const IndividualLeadPage: React.FC = () => {
               {/* Lead Status and Tags */}
               <div className="mt-6 flex items-center space-x-4">
                 <Badge variant="secondary">
-                  Status: {leads[0].status.name}
+                  Status: {leads[0]?.status?.name || "Pending"}
                 </Badge>
                 {/* {lead.leadInfo.tags?.map((tag) => (
                   <Badge key={tag} variant="outline">
