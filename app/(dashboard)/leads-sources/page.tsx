@@ -62,7 +62,7 @@ const LeadSourceManager: React.FC = () => {
   const { data: workspacesData } = useGetActiveWorkspaceQuery();
   console.log(workspacesData);
   const [webhook] = useWebhookMutation();
-  const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery();
+  const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery({ id: workspacesData?.data.id });
   const webhooksData = webhooks?.data;
   const [sources, setSources] = useState<Source[]>(webhooksData || []);
   const [selectedSource, setSelectedSource] = useState<any>(null);
@@ -131,23 +131,26 @@ const LeadSourceManager: React.FC = () => {
       const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
         }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.data.id}`;
 
-      setSources([
-        ...sources,
-        {
-          id: newId,
-          ...data,
-          webhook_url: newWebhook,
-          description: data.description || "",
-          status: true, // New sources are enabled by default
-        },
-      ]);
+
       try {
         await webhook({
           status: true,
           type: data.type,
           name: data.name,
           webhook_url: newWebhook,
+          workspace_id: workspacesData?.data.id,
         });
+        setSources([
+          ...sources,
+          {
+            id: newId,
+            ...data,
+            webhook_url: newWebhook,
+            description: data.description || "",
+            workspace_id: workspacesData?.data.id,
+            status: true, // New sources are enabled by default
+          },
+        ]);
       } catch (error) { }
       console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {

@@ -7,6 +7,7 @@ interface WebhookRequest {
   type: string;
   name: string;
   webhook_url: string;
+  workspace_id: number;
 }
 
 export default async function handler(
@@ -21,7 +22,8 @@ export default async function handler(
         return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
 
-      const { status, type, name, webhook_url }: WebhookRequest = body;
+      const { status, type, name, webhook_url, workspace_id }: WebhookRequest =
+        body;
       const authHeader = headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
@@ -31,10 +33,15 @@ export default async function handler(
       switch (action) {
         case "createWebhook": {
           // Validate request body
-          if (status === undefined || !type || !name || !webhook_url) {
+          if (
+            status === undefined ||
+            !type ||
+            !name ||
+            !webhook_url ||
+            !workspace_id
+          ) {
             return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
           }
-
           // Retrieve session and user details
           const {
             data: { user },
@@ -50,6 +57,7 @@ export default async function handler(
             webhook_url,
             user_id: user?.id, // Include user ID in the webhook
             description: " ",
+            workspace_id,
           });
 
           if (error) {
@@ -94,7 +102,6 @@ export default async function handler(
     }
 
     case "GET": {
-      console.log("Action:", action);
       if (!action) {
         return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
@@ -102,7 +109,8 @@ export default async function handler(
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
       }
-
+      const { id: workspace_id } = query;
+      console.log(query);
       const token = authHeader.split(" ")[1];
       switch (action) {
         case "getWebhooks": {
@@ -118,6 +126,7 @@ export default async function handler(
           const { data, error } = await supabase
             .from("webhooks")
             .select("*")
+            .eq("workspace_id", workspace_id)
             .eq("user_id", user.id);
 
           if (error) {

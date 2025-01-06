@@ -8,7 +8,7 @@ interface WebhookRequest {
 }
 
 interface WebhookResponse {
- [key: string]: any;
+  [key: string]: any;
 }
 
 export const webhookApis = webhookApi.injectEndpoints({
@@ -41,9 +41,9 @@ export const webhookApis = webhookApi.injectEndpoints({
     }),
 
     // Fetch webhooks
-    getWebhooks: builder.query<any, void>({
-      query: () => ({
-        url: "?action=getWebhooks",
+    getWebhooks: builder.query<any, { id: string }>({
+      query: ({ id }) => ({
+        url: `?action=getWebhooks&id=${id}`, // Include the id as a query parameter
         method: "GET",
       }),
     }),
