@@ -153,13 +153,13 @@ const IndividualLeadPage: React.FC = () => {
 
   const { custom_data } = leads[0]
 
-  const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  // const [copiedIndex, setCopiedIndex] = useState<any>(null);
 
-  const handleCopy = (value: string, index: number) => {
-    navigator.clipboard.writeText(value);
-    setCopiedIndex(index);
-    setTimeout(() => setCopiedIndex(null), 2000);
-  };
+  // const handleCopy = (value: string, index: number) => {
+  //   navigator.clipboard.writeText(value);
+  //   setCopiedIndex(index);
+  //   setTimeout(() => setCopiedIndex(null), 2000);
+  // };
 
 
   return (
@@ -261,7 +261,7 @@ const IndividualLeadPage: React.FC = () => {
                                         </div>
                                       </div>
                                     </div>
-                                    <button
+                                    {/* <button
                                       onClick={(e) => {
                                         e.preventDefault();
                                         handleCopy(value as string, index);
@@ -273,7 +273,7 @@ const IndividualLeadPage: React.FC = () => {
                                       ) : (
                                         <Clipboard className="h-4 w-4 text-muted-foreground hover:text-primary" />
                                       )}
-                                    </button>
+                                    </button> */}
                                   </div>
                                 </TooltipTrigger>
                                 <TooltipContent side="top" className="bg-popover">
