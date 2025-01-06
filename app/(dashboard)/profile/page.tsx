@@ -27,6 +27,8 @@ import {
 } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/lib/supabaseClient';
+import { toast } from 'sonner';
+import { CRM_MESSAGES } from '@/lib/constant/crm';
 
 interface ProfileDetails {
   personalInfo: {
@@ -247,7 +249,6 @@ export default function ProfileDetailsPage() {
       try {
         setLoading(true);
         const { data: { user }, error } = await supabase.auth.getUser();
-
         if (error) throw error;
 
         if (user) {
@@ -291,9 +292,8 @@ export default function ProfileDetailsPage() {
       const { data, error } = await supabase.auth.updateUser({
         data: formData
       });
-
       if (error) throw error;
-
+      toast.success(CRM_MESSAGES.PROFILE_UPDATED);
       // Update local state with new data
       setProfileData({
         personalInfo: {

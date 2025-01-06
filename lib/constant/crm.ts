@@ -43,5 +43,6 @@ export const CRM_MESSAGES = {
     DATA_SAVE_FAILED: 'Failed to save data. Please try again.',
     SYSTEM_ERROR: 'A system error occurred. Please contact support.',
     CONNECTION_ERROR: 'Connection error. Please check your internet connection.',
+    PROFILE_UPDATED: 'Profile updated successfully!',
   };
   
