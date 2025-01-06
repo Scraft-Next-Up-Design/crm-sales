@@ -191,6 +191,62 @@ export default async function handler(
         }
       }
     }
+    case "PUT": {
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+      }
+      const token = authHeader.split(" ")[1];
+
+      switch (action) {
+        case "updateWorkspaceDetails": {
+          const { id: workspace_id, data } = body;
+          if (!workspace_id || typeof status === "undefined") {
+            return res.status(400).json({
+              error: "workspace_id, status, and user_id are required",
+            });
+          }
+
+          try {
+            const {
+              data: { user },
+            } = await supabase.auth.getUser(token);
+            if (!user) {
+              return res
+                .status(401)
+                .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+            }
+            // Set all statuses to false for workspaces owned by the user
+            const resetStatus = await supabase
+              .from("workspaces")
+              .update({ status: false })
+              .eq("owner_id", user.id); // Assuming `owner_id` is the column for workspace ownership
+
+            if (resetStatus.error) {
+              throw new Error(resetStatus.error.message);
+            }
+
+            // Update the specific workspace's status to true
+            const updateStatus = await supabase
+              .from("workspaces")
+              .update({ status: true })
+              .eq("id", workspace_id)
+              .eq("owner_id", user.id); // Ensure the workspace belongs to the user
+
+            if (updateStatus.error) {
+              throw new Error(updateStatus.error.message);
+            }
+
+            return res
+              .status(200)
+              .json({ message: "Workspace status updated successfully" });
+          } catch (error: any) {
+            console.error("Error updating workspace status:", error.message);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
+      }
+    }
 
     default:
       return res.status(405).json({ error: "Method Not Allowed" });

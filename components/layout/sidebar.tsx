@@ -249,21 +249,24 @@ export function Sidebar({
       if (!workspace) return;
 
       await updateWorkspaceStatus({ id: workspaceId, status: true });
+
       setSelectedWorkspace(workspace);
+
       refetch();
 
       if (window.location.href.includes('workspace')) {
-        router.push(`/workspace/${workspaceId}`);
+        console.log('workspace changed', workspaceId);
+
+        await router.push(`/workspace/${workspaceId}`);
+      } else {
+        await router.push(`/dashboard`);
       }
-      else {
-        router.push(`/dashboard`);
-      }
-      // Ensure the page reloads after navigation or by default
-      window.location.reload();
+
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
   };
+
   return (
     <>
       <Button
