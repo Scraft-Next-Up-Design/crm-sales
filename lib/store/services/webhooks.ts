@@ -47,6 +47,13 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    changeWebhookStatus: builder.mutation<{ id: string; status: boolean }, { id: string; status: boolean }>({
+      query: ({ id, status }) => ({
+        url: `?action=changeWebhookStatus`,
+        method: "PUT",
+        body: { id, status },
+      }),
+    }),
   }),
 });
 
@@ -56,4 +63,5 @@ export const {
   useUpdateWebhookMutation,
   useDeleteWebhookMutation,
   useGetWebhooksQuery,
+  useChangeWebhookStatusMutation,
 } = webhookApis;

@@ -35,10 +35,12 @@ import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useDeleteWebhookMutation, useWebhookMutation } from "@/lib/store/services/webhooks";
+import { useDeleteWebhookMutation, useWebhookMutation, useChangeWebhookStatusMutation } from "@/lib/store/services/webhooks";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
-import { useGetActiveWorkspaceQuery, useDeleteWorkspaceMutation } from "@/lib/store/services/workspace";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { toast } from "sonner";
+
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -61,6 +63,7 @@ export type Source = {
 const LeadSourceManager: React.FC = () => {
   const { data: workspacesData } = useGetActiveWorkspaceQuery();
   console.log(workspacesData);
+  const [changeWebhookStatus] = useChangeWebhookStatusMutation()
   const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
   const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] = useDeleteWebhookMutation();
   const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery({ id: workspacesData?.data.id });
@@ -117,12 +120,15 @@ const LeadSourceManager: React.FC = () => {
   };
 
   // Function to toggle webhook status
-  const toggleWebhookStatus = (sourceId: string) => {
+  const toggleWebhookStatus = async (sourceId: string) => {
+
+    await changeWebhookStatus({ id: sourceId, status: !sources.find((source) => source.id === sourceId)?.status! });
     setSources(
       sources.map((source) =>
         source.id === sourceId ? { ...source, status: !source.status } : source
       )
     );
+    toast.success("Webhook status updated successfully");
   };
 
   const onSubmit = async (data: z.infer<typeof sourceSchema>) => {
@@ -153,7 +159,6 @@ const LeadSourceManager: React.FC = () => {
           },
         ]);
       } catch (error) { }
-      console.log("New source added:", newWebhook, data);
     } else if (dialogMode === "edit" && selectedSource) {
       setSources(
         sources.map((source) =>
@@ -172,7 +177,6 @@ const LeadSourceManager: React.FC = () => {
 
 
   const handleDelete = async (id: string) => {
-
     await deleteWebhook({ id });
     resetDialog();
     setSources(sources.filter((source) => source.id !== id));

@@ -109,7 +109,7 @@ export default async function handler(
       }
     }
     case "DELETE": {
-      console.log("ok",action)
+      console.log("ok", action);
       if (!action) {
         return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
@@ -148,6 +148,62 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+      }
+    }
+    case "PUT": {
+      if (!action) {
+        return res.status(400).json({ error: "Action parameter is missing" });
+      }
+
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: "Unauthorized access" });
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      switch (action) {
+        case "changeWebhookStatus": {
+          const { id: webhook_id, status } = body;
+
+          // Validate request body
+          if (status === undefined || !webhook_id) {
+            return res.status(400).json({ error: "Invalid request body" });
+          }
+
+          try {
+            // Retrieve session and user details
+            const { data: session, error: userError } =
+              await supabase.auth.getUser(token);
+
+            if (userError || !session?.user) {
+              return res.status(401).json({ error: "User not authorized" });
+            }
+
+            const user = session.user;
+
+            // Update webhook status if it belongs to the user
+            const { data, error } = await supabase
+              .from("webhooks")
+              .update({ status })
+              .eq("user_id", user.id)
+              .eq("id", webhook_id)
+              .single();
+
+            if (error) {
+              return res.status(400).json({ error: error.message });
+            }
+
+            return res.status(200).json({ data });
+          } catch (err: any) {
+            return res
+              .status(500)
+              .json({ error: "Server error", details: err.message });
+          }
+        }
+
+        default:
+          return res.status(400).json({ error: "Invalid action" });
       }
     }
 
