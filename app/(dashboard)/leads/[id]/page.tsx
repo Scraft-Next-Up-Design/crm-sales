@@ -94,7 +94,7 @@ const IndividualLeadPage: React.FC = () => {
       setNewNote("");
     }
   };
-
+  console.log()
   // Mock Lead Data - Replace with actual data fetching
   const lead: Lead = {
     id: "LEAD-001",
@@ -292,13 +292,13 @@ const IndividualLeadPage: React.FC = () => {
               {/* Lead Status and Tags */}
               <div className="mt-6 flex items-center space-x-4">
                 <Badge variant="secondary">
-                  Status: {lead.leadInfo.status}
+                  Status: {leads[0].status.name}
                 </Badge>
-                {lead.leadInfo.tags?.map((tag) => (
+                {/* {lead.leadInfo.tags?.map((tag) => (
                   <Badge key={tag} variant="outline">
                     {tag}
                   </Badge>
-                ))}
+                ))} */}
               </div>
             </TabsContent>
 
