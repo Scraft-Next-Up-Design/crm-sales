@@ -1,6 +1,6 @@
 
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams } from "next/navigation";
 import React from "react";
 import {
@@ -34,13 +34,12 @@ import {
   Check
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useGetLeadByIdQuery } from "@/lib/store/services/leadsApi";
+import { useGetLeadByIdQuery, useAddNotesMutation } from "@/lib/store/services/leadsApi";
 import { formatDate } from "@/utils/date";
 import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Separator } from "@/components/ui/separator";
-import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from '@/components/ui/tooltip';
-// Comprehensive Lead Interface
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { supabase } from "@/lib/supabaseClient";
 interface Lead {
   id: string;
   personalInfo: {
@@ -82,18 +81,44 @@ interface Lead {
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
+  const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
   const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
   const leads = leadsData?.data
   const [notes, setNotes] = useState(leads?.notes || []);
   const [newNote, setNewNote] = useState("");
+  const [user, setUser] = useState<any>(null);
 
+  useEffect(() => {
+    // Fetch user session on component mount
+    const fetchUser = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      setUser(user?.user_metadata);
+    };
+
+    fetchUser();
+  }, []);
+  console.log(user)
   const handleAddNote = () => {
     if (newNote.trim()) {
-      setNotes([...notes, newNote]);
+      // Combine the note text and author into a single string
+      console.log(user)
+      const author = user?.firstName
+        || user.name || "Unknown"; // Provide a fallback for author
+      const newNoteText = `${newNote} (added by ${author})`;
+
+      // Update the notes array
+      const updatedNotes = [...notes, { message: newNoteText }];
+      setNotes(updatedNotes);
       setNewNote("");
+
+      console.log(updatedNotes);
+
+      // Pass the updated notes to the updateNotes function
+      addNotes({ id: leadId, Note: updatedNotes });
     }
   };
+
   console.log()
   // Mock Lead Data - Replace with actual data fetching
   const lead: Lead = {
@@ -345,14 +370,36 @@ const IndividualLeadPage: React.FC = () => {
                   </div>
 
                   {/* Notes List */}
-                  {notes.map((note: string, index: number) => (
-                    <Card className="mb-2">
-                      <CardContent className="p-3 flex items-center">
-                        <MessageSquare className="mr-2 text-muted-foreground" size={20} />
-                        <span>{note}</span>
-                      </CardContent>
-                    </Card>
-                  ))}
+                  <div className="grid gap-3">
+                    {notes.map((dataItem: { message: string }, index: number) =>
+                      Object.entries(dataItem).map(([key, value]) => (
+                        <Tooltip key={`${key}-${index}`}>
+                          <TooltipTrigger asChild>
+                            <div className="group relative flex items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-4">
+                                  <div className="min-w-[120px]">
+                                    <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary">
+                                      {key}
+                                    </span>
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <span className="block text-sm text-muted-foreground break-all">
+                                      {value as string}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </TooltipTrigger>
+                          <TooltipContent side="top" className="bg-popover">
+                            <p className="text-popover-foreground">Click to copy</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      ))
+                    )}
+                  </div>
+
                 </CardContent>
               </Card>
             </TabsContent>

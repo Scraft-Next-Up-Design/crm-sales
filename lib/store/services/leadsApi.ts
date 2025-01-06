@@ -35,14 +35,21 @@ export const leadsApis = leadsApi.injectEndpoints({
         }),
       }
     ),
-    updateLead: builder.mutation<any, { id: any; leads : any }>({
+    updateLead: builder.mutation<any, { id: any; leads: any }>({
       query: ({ id, leads }) => ({
         url: `?action=updateLeadById&id=${id}`,
         method: "PUT",
         body: leads, // Pass the body with name and color
       }),
     }),
-    
+    addNotes: builder.mutation<any, { id: any; Note: any }>({
+      query: ({ id, Note }) => ({
+        url: `?action=updateNotesById&id=${id}`,
+        method: "POST",
+        body: Note, // Pass the body with name and color
+      }),
+    }),
+
     deleteLead: builder.mutation<void, { id: string; userId: string }>({
       query: ({ id, userId }) => ({
         url: `${id}?userId=${userId}`,
@@ -57,6 +64,7 @@ export const {
   useGetLeadsByUserQuery,
   useGetLeadsByWorkspaceQuery,
   useGetLeadByIdQuery,
+  useAddNotesMutation,
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
