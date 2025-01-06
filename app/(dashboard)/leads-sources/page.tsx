@@ -35,10 +35,10 @@ import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useWebhookMutation } from "@/lib/store/services/webhooks";
+import { useDeleteWebhookMutation, useWebhookMutation } from "@/lib/store/services/webhooks";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
-import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetActiveWorkspaceQuery, useDeleteWorkspaceMutation } from "@/lib/store/services/workspace";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -61,7 +61,8 @@ export type Source = {
 const LeadSourceManager: React.FC = () => {
   const { data: workspacesData } = useGetActiveWorkspaceQuery();
   console.log(workspacesData);
-  const [webhook] = useWebhookMutation();
+  const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
+  const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] = useDeleteWebhookMutation();
   const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery({ id: workspacesData?.data.id });
   const webhooksData = webhooks?.data;
   const [sources, setSources] = useState<Source[]>(webhooksData || []);
@@ -170,11 +171,11 @@ const LeadSourceManager: React.FC = () => {
   };
 
 
-  const handleDelete = () => {
-    if (selectedSource) {
-      setSources(sources.filter((source) => source.id !== selectedSource.id));
-      resetDialog();
-    }
+  const handleDelete = async (id: string) => {
+
+    await deleteWebhook({ id });
+    resetDialog();
+    setSources(sources.filter((source) => source.id !== id));
   };
   if (!workspacesData?.data?.id) return <div className="flex items-center justify-center min-h-screen">
     <Loader2 className="h-8 w-8 animate-spin" />
@@ -340,8 +341,18 @@ const LeadSourceManager: React.FC = () => {
                   </Button>
                 </DialogClose>
                 <Button type="submit" className="w-full sm:w-auto">
-                  {dialogMode === "create" ? "Add Source" : "Update Source"}
+                  {isWebhookAdded ? (
+                    <>
+                      <Loader2 className="h-5 w-5" />
+                      <span className="ml-2">
+                        {dialogMode === "create" ? "Adding..." : "Updating..."}
+                      </span>
+                    </>
+                  ) : (
+                    dialogMode === "create" ? "Add Source" : "Update Source"
+                  )}
                 </Button>
+
               </DialogFooter>
             </form>
           </Form>
@@ -370,10 +381,17 @@ const LeadSourceManager: React.FC = () => {
             </DialogClose>
             <Button
               variant="destructive"
-              onClick={handleDelete}
+              onClick={() => handleDelete(selectedSource?.id)}
               className="w-full sm:w-auto"
             >
-              Delete
+              {isDeleted ? (
+                <>
+                  <Loader2 className="h-5 w-5" />
+                  <span className="ml-2">Deleting...</span>
+                </>
+              ) : (
+                "Delete Source"
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>

@@ -66,9 +66,62 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-        case "deleteWebhook": {
-          const { webhook_id }: { webhook_id: number } = body;
 
+        default:
+          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+      }
+    }
+    case "GET": {
+      if (!action) {
+        return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+      }
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+      }
+      const { id: workspace_id } = query;
+      console.log(query);
+      const token = authHeader.split(" ")[1];
+      switch (action) {
+        case "getWebhooks": {
+          // Retrieve session and user details
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+          // Fetch webhooks for the user ID
+          const { data, error } = await supabase
+            .from("webhooks")
+            .select("*")
+            .eq("workspace_id", workspace_id)
+            .eq("user_id", user.id);
+
+          if (error) {
+            return res.status(400).json({ error });
+          }
+          return res.status(200).json({ data });
+        }
+
+        default:
+          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+      }
+    }
+    case "DELETE": {
+      console.log("ok",action)
+      if (!action) {
+        return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+      }
+      const authHeader = headers.authorization;
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+      }
+      const token = authHeader.split(" ")[1];
+      switch (action) {
+        case "deleteWebhook": {
+          const { id: webhook_id } = body;
+          console.log(webhook_id);
           // Validate request body
           if (!webhook_id) {
             return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
@@ -95,48 +148,6 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-
-        default:
-          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
-      }
-    }
-
-    case "GET": {
-      if (!action) {
-        return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
-      }
-      const authHeader = headers.authorization;
-      if (!authHeader || !authHeader.startsWith("Bearer ")) {
-        return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-      }
-      const { id: workspace_id } = query;
-      console.log(query);
-      const token = authHeader.split(" ")[1];
-      switch (action) {
-        case "getWebhooks": {
-          // Retrieve session and user details
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-          if (!user) {
-            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          }
-          console.log("User:", user);
-          // Fetch webhooks for the user ID
-          const { data, error } = await supabase
-            .from("webhooks")
-            .select("*")
-            .eq("workspace_id", workspace_id)
-            .eq("user_id", user.id);
-
-          if (error) {
-            return res.status(400).json({ error });
-          }
-          return res.status(200).json({ data });
-        }
-
-        default:
-          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
     }
 
