@@ -72,6 +72,7 @@ const leadSchema = z.object({
   contact_method: z.enum(["WhatsApp", "SMS", "Call"], {
     required_error: "Please select a contact method",
   }),
+  revenue: z.string().optional(),
 });
 
 const initialFilters: any = {
@@ -85,7 +86,6 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
-  const [open, setOpen] = useState(false);
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
@@ -111,6 +111,7 @@ const LeadManagement: React.FC = () => {
         contact_method: lead.contact_method, // Default value if not provided
         owner: lead.owner || "Unknown", // Adjust according to your data schema
         status: lead.status || "New", // Default status
+        revenue: lead.revenue || "", // Default to 0
         createdAt: lead.createdAt || new Date().toISOString(), // Default to current date
       }));
 
@@ -215,6 +216,7 @@ const LeadManagement: React.FC = () => {
       company: "",
       position: "",
       contact_method: undefined,
+      revenue: "",
     },
   });
 
@@ -227,6 +229,7 @@ const LeadManagement: React.FC = () => {
       company: "",
       position: "",
       contact_method: undefined,
+      revenue: "",
     })
     setEditingLead(null);
     setDialogMode(null);
@@ -247,6 +250,7 @@ const LeadManagement: React.FC = () => {
       company: lead.company,
       position: lead.position,
       contact_method: lead.contact_method,
+      revenue: lead.revenue,
     });
     setEditingLead(lead);
     setDialogMode("edit");
@@ -263,16 +267,26 @@ const LeadManagement: React.FC = () => {
           ...data,
           company: data.company || "",
           position: data.position || "",
+          revenue: data.revenue || "",
         },
         // console.log(leads),
       ]);
-      // toast.success(CRM_MESSAGES.LEAD_ADDED_SUCCESS);
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
       try {
         updateLeadData({ id: editingLead.id, leads: data });
-        setLeads((prevLeads) =>
-          prevLeads.map((lead) => (lead.id === editingLead.id ? { ...lead, ...data } : lead))
+        setLeads(
+          leads.map((lead) =>
+            lead.id === editingLead.id
+              ? {
+                id: editingLead.id,
+                ...data,
+                company: data.company || "",
+                position: data.position || "",
+                revenue: data.revenue || 0,
+              }
+              : lead
+          )
         );
         setEditingLead(null);
       } catch (error) {
@@ -572,7 +586,7 @@ const LeadManagement: React.FC = () => {
                               <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" style={{ backgroundColor: lead?.status?.color }} />
                               <div className="relative h-3 w-3 rounded-lg bg-gray-400" style={{ backgroundColor: lead?.status?.color }} />
                             </div>
-                            <span className="text-sm font-medium">{lead.status.name}</span>
+                            <span className="text-sm font-medium">{lead?.status?.name}</span>
                           </div>
                         </SelectTrigger>
 
@@ -580,7 +594,7 @@ const LeadManagement: React.FC = () => {
                           {statusData.data.map((status: { name: string; color: string }) => (
                             <SelectItem
                               key={status.name}
-                              value={JSON.stringify({ name: status.name, color: status.color })}
+                              value={JSON.stringify({ name: status?.name, color: status?.color })}
                               className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
                             >
                               <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
@@ -588,12 +602,12 @@ const LeadManagement: React.FC = () => {
                                   {/* Glow effect */}
                                   <div
                                     className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
-                                    style={{ backgroundColor: status.color }}
+                                    style={{ backgroundColor: status?.color }}
                                   />
                                   {/* Main dot */}
                                   <div
                                     className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
-                                    style={{ backgroundColor: status.color }}
+                                    style={{ backgroundColor: status?.color }}
                                   />
                                 </div>
                                 <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -777,22 +791,23 @@ const LeadManagement: React.FC = () => {
                   </FormItem>
                 )}
               />
-              {/* <FormField
+              <FormField
                 control={form.control}
-                name="notes"
+                name="revenue"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Notes</FormLabel>
+                    <FormLabel>Revenue</FormLabel>
                     <FormControl>
-                      <Textarea
-                        placeholder="Additional notes about the lead"
+                      <Input
+                        placeholder="Enter revenue"
+                        type="text"
                         {...field}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
-              /> */}
+              />
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">
@@ -800,8 +815,15 @@ const LeadManagement: React.FC = () => {
                   </Button>
                 </DialogClose>
                 <Button type="submit">
-                  {dialogMode === "create" ? "Add Lead" : "Update Lead"}
+                  {isUpdateLoading ? (
+                    <>
+                      <Loader2 />
+                      {" "}
+                      Loading...
+                    </>
+                  ) : dialogMode === "create" ? "Add Lead" : "Update Lead"}
                 </Button>
+
               </DialogFooter>
             </form>
           </Form>
@@ -817,7 +839,7 @@ const LeadManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Delete Selected Leads</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete {selectedLeads.length} lead(s)?</p>
+          <p>Are you sure you want to delete {selectedLeads?.length} lead(s)?</p>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>
