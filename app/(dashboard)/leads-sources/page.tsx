@@ -90,8 +90,11 @@ const LeadSourceManager: React.FC = () => {
   });
 
   const resetDialog = () => {
-    form.reset();
-    setSelectedSource(null);
+    form.reset({
+      name: "",
+      type: "",
+      description: ""
+    }); setSelectedSource(null);
     setDialogMode(null);
   };
 
