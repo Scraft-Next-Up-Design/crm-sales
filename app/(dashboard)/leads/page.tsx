@@ -56,14 +56,13 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
+import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { Badge } from "@/components/ui/badge";
 // Zod validation schema for lead
 const leadSchema = z.object({
-  firstName: z.string().min(2, { message: "First name is required" }),
-  lastName: z.string().min(2, { message: "Last name is required" }),
+  name: z.string().min(2, { message: "First name is required" }),
   email: z.string().email({ message: "Invalid email address" }),
   phone: z
     .string()
@@ -73,7 +72,6 @@ const leadSchema = z.object({
   contact_method: z.enum(["WhatsApp", "SMS", "Call"], {
     required_error: "Please select a contact method",
   }),
-  notes: z.string().optional(),
 });
 
 const initialFilters: any = {
@@ -87,6 +85,8 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
+  const [open, setOpen] = useState(false);
+  const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data.id;
@@ -98,20 +98,17 @@ const LeadManagement: React.FC = () => {
     }
   );
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
-  console.log(statusData);
   useEffect(() => {
     if (!isLoadingLeads && workspaceData?.data) {
       // Assuming workspaceData.data contains the leads array
       const fetchedLeads = workspaceData?.data.map((lead: any, index: number) => ({
         id: lead.id || index + 1, // Ensure each lead has a unique ID
-        firstName: lead.name || "",
-        lastName: lead.lastName || "",
+        Name: lead.name || "",
         email: lead.email || "",
         phone: lead.phone || "",
         company: lead.company || "",
         position: lead.position || "",
         contact_method: lead.contact_method, // Default value if not provided
-        notes: lead.notes || "",
         owner: lead.owner || "Unknown", // Adjust according to your data schema
         status: lead.status || "New", // Default status
         createdAt: lead.createdAt || new Date().toISOString(), // Default to current date
@@ -212,28 +209,24 @@ const LeadManagement: React.FC = () => {
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
+      name: "",
       email: "",
       phone: "",
       company: "",
       position: "",
       contact_method: undefined,
-      notes: "",
     },
   });
 
   // Reset dialog state
   const resetDialog = () => {
     form.reset({
-      firstName: "",
-      lastName: "",
+      name: "",
       email: "",
       phone: "",
       company: "",
       position: "",
       contact_method: undefined,
-      notes: "",
     })
     setEditingLead(null);
     setDialogMode(null);
@@ -248,14 +241,12 @@ const LeadManagement: React.FC = () => {
   // Open edit dialog
   const openEditDialog = (lead: any) => {
     form.reset({
-      firstName: lead.firstName,
-      lastName: lead.lastName,
+      name: "",
       email: lead.email,
       phone: lead.phone,
       company: lead.company,
       position: lead.position,
       contact_method: lead.contact_method,
-      notes: lead.notes,
     });
     setEditingLead(lead);
     setDialogMode("edit");
@@ -272,26 +263,22 @@ const LeadManagement: React.FC = () => {
           ...data,
           company: data.company || "",
           position: data.position || "",
-          notes: data.notes || "",
         },
         // console.log(leads),
       ]);
-      toast.success(CRM_MESSAGES.LEAD_ADDED_SUCCESS);
+      // toast.success(CRM_MESSAGES.LEAD_ADDED_SUCCESS);
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
-      setLeads(
-        leads.map((lead) =>
-          lead.id === editingLead.id
-            ? {
-              id: editingLead.id,
-              ...data,
-              company: data.company || "",
-              position: data.position || "",
-              notes: data.notes || "",
-            }
-            : lead
-        )
-      );
+      try {
+        updateLeadData({ id: editingLead.id, leads: data });
+        setLeads((prevLeads) =>
+          prevLeads.map((lead) => (lead.id === editingLead.id ? { ...lead, ...data } : lead))
+        );
+        setEditingLead(null);
+      } catch (error) {
+        console.error("Error updating lead", error);
+        toast.error(CRM_MESSAGES.LEAD_UPDATED_ERROR);
+      }
     }
     toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     resetDialog();
@@ -412,7 +399,6 @@ const LeadManagement: React.FC = () => {
       )
     );
     updateLead({ id, leads: { name, color } });
-    console.log(id, { status: { name, color } });
     toast.success(`Lead status updated to ${name}`);
   };
 
@@ -426,7 +412,6 @@ const LeadManagement: React.FC = () => {
   if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
-  console.log(statusData);
   return (
     <div className="w-full p-4 md:p-6 lg:p-8">
       <Card className="w-full">
@@ -526,7 +511,7 @@ const LeadManagement: React.FC = () => {
                         onCheckedChange={() => toggleLeadSelection(lead.id)}
                       />
                     </TableCell>
-                    <TableCell>{`${lead.firstName} ${lead.lastName}`}</TableCell>
+                    <TableCell>{lead.Name}</TableCell>
                     <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.phone}</TableCell>
 
@@ -584,17 +569,17 @@ const LeadManagement: React.FC = () => {
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
-                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" />
+                              <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" style={{ backgroundColor: lead?.status?.color }} />
+                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" style={{ backgroundColor: lead?.status?.color }} />
                             </div>
-                            <span className="text-sm font-medium">Select status</span>
+                            <span className="text-sm font-medium">{lead.status.name}</span>
                           </div>
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                          {statusData.data.map((status: { id: number; name: string; color: string }) => (
+                          {statusData.data.map((status: { name: string; color: string }) => (
                             <SelectItem
-                              key={status.id}
+                              key={status.name}
                               value={JSON.stringify({ name: status.name, color: status.color })}
                               className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
                             >
@@ -683,18 +668,18 @@ const LeadManagement: React.FC = () => {
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={form.control}
-                  name="firstName"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>First Name</FormLabel>
+                      <FormLabel>Full Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Enter first name" {...field} />
+                        <Input placeholder="Enter Your Full name" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-                <FormField
+                {/* <FormField
                   control={form.control}
                   name="lastName"
                   render={({ field }) => (
@@ -706,7 +691,7 @@ const LeadManagement: React.FC = () => {
                       <FormMessage />
                     </FormItem>
                   )}
-                />
+                /> */}
               </div>
               <FormField
                 control={form.control}
@@ -792,7 +777,7 @@ const LeadManagement: React.FC = () => {
                   </FormItem>
                 )}
               />
-              <FormField
+              {/* <FormField
                 control={form.control}
                 name="notes"
                 render={({ field }) => (
@@ -807,7 +792,7 @@ const LeadManagement: React.FC = () => {
                     <FormMessage />
                   </FormItem>
                 )}
-              />
+              /> */}
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">

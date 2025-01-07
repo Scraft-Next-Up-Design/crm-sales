@@ -42,6 +42,13 @@ export const leadsApis = leadsApi.injectEndpoints({
         body: leads, // Pass the body with name and color
       }),
     }),
+    updateLeadData: builder.mutation<any, { id: any; leads: any }>({
+      query: ({ id, leads }) => ({
+        url: `?action=updateLeadData&id=${id}`,
+        method: "PUT",
+        body: leads, // Pass the body with name and color
+      }),
+    }),
     addNotes: builder.mutation<any, { id: any; Note: any }>({
       query: ({ id, Note }) => ({
         url: `?action=updateNotesById&id=${id}`,
@@ -75,4 +82,5 @@ export const {
   useCreateLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
+  useUpdateLeadDataMutation,
 } = leadsApis;

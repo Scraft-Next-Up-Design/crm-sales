@@ -44,5 +44,5 @@ export const CRM_MESSAGES = {
     SYSTEM_ERROR: 'A system error occurred. Please contact support.',
     CONNECTION_ERROR: 'Connection error. Please check your internet connection.',
     PROFILE_UPDATED: 'Profile updated successfully!',
-  };
-  
+    LEAD_UPDATED_ERROR : 'Unable To Update Lead!',
+};
