@@ -23,7 +23,9 @@ Format Rules:
 
 If you see a full name, split it into first_name and last_name.
 If you see a phone number, clean it to only include digits and +.
-Move any unrecognized fields into custom_data.`;
+Move any unrecognized fields into custom_data.
+Sort the custom_data keys alphabetically.
+For values that are lists or objects, ensure they are also sorted`;
 
 // Normalize any input data to a string
 const normalizeInput = (data: any): string => {

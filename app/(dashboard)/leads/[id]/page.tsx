@@ -33,6 +33,13 @@ import {
   Clipboard,
   Check
 } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useGetLeadByIdQuery, useAddNotesMutation } from "@/lib/store/services/leadsApi";
 import { formatDate } from "@/utils/date";
@@ -40,17 +47,25 @@ import { Textarea } from "@/components/ui/textarea";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { supabase } from "@/lib/supabaseClient";
-
+import { useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
+import { toast } from "sonner";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetStatusQuery } from "@/lib/store/services/status";
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
+  const [updateLead] = useUpdateLeadMutation();
   const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
   const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
   const currentLead = leadsData?.data?.[0];
   const [newNote, setNewNote] = useState("");
   const [user, setUser] = useState<any>(null);
-  const [notes, setNotes] = useState<Array<{ message: string }>>([]); // Type the notes state properly
+  const [notes, setNotes] = useState<Array<{ message: string }>>([]);
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
+  const workspaceId = activeWorkspace?.data.id;
+  // Type the notes state properly
+  const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
 
   useEffect(() => {
     // Set initial notes when lead data loads
@@ -120,6 +135,18 @@ const IndividualLeadPage: React.FC = () => {
     }
   };
 
+  const handleStatusChange = async (id: number, value: string) => {
+    const { name, color } = JSON.parse(value);
+
+    // setLeads((prevLeads) =>
+    //   prevLeads.map((lead) =>
+    //     lead.id === id ? { ...lead, status: { name, color } } : lead
+    //   )
+    // );
+    updateLead({ id, leads: { name, color } });
+    toast.success(`Lead status updated to ${name}`);
+  };
+
   return (
     <div className="container mx-auto pt-2">
       <Card>
@@ -134,7 +161,62 @@ const IndividualLeadPage: React.FC = () => {
             <Button variant="outline" onClick={handleGoBack}>
               Back to Leads
             </Button>
-            <Button>Edit Lead</Button>
+            <Select
+              defaultValue={JSON.stringify({
+                name: currentLead?.status?.name || "Pending",
+                color: currentLead.status?.color || "#ea1212",
+              })}
+              onValueChange={(value) => handleStatusChange(currentLead.id, value)} // Uncomment and use for status change handler
+            >
+              <SelectTrigger
+                className="group relative w-[200px] overflow-hidden rounded-md border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
+                style={{ outline: `2px solid ${currentLead?.status?.color || 'gray'}` }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="relative">
+                    <div
+                      className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30"
+                      style={{ backgroundColor: currentLead?.status?.color }}
+                    />
+                    <div
+                      className="relative h-3 w-3 rounded-lg bg-gray-400"
+                      style={{ backgroundColor: currentLead?.status?.color }}
+                    />
+                  </div>
+                  <span className="text-sm font-medium">{currentLead?.status?.name}</span>
+                </div>
+              </SelectTrigger>
+
+
+              <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                {statusData?.data.map((status: { name: string; color: string }) => (
+                  <SelectItem
+                    key={status.name}
+                    value={JSON.stringify({ name: status?.name, color: status?.color })}
+                    className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                  >
+                    <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                      <div className="relative">
+                        {/* Glow effect */}
+                        <div
+                          className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
+                          style={{ backgroundColor: status?.color }}
+                        />
+                        {/* Main dot */}
+                        <div
+                          className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
+                          style={{ backgroundColor: status?.color }}
+                        />
+                      </div>
+                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                        {status.name}
+                      </span>
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+
+            </Select>
           </div>
         </CardHeader>
 
