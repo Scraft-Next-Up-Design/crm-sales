@@ -241,6 +241,10 @@ export default async function handler(
       lead_source_id: req.query.sourceId,
       user_id: webhookMatch?.user_id,
       contact_method: "Call",
+      status: {
+        name: "Arrived",
+        color: "#FFA500",
+      },
       work_id: req.query.workspaceId,
     };
 
