@@ -453,7 +453,7 @@ const LeadManagement: React.FC = () => {
   const handleGoBack = () => {
     router.push("/dashboard");
   }
-  if (paginatedLeads.length < 1) {
+  if (workspaceData?.data.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Card className="max-w-lg w-full p-8 bg-white shadow-xl rounded-lg flex flex-col items-center">
@@ -473,7 +473,7 @@ const LeadManagement: React.FC = () => {
       </div>
     );
   }
-  if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
+  if (isLoadingStatus || isLoadingLeads) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
   return (
