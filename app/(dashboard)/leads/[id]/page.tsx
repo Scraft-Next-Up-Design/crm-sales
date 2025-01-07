@@ -110,17 +110,17 @@ const IndividualLeadPage: React.FC = () => {
   }
 
   // Show not found state
-  // if (!currentLead) {
-  //   return (
-  //     <div className="flex items-center justify-center min-h-screen">
-  //       <Card className="p-6">
-  //         <CardTitle>Lead not found</CardTitle>
-  //         <CardDescription>The requested lead could not be found</CardDescription>
-  //         <Button className="mt-4" onClick={handleGoBack}>Back to Leads</Button>
-  //       </Card>
-  //     </div>
-  //   );
-  // }
+  if (!currentLead) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="p-6">
+          <CardTitle>Lead not found</CardTitle>
+          <CardDescription>The requested lead could not be found</CardDescription>
+          <Button className="mt-4" onClick={handleGoBack}>Back to Leads</Button>
+        </Card>
+      </div>
+    );
+  }
 
   const handleAddNote = () => {
     if (newNote.trim()) {

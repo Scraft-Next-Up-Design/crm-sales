@@ -59,7 +59,7 @@ import { CRM_MESSAGES } from "@/lib/constant/crm";
 import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
-import { Badge } from "@/components/ui/badge";
+import { CardDescription } from "@/components/ui/card";
 // Zod validation schema for lead
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -233,7 +233,6 @@ const LeadManagement: React.FC = () => {
   // }, [leads, currentPage]);
 
   const paginatedLeads = leads
-
   // Form setup
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
@@ -451,6 +450,29 @@ const LeadManagement: React.FC = () => {
       )
     );
   };
+  const handleGoBack = () => {
+    router.push("/dashboard");
+  }
+  if (paginatedLeads.length < 1) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Card className="max-w-lg w-full p-8 bg-white shadow-xl rounded-lg flex flex-col items-center">
+          <CardTitle className="text-2xl font-semibold text-center text-gray-800">
+            No Leads Found in this Workspace
+          </CardTitle>
+          <CardDescription className="mt-2 text-lg text-gray-600 text-center">
+            It seems there are no leads available in this workspace at the moment.
+          </CardDescription>
+          <Button
+            className="mt-6 px-6 py-2 bg-primary text-white rounded-md shadow-md hover:bg-primary-dark focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            onClick={handleGoBack}
+          >
+            Back to Dashboard
+          </Button>
+        </Card>
+      </div>
+    );
+  }
   if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
