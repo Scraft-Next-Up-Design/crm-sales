@@ -91,33 +91,57 @@ const LeadManagement: React.FC = () => {
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data.id;
 
+  // const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
+  //   workspaceId ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) : ({} as { workspaceId: string }),
+  //   {
+  //     skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
+  //   }
+  // );
   const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
-    workspaceId ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) : ({} as { workspaceId: string }),
+    workspaceId
+      ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
+      : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
     {
-      skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
+      skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
+      pollingInterval: 2000, // Poll every 2 seconds (2000 ms)
     }
   );
+
+  const POLLING_INTERVAL = 2000
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
   useEffect(() => {
-    if (!isLoadingLeads && workspaceData?.data) {
-      // Assuming workspaceData.data contains the leads array
-      const fetchedLeads = workspaceData?.data.map((lead: any, index: number) => ({
-        id: lead.id || index + 1, // Ensure each lead has a unique ID
-        Name: lead.name || "",
-        email: lead.email || "",
-        phone: lead.phone || "",
-        company: lead.company || "",
-        position: lead.position || "",
-        contact_method: lead.contact_method, // Default value if not provided
-        owner: lead.owner || "Unknown", // Adjust according to your data schema
-        status: lead.status || "New", // Default status
-        revenue: lead.revenue || "", // Default to 0
-        createdAt: lead.createdAt || new Date().toISOString(), // Default to current date
-      }));
+    const fetchLeads = () => {
+      if (!isLoadingLeads && workspaceData?.data) {
+        const fetchedLeads = workspaceData?.data
+          .map((lead: any, index: number) => ({
+            id: lead.id || index + 1,
+            Name: lead.name || "",
+            email: lead.email || "",
+            phone: lead.phone || "",
+            company: lead.company || "",
+            position: lead.position || "",
+            contact_method: lead.contact_method,
+            owner: lead.owner || "Unknown",
+            status: lead.status || "New",
+            revenue: lead.revenue || "",
+            createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),  // Ensure valid date format
+          }))
+          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Sort by most recent
 
-      setLeads(fetchedLeads);
-    }
+        setLeads(fetchedLeads);
+      }
+    };
+
+    // Initial fetch
+    fetchLeads();
+
+    // Set up polling
+    const pollInterval = setInterval(fetchLeads, POLLING_INTERVAL);
+
+    // Cleanup
+    return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
+
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
 
@@ -125,9 +149,7 @@ const LeadManagement: React.FC = () => {
   const [filters, setFilters] = useState<any>(initialFilters);
   const [leads, setLeads] = useState<any[]>([]);
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-  };
+
 
   const handleFilterReset = () => {
     setFilters(initialFilters);
@@ -145,7 +167,7 @@ const LeadManagement: React.FC = () => {
       }
 
       // Status filter
-      if (filters.status && lead.status !== filters.status) {
+      if (filters.status && lead.status.name !== filters.status) {
         return false;
       }
 
@@ -189,6 +211,10 @@ const LeadManagement: React.FC = () => {
       return true;
     });
   }, [leads, filters]);
+  const handleFilterChange = (newFilters: any) => {
+    setFilters(newFilters);
+    setLeads(filteredLeads);
+  };
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
   const [dialogMode, setDialogMode] = useState<
     "create" | "edit" | "delete" | null

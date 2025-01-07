@@ -81,8 +81,10 @@ export const FilterComponent: React.FC<FilterComponentProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="Select">All Statuses</SelectItem>
-                  <SelectItem value="Qualified">Qualified</SelectItem>
-                  <SelectItem value="Unqualified">Unqualified</SelectItem>
+                  <SelectItem value="Pending">Pending</SelectItem>
+                  <SelectItem value="Completed">Completed</SelectItem>
+                  <SelectItem value="Not Completed">Not Completed</SelectItem>
+
                 </SelectContent>
               </Select>
             </div>
