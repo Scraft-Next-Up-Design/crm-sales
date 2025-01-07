@@ -3,14 +3,6 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
   BarChart,
   Bar,
   XAxis,
@@ -18,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Award, DollarSign, Users, TrendingUp, IndianRupee } from "lucide-react";
+import { Award, Users, TrendingUp, IndianRupee } from "lucide-react";
 
 // Demo data
 const salesData = [
@@ -54,14 +46,20 @@ const leadsData = [
   },
 ];
 
+interface Workspace {
+  id: string;
+  name: string;
+  role: string;
+  industry?: string;
+  status?: boolean;
+  type?: string;
+}
 const SalesDashboard = () => {
-  const [activeTab, setActiveTab] = useState("overview");
-
   const dashboardStats = [
     {
       icon: <IndianRupee className="text-green-500" />,
       title: "Revenue",
-      value: "$456,789",
+      value: "456,789",
       change: "+12.5%",
     },
     {

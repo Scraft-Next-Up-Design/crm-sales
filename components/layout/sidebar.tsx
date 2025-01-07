@@ -88,7 +88,7 @@ export function Sidebar({
   const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
   const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
-  const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery({ workspaceId: selectedWorkspace.id });
+  const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery({ workspaceId: selectedWorkspace.id }, { pollingInterval: 2000 });
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
