@@ -227,10 +227,12 @@ const LeadManagement: React.FC = () => {
   const totalPages = Math.ceil(leads.length / leadsPerPage);
 
   // Paginated leads
-  const paginatedLeads = useMemo(() => {
-    const startIndex = (currentPage - 1) * leadsPerPage;
-    return leads.slice(startIndex, startIndex + leadsPerPage);
-  }, [leads, currentPage]);
+  // const paginatedLeads = useMemo(() => {
+  //   const startIndex = (currentPage - 1) * leadsPerPage;
+  //   return leads.slice(startIndex, startIndex + leadsPerPage);
+  // }, [leads, currentPage]);
+
+  const paginatedLeads = leads
 
   // Form setup
   const form = useForm<z.infer<typeof leadSchema>>({
@@ -449,12 +451,12 @@ const LeadManagement: React.FC = () => {
       )
     );
   };
-  if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen">
+  if (isLoadingStatus) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
   return (
-    <div className="w-full p-4 md:p-6 lg:p-8">
-      <Card className="w-full">
+    <div className="w-full p-4 md:p-6 lg:p-8 ">
+      <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
             values={filters}
@@ -463,7 +465,7 @@ const LeadManagement: React.FC = () => {
           />
         )}
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <CardTitle className="text-lg md:text-xl lg:text-2xl">
+          <CardTitle className="text-lg md:text-xl lg:text-2xl ">
             Lead Management
           </CardTitle>
           <div className="flex space-x-2">
@@ -518,7 +520,7 @@ const LeadManagement: React.FC = () => {
             </div>
           )}
 
-          <div className="overflow-x-auto">
+          <div className="">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -670,7 +672,7 @@ const LeadManagement: React.FC = () => {
           </div>
 
           {/* Pagination */}
-          <div className="flex justify-between items-center mt-4">
+          {/* <div className="flex justify-between items-center mt-4">
             <Button
               variant="outline"
               onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
@@ -690,7 +692,7 @@ const LeadManagement: React.FC = () => {
             >
               Next
             </Button>
-          </div>
+          </div> */}
         </CardContent>
       </Card>
       <Dialog
