@@ -24,7 +24,8 @@ Format Rules:
 If you see a full name, split it into first_name and last_name.
 If you see a phone number, clean it to only include digits and +.
 Move any unrecognized fields into custom_data.
-Sort the custom_data keys alphabetically.
+Sort the custom_data keys in small key like if it is what_are_you_looking_for?
+make it customer query in this way sort all incoming key.
 For values that are lists or objects, ensure they are also sorted`;
 
 // Normalize any input data to a string
