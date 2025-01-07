@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -40,7 +40,7 @@ import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
-
+import { useRouter } from "next/navigation";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -61,6 +61,7 @@ export type Source = {
   workspace_id?: string | null; // Can be a string or null
 };
 const LeadSourceManager: React.FC = () => {
+  const router = useRouter();
   const { data: workspacesData } = useGetActiveWorkspaceQuery();
   console.log(workspacesData);
   const [changeWebhookStatus] = useChangeWebhookStatusMutation()
@@ -180,8 +181,29 @@ const LeadSourceManager: React.FC = () => {
     }
     resetDialog();
   };
-
-
+  const handleGoBack = () => {
+    router.push("/dashboard");
+  }
+  if (sources.length < 1) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Card className="max-w-lg w-full p-8 bg-white shadow-xl rounded-lg flex flex-col items-center">
+          <CardTitle className="text-2xl font-semibold text-center text-gray-800">
+            No Lead Sources Found in this Workspace
+          </CardTitle>
+          <CardDescription className="mt-2 text-lg text-gray-600 text-center">
+            It appears there are no lead sources available in this workspace at the moment.
+          </CardDescription>
+          <Button
+            className="mt-6 px-6 py-2 bg-primary text-white rounded-md shadow-md hover:bg-primary-dark focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+            onClick={handleGoBack}
+          >
+            Back to Lead Sources
+          </Button>
+        </Card>
+      </div>
+    );
+  }
   const handleDelete = async (id: string) => {
     await deleteWebhook({ id });
     resetDialog();
