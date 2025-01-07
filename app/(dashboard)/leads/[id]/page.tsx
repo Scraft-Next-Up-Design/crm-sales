@@ -57,7 +57,9 @@ const IndividualLeadPage: React.FC = () => {
   const [updateLead] = useUpdateLeadMutation();
   const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
-  const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId });
+  const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId },{
+    pollingInterval: 2000, // 2 seconds
+  });
   const currentLead = leadsData?.data?.[0];
   const [newNote, setNewNote] = useState("");
   const [user, setUser] = useState<any>(null);
@@ -108,19 +110,17 @@ const IndividualLeadPage: React.FC = () => {
   }
 
   // Show not found state
-  if (!currentLead) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Card className="p-6">
-          <CardTitle>Lead not found</CardTitle>
-          <CardDescription>The requested lead could not be found</CardDescription>
-          <Button className="mt-4" onClick={handleGoBack}>Back to Leads</Button>
-        </Card>
-      </div>
-    );
-  }
-
-  ;
+  // if (!currentLead) {
+  //   return (
+  //     <div className="flex items-center justify-center min-h-screen">
+  //       <Card className="p-6">
+  //         <CardTitle>Lead not found</CardTitle>
+  //         <CardDescription>The requested lead could not be found</CardDescription>
+  //         <Button className="mt-4" onClick={handleGoBack}>Back to Leads</Button>
+  //       </Card>
+  //     </div>
+  //   );
+  // }
 
   const handleAddNote = () => {
     if (newNote.trim()) {
@@ -138,13 +138,19 @@ const IndividualLeadPage: React.FC = () => {
   const handleStatusChange = async (id: number, value: string) => {
     const { name, color } = JSON.parse(value);
 
-    // setLeads((prevLeads) =>
-    //   prevLeads.map((lead) =>
-    //     lead.id === id ? { ...lead, status: { name, color } } : lead
-    //   )
-    // );
-    updateLead({ id, leads: { name, color } });
-    toast.success(`Lead status updated to ${name}`);
+
+
+    try {
+      updateLead({ id, leads: { name, color } });
+      toast.success(`Lead status updated to ${name}`);
+      // setCurrentLead((prev: typeof currentLead) => ({
+      //   id: prev.id,
+      //   ...prev,
+      //   status: { name, color },
+      // }));
+    } catch (error) {
+      toast.error("Failed to update lead status");
+    }
   };
 
   return (
@@ -152,9 +158,9 @@ const IndividualLeadPage: React.FC = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle>{currentLead.name}</CardTitle>
+            <CardTitle>{currentLead?.name}</CardTitle>
             <CardDescription className="my-4">
-              <Badge>{currentLead.lead_source_id}</Badge>
+              <Badge>{currentLead?.lead_source_id}</Badge>
             </CardDescription>
           </div>
           <div className="flex space-x-2">
@@ -164,7 +170,7 @@ const IndividualLeadPage: React.FC = () => {
             <Select
               defaultValue={JSON.stringify({
                 name: currentLead?.status?.name || "Pending",
-                color: currentLead.status?.color || "#ea1212",
+                color: currentLead?.status?.color || "#ea1212",
               })}
               onValueChange={(value) => handleStatusChange(currentLead.id, value)} // Uncomment and use for status change handler
             >
@@ -238,15 +244,15 @@ const IndividualLeadPage: React.FC = () => {
                     <div className="space-y-3">
                       <div className="flex items-center">
                         <Mail className="mr-2 text-gray-500" size={20} />
-                        <span>{currentLead.email}</span>
+                        <span>{currentLead?.email}</span>
                       </div>
                       <div className="flex items-center">
                         <Phone className="mr-2 text-gray-500" size={20} />
-                        <span>{currentLead.phone}</span>
+                        <span>{currentLead?.phone}</span>
                       </div>
                       <div className="flex items-center">
                         <Calendar className="mr-2 text-gray-500" size={20} />
-                        <span>{formatDate(currentLead.created_at)}</span>
+                        <span>{formatDate(currentLead?.created_at)}</span>
                       </div>
                     </div>
                   </CardContent>
@@ -257,7 +263,7 @@ const IndividualLeadPage: React.FC = () => {
                     <CardTitle>Additional Information</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {currentLead.custom_data && (
+                    {currentLead?.custom_data && (
                       <Card className="relative border-border/40">
                         <CardHeader className="space-y-0 pb-4">
                           <div className="flex items-center gap-3">
@@ -272,7 +278,7 @@ const IndividualLeadPage: React.FC = () => {
                         <CardContent className="p-4 pt-0">
                           <ScrollArea className="h-[400px] pr-4">
                             <div className="grid gap-3">
-                              {Object.entries(currentLead.custom_data).map(([key, value], index) => (
+                              {Object.entries(currentLead?.custom_data).map(([key, value], index) => (
                                 <Tooltip key={index}>
                                   <TooltipTrigger asChild>
                                     <div className="group relative flex items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
@@ -308,7 +314,7 @@ const IndividualLeadPage: React.FC = () => {
 
               <div className="mt-6 flex items-center space-x-4">
                 <Badge variant="secondary">
-                  Status: {currentLead.status?.name || "Pending"}
+                  Status: {currentLead?.status?.name || "Pending"}
                 </Badge>
               </div>
             </TabsContent>
@@ -366,7 +372,7 @@ const IndividualLeadPage: React.FC = () => {
                                 </div>
                                 <div className="flex-1 min-w-0">
                                   <span className="block text-sm text-muted-foreground break-all">
-                                    {noteItem.message}
+                                    {noteItem?.message}
                                   </span>
                                 </div>
                               </div>

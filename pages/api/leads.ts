@@ -25,6 +25,7 @@ If you see a full name, split it into first_name and last_name.
 If you see a phone number, clean it to only include digits and +.
 Move any unrecognized fields into custom_data.;
 in this add to format custom data as well by sortning key and values`;
+
 // Normalize any input data to a string
 const normalizeInput = (data: any): string => {
   if (data === null || data === undefined) {
