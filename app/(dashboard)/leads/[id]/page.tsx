@@ -57,7 +57,7 @@ const IndividualLeadPage: React.FC = () => {
   const [updateLead] = useUpdateLeadMutation();
   const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
-  const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId },{
+  const { data: leadsData, isLoading, error } = useGetLeadByIdQuery({ id: leadId }, {
     pollingInterval: 2000, // 2 seconds
   });
   const currentLead = leadsData?.data?.[0];
