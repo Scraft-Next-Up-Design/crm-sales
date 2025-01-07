@@ -60,8 +60,7 @@ export type Source = {
   workspace_id?: string | null; // Can be a string or null
 };
 const LeadSourceManager: React.FC = () => {
-  const { data: workspacesData } = useGetActiveWorkspaceQuery();
-  console.log(workspacesData);
+  const { data: workspacesData, isLoading: workspaceLoading, error: workspaceError } = useGetActiveWorkspaceQuery();
   const [changeWebhookStatus] = useChangeWebhookStatusMutation()
   const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
   const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] = useDeleteWebhookMutation();
@@ -98,9 +97,16 @@ const LeadSourceManager: React.FC = () => {
   };
 
   const openCreateDialog = () => {
+    console.log(workspacesData === undefined);
+
+    if (workspacesData === undefined) {
+      toast.error("No workspace selected. Please select a workspace");
+      return; // Prevent dialog from opening
+    }
     resetDialog();
     setDialogMode("create");
   };
+
 
   const openEditDialog = (source: (typeof sources)[number]) => {
     form.reset({
@@ -179,13 +185,13 @@ const LeadSourceManager: React.FC = () => {
     }
     resetDialog();
   };
-  
+
   const handleDelete = async (id: string) => {
     await deleteWebhook({ id });
     resetDialog();
     setSources(sources.filter((source) => source.id !== id));
   };
-  if (!workspacesData?.data?.id) return <div className="flex items-center justify-center min-h-screen">
+  if (workspaceLoading) return <div className="flex items-center justify-center min-h-screen">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>
 
