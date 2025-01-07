@@ -18,7 +18,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Award, DollarSign, Users, TrendingUp } from "lucide-react";
+import { Award, DollarSign, Users, TrendingUp, IndianRupee } from "lucide-react";
 
 // Demo data
 const salesData = [
@@ -59,7 +59,7 @@ const SalesDashboard = () => {
 
   const dashboardStats = [
     {
-      icon: <DollarSign className="text-green-500" />,
+      icon: <IndianRupee className="text-green-500" />,
       title: "Revenue",
       value: "$456,789",
       change: "+12.5%",
