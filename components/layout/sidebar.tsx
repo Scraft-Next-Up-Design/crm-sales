@@ -261,7 +261,7 @@ export function Sidebar({
       } else {
         await router.push(`/dashboard`);
       }
-
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }

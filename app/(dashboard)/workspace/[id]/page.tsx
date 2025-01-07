@@ -744,17 +744,28 @@ export default function WorkspaceSettingsPage() {
                           className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
                         >
                           <div className="flex items-center gap-4 flex-1">
-                            <Badge
-                              className="flex items-center gap-2"
-                              style={{
-                                backgroundColor: status.color,
-                                color: '#fff',
-                                border: '1px solid transparent'
-                              }}
-                            >
-                              <span className="w-2 h-2 rounded-full bg-current" />
-                              {status.name}
-                            </Badge>
+                            <div className="flex items-center gap-2">
+                              <div
+                                className="relative"
+                                style={{ display: 'inline-flex', alignItems: 'center' }}
+                              >
+                                <div
+                                  className="w-3 h-3 rounded-full absolute"
+                                  style={{
+                                    backgroundColor: status.color,
+                                    filter: `blur(4px)`,
+                                    opacity: 0.7,
+                                  }}
+                                />
+                                <div
+                                  className="w-3 h-3 rounded-full relative"
+                                  style={{
+                                    backgroundColor: status.color,
+                                  }}
+                                />
+                              </div>
+                              <span className="text-foreground text-gray-600">{status.name}</span>
+                            </div>
                           </div>
                           <div className="flex items-center gap-4 flex-wrap justify-end">
                             <div className="flex items-center gap-2">

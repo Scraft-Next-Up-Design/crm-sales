@@ -570,43 +570,42 @@ const LeadManagement: React.FC = () => {
                         })}
                         onValueChange={(value) => handleStatusChange(lead.id, value)} // Uncomment and use for status change handler
                       >
-                        <SelectTrigger className="w-[180px] bg-white dark:bg-gray-800">
-                          <SelectValue placeholder="Select status">
-                            {/* {({ value }) => {
-                              const status = JSON.parse(value);
-                              return <Badge style={{ backgroundColor: status.color }}>{status.name}</Badge>
-
-                            }} */}
-                          </SelectValue>
+                        <SelectTrigger
+                          className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
+                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" />
+                            </div>
+                            <span className="text-sm font-medium">Select status</span>
+                          </div>
                         </SelectTrigger>
-                        <SelectContent>
-                          {statusData.data.map((status: any) => (
+
+                        <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                          {statusData.data.map((status: { id: number; name: string; color: string }) => (
                             <SelectItem
                               key={status.id}
                               value={JSON.stringify({ name: status.name, color: status.color })}
-                              className="focus:bg-gray-100 dark:focus:bg-gray-800"
+                              className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
                             >
-                              <Badge
-                                style={{
-                                  backgroundColor: status.color,
-                                  color: '#fff',
-                                  border: '1px solid transparent',
-                                  display: 'flex',
-                                  alignItems: 'center', // Align dot and text
-                                  gap: '4px', // Add spacing between dot and text
-                                }}
-                              >
-                                <span
-                                  style={{
-                                    width: '8px', // Adjust size of the dot
-                                    height: '8px',
-                                    backgroundColor: '#fff', // White dot
-                                    borderRadius: '50%',
-                                    display: 'inline-block',
-                                  }}
-                                ></span>
-                                {status.name}
-                              </Badge>
+                              <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                <div className="relative">
+                                  {/* Glow effect */}
+                                  <div
+                                    className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
+                                    style={{ backgroundColor: status.color }}
+                                  />
+                                  {/* Main dot */}
+                                  <div
+                                    className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
+                                    style={{ backgroundColor: status.color }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                  {status.name}
+                                </span>
+                              </div>
                             </SelectItem>
                           ))}
                         </SelectContent>
