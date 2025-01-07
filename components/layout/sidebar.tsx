@@ -22,6 +22,7 @@ import {
   Contact,
   Bell,
   Trash2,
+  Zap,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect, usePathname } from "next/navigation";
@@ -288,12 +289,11 @@ export function Sidebar({
         )}
       >
         {/* Logo Section */}
-        <div className="flex items-center justify-center py-4">
-          <img
-            src={logoSrc}
-            alt={logoAlt}
-            className="h-12 w-auto max-w-48 object-contain"
-          />
+        <div className="flex items-center justify-center py-4 bg-inherit text-2xl tracking-wide">
+          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+            <Zap className="h-6 w-6 text-primary" />
+            <span className="text-xl font-bold">SCRAFT PRE CRM</span>
+          </Link>
         </div>
 
         {/* Workspace Selector */}

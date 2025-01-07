@@ -60,13 +60,13 @@ const SalesDashboard = () => {
   const dashboardStats = [
     {
       icon: <DollarSign className="text-green-500" />,
-      title: "Total Revenue",
+      title: "Revenue",
       value: "$456,789",
       change: "+12.5%",
     },
     {
       icon: <Users className="text-blue-500" />,
-      title: "New Clients",
+      title: "New Leads",
       value: "42",
       change: "+8.3%",
     },
@@ -102,11 +102,10 @@ const SalesDashboard = () => {
                   {stat.value}
                 </p>
                 <p
-                  className={`text-xs ${
-                    stat.change.startsWith("+")
-                      ? "text-green-600"
-                      : "text-red-600"
-                  }`}
+                  className={`text-xs ${stat.change.startsWith("+")
+                    ? "text-green-600"
+                    : "text-red-600"
+                    }`}
                 >
                   {stat.change}
                 </p>
@@ -136,7 +135,7 @@ const SalesDashboard = () => {
       </Card>
 
       {/* Leads Table */}
-      <Card className="w-full">
+      {/* <Card className="w-full">
         <CardHeader className="p-4 sm:p-6">
           <CardTitle className="text-base sm:text-lg">Active Leads</CardTitle>
         </CardHeader>
@@ -160,10 +159,9 @@ const SalesDashboard = () => {
                     <TableCell>
                       <span
                         className={`px-2 py-1 rounded-full text-xs inline-block 
-                          ${
-                            lead.status === "Qualified"
-                              ? "bg-green-100 text-green-800"
-                              : lead.status === "Negotiation"
+                          ${lead.status === "Qualified"
+                            ? "bg-green-100 text-green-800"
+                            : lead.status === "Negotiation"
                               ? "bg-yellow-100 text-yellow-800"
                               : "bg-blue-100 text-blue-800"
                           }`}
@@ -181,7 +179,7 @@ const SalesDashboard = () => {
             </Table>
           </div>
         </CardContent>
-      </Card>
+      </Card> */}
     </div>
   );
 };
