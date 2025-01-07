@@ -225,7 +225,16 @@ const LeadManagement: React.FC = () => {
 
   // Reset dialog state
   const resetDialog = () => {
-    form.reset();
+    form.reset({
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      company: "",
+      position: "",
+      contact_method: undefined,
+      notes: "",
+    })
     setEditingLead(null);
     setDialogMode(null);
   };
