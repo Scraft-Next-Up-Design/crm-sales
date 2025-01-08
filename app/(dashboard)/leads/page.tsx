@@ -270,8 +270,9 @@ const LeadManagement: React.FC = () => {
 
   // Open edit dialog
   const openEditDialog = (lead: any) => {
+    console.log(lead)
     form.reset({
-      name: "",
+      name:lead.Name,
       email: lead.email,
       phone: lead.phone,
       company: lead.company,
