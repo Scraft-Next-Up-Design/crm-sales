@@ -53,7 +53,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useAddStatusMutation } from "@/lib/store/services/status";
+import { useAddStatusMutation, useGetStatusQuery } from "@/lib/store/services/status";
+
 interface WorkspaceMember {
   id: string;
   email: string;
@@ -67,8 +68,8 @@ interface Status {
   id: string;
   name: string;
   color: string;
-  countInStatistics: boolean;
-  showInWorkspace: boolean;
+  count_statistics: boolean;
+  workspace_show: boolean;
 }
 
 interface WorkspaceSettings {
@@ -86,7 +87,6 @@ interface WorkspaceSettings {
     ipRestriction: boolean;
   };
   members: WorkspaceMember[];
-  statuses: Status[];
 }
 
 // Status Form Component
@@ -180,22 +180,7 @@ export default function WorkspaceSettingsPage() {
         profileImage: "/api/placeholder/32/32",
       },
     ],
-    statuses: [
-      {
-        id: "1",
-        name: "In Progress",
-        color: "#0ea5e9",
-        countInStatistics: true,
-        showInWorkspace: true,
-      },
-      {
-        id: "2",
-        name: "Completed",
-        color: "#22c55e",
-        countInStatistics: true,
-        showInWorkspace: true,
-      },
-    ],
+
   });
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -204,6 +189,7 @@ export default function WorkspaceSettingsPage() {
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
 
   // Status Management States
   const [newStatus, setNewStatus] = useState({
@@ -297,25 +283,27 @@ export default function WorkspaceSettingsPage() {
   const handleUpdateStatus = () => {
     if (!statusToEdit) return;
 
-    const updatedStatuses = settings.statuses.map((status) =>
+    const updatedStatus = statusData?.data.map((status: Status) =>
       status.id === statusToEdit.id ? statusToEdit : status
     );
 
     setSettings({
-      ...settings,
-      statuses: updatedStatuses,
+      ...statusData?.data,
+      updatedStatus,
     });
+    console.log(updatedStatus)
     setStatusToEdit(null);
   };
 
   const confirmDeleteStatus = () => {
     if (statusToDelete) {
-      const updatedStatuses = settings.statuses.filter(
-        (s) => s.id !== statusToDelete.id
+      const updatedStatus = statusData?.data.filter(
+        (s: Status) => s.id !== statusToDelete.id
       );
+
       setSettings({
-        ...settings,
-        statuses: updatedStatuses,
+        ...statusData?.data,
+        updatedStatus,
       });
       setStatusToDelete(null);
     }
@@ -354,7 +342,7 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
-
+  console.log(statusData.data)
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-6 space-y-6">
@@ -738,7 +726,7 @@ export default function WorkspaceSettingsPage() {
                   {/* Status List */}
                   <div className="space-y-4">
                     <div className="grid gap-4">
-                      {settings.statuses.map((status) => (
+                      {statusData?.data?.map((status: Status) => (
                         <div
                           key={status.id}
                           className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
@@ -770,14 +758,14 @@ export default function WorkspaceSettingsPage() {
                           <div className="flex items-center gap-4 flex-wrap justify-end">
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={status.countInStatistics}
+                                checked={status.count_statistics}
                                 disabled
                               />
                               <Label className="text-sm">Count in statistics</Label>
                             </div>
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={status.showInWorkspace}
+                                checked={status.workspace_show}
                                 disabled
                               />
                               <Label className="text-sm">Show in workspace</Label>

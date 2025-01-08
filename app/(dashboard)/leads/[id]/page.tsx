@@ -14,8 +14,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Table,
-  TableBody,
-  TableCell,
   TableHead,
   TableHeader,
   TableRow,
@@ -24,23 +22,15 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Mail,
   Phone,
-  Building,
-  Tag,
   Calendar,
-  MessageSquare,
   Database,
   Loader2,
-  Clipboard,
-  Check,
-  Copy,
-  ChevronRight
 } from "lucide-react";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue,
 } from "@/components/ui/select";
 import { useRouter } from "next/navigation";
 import { useGetLeadByIdQuery, useAddNotesMutation } from "@/lib/store/services/leadsApi";
@@ -132,7 +122,7 @@ const IndividualLeadPage: React.FC = () => {
       </div>
     );
   }
-
+  console.log(notes)
   const handleAddNote = () => {
     if (newNote.trim()) {
       const author = user?.firstName || user?.name || "Unknown";
@@ -317,7 +307,7 @@ const IndividualLeadPage: React.FC = () => {
                                         </div>
                                       </AccordionTrigger>
                                       <AccordionContent className="px-4 pb-4 pt-1">
-                                        <p className="text-[14px] text-gray-800 leading-relaxed bg-orange-200 p-2 rounded-md">
+                                        <p className="text-[14px] text-gray-800 leading-relaxed bg-gray-200 p-2 rounded-md">
                                           {answer as string} {/* Answer displayed */}
                                         </p>
                                       </AccordionContent>
@@ -382,24 +372,19 @@ const IndividualLeadPage: React.FC = () => {
                   </div>
 
                   <div className="grid gap-3">
+                    <div className="grid grid-cols-4 gap-4 bg-primary text-white p-4 rounded-lg">
+                      {/* Table Headers */}
+                      <div className="font-semibold">Author</div>
+                      <div className="font-semibold">Message</div>
+                      <div className="font-semibold">Timestamp</div>
+                      <div className="font-semibold">Status</div>
+                    </div>
                     {notes.map((noteItem, index) => (
                       <Tooltip key={index}>
                         <TooltipTrigger asChild>
-                          <div className="group relative flex items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-4">
-                                <div className="min-w-[120px]">
-                                  <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary">
-                                    Note
-                                  </span>
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                  <span className="block text-sm text-muted-foreground break-all">
-                                    {noteItem?.message}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
+                          <div className="group grid grid-cols-4 gap-4 items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
+                            {/* Author */}
+
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-popover">
@@ -408,6 +393,7 @@ const IndividualLeadPage: React.FC = () => {
                       </Tooltip>
                     ))}
                   </div>
+
                 </CardContent>
               </Card>
             </TabsContent>
@@ -419,3 +405,23 @@ const IndividualLeadPage: React.FC = () => {
 };
 
 export default IndividualLeadPage;
+
+
+
+
+
+// <div className="text-sm text-muted-foreground">
+//                               {noteItem?.author || "Unknown"}
+//                             </div>
+//                             {/* Message */}
+//                             <div className="text-sm text-muted-foreground break-all">
+//                               {noteItem?.message || "No message"}
+//                             </div>
+//                             {/* Timestamp */}
+//                             <div className="text-sm text-muted-foreground">
+//                               {noteItem?.timestamp || "Not available"}
+//                             </div>
+//                             {/* Status */}
+//                             <div className="text-sm text-muted-foreground">
+//                               {noteItem?.status || "Pending"}
+//                             </div>
