@@ -11,19 +11,19 @@ Format Rules:
 1. Extract name parts to first_name and last_name
 2. Clean phone to digits and + only
 3. Email to lowercase
-4. Unknown fields go to custom_data and all unknown fields remove any underscore presenting characters
+4. Unknown fields go to custom_data and all unknown fields remove any underscore presenting characters from custom data 
 5. Output format:
 {
   "name": "",
   "email": "",
   "phone": "",
+  "message": "",
   "custom_data": {}
 }
-
 If you see a full name, split it into first_name and last_name.
 If you see a phone number, clean it to only include digits and +.
-Move any unrecognized fields into custom_data.`;
-
+Move any unrecognized fields into custom_data.;
+in this add to format custom data as well by sortning key and values`;
 // Normalize any input data to a string
 const normalizeInput = (data: any): string => {
   if (data === null || data === undefined) {
