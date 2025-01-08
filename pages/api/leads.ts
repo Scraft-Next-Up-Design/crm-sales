@@ -11,7 +11,12 @@ Format Rules:
 1. Extract name parts to first_name and last_name
 2. Clean phone to digits and + only
 3. Email to lowercase
-4. Unknown fields go to custom_data
+4. For custom_data:
+   - Identify question-answer pairs and format as {"question": "answer"}
+   - Handle form fields as key-value pairs
+   - Clean and normalize keys (lowercase, remove special chars)
+   - Group related fields when possible
+   - Maintain data structure (arrays stay arrays, objects stay objects)
 5. Output format:
 {
   "name": "",

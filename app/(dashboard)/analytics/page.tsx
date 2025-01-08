@@ -47,6 +47,8 @@ interface AnalyticsData {
 }
 
 export default function AnalyticsDashboard() {
+
+  
   // Mock Analytics Data - Replace with actual data fetching
   const analyticsData: AnalyticsData = {
     leads: {
