@@ -5,33 +5,118 @@ import Together from "together-ai";
 // Initialize Together AI client
 const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
 
-const SYSTEM_PROMPT = `You are a JSON formatter. Format the input data into a JSON object. ONLY OUTPUT THE JSON OBJECT, NO OTHER TEXT.
+const SYSTEM_PROMPT = `You are a JSON formatter. Format the input data into a JSON object with special handling for custom data. ONLY OUTPUT THE JSON OBJECT, NO OTHER TEXT.
 
 Format Rules:
 1. Extract name parts to first_name and last_name
 2. Clean phone to digits and + only
 3. Email to lowercase
 4. For custom_data:
-   - Identify question-answer pairs and format as {"question": "answer"}
+   - Convert underscore questions into readable format
    - Handle form fields as key-value pairs
-   - Clean and normalize keys (lowercase, remove special chars)
-   - Group related fields when possible
-   - Maintain data structure (arrays stay arrays, objects stay objects)
+   - Detect and format question-answer pairs
+   - Maintain semantic meaning of fields
+   - Group related questions together
 5. Output format:
 {
   "name": "",
   "email": "",
   "phone": "",
   "message": "",
-  "custom_data": {}
+  "custom_data": {
+    "questions": {
+      // Formatted questions here
+    },
+    // Other custom fields here
+  }
+}`;
+
+function formatQuestionText(text: string): string {
+  // Remove common prefixes
+  text = text.replace(/^(what_is_|what_are_|how_|when_|where_|why_|who_)/, '');
+  
+  // Convert underscores to spaces and capitalize first letter
+  text = text
+    .split('_')
+    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .join(' ');
+  
+  // Remove question mark if present and add it back consistently
+  text = text.replace(/\?$/, '');
+  if (!/[.!]$/.test(text)) {
+    text += '?';
+  }
+  
+  return text;
 }
 
-If you see a full name, split it into first_name and last_name.
-If you see a phone number, clean it to only include digits and +.
-Move any unrecognized fields into custom_data.;
-in this add to format custom data as well by sortning key and values`;
+function processCustomData(data: any): Record<string, any> {
+  const processed: Record<string, any> = {
+    questions: {}
+  };
 
-// Normalize any input data to a string
+  const isQuestionFormat = (key: string): boolean => {
+    return /^(what_|how_|when_|where_|why_|who_|question_)/i.test(key) ||
+           key.includes('_you_') ||
+           key.endsWith('?') ||
+           key.includes('looking_for');
+  };
+
+  const processQuestionAnswer = (key: string, value: any) => {
+    const questionText = formatQuestionText(key);
+    const questionKey = `question_${Object.keys(processed.questions).length}`;
+    
+    processed.questions[questionKey] = {
+      question: questionText,
+      answer: value,
+      original_key: key
+    };
+  };
+
+  const processValue = (key: string, value: any) => {
+    if (Array.isArray(value)) {
+      if (value.length === 2 && typeof value[0] === 'string' && isQuestionFormat(value[0])) {
+        processQuestionAnswer(value[0], value[1]);
+      } else {
+        processed[key] = value;
+      }
+      return;
+    }
+
+    if (value && typeof value === 'object') {
+      processed[key] = processCustomData(value);
+      return;
+    }
+
+    if (isQuestionFormat(key)) {
+      processQuestionAnswer(key, value);
+    } else {
+      const cleanKey = key.toLowerCase().replace(/[^a-z0-9_]/g, '_');
+      processed[cleanKey] = value;
+    }
+  };
+
+  if (Array.isArray(data)) {
+    data.forEach((item, index) => {
+      if (typeof item === 'object' && item.name && item.value) {
+        processValue(item.name, item.value);
+      } else {
+        processValue(`item_${index}`, item);
+      }
+    });
+  } else if (typeof data === 'object') {
+    Object.entries(data).forEach(([key, value]) => {
+      processValue(key, value);
+    });
+  }
+
+  if (Object.keys(processed.questions).length === 0) {
+    delete processed.questions;
+  }
+
+  return processed;
+}
+
 const normalizeInput = (data: any): string => {
   if (data === null || data === undefined) {
     return "";
@@ -47,19 +132,15 @@ const normalizeInput = (data: any): string => {
   }
 };
 
-// Basic validation of lead data
 const isValidLead = (data: any): boolean => {
   if (!data) return false;
 
-  // Check if we have at least a name or phone
-  const hasName =
-    data.first_name || (data.custom_data && data.custom_data.name);
+  const hasName = data.first_name || (data.custom_data && data.custom_data.name);
   const hasPhone = data.phone || (data.custom_data && data.custom_data.phone);
 
   return Boolean(hasName || hasPhone);
 };
 
-// Process data with Together AI
 async function processWithAI(inputData: any) {
   try {
     const normalizedInput = normalizeInput(inputData);
@@ -90,20 +171,25 @@ async function processWithAI(inputData: any) {
       }
     }
 
-    // Find the JSON object in the response
     const match = formattedResponse.match(/\{[\s\S]*\}/);
     if (!match) {
       throw new Error("No JSON found in AI response");
     }
 
-    return JSON.parse(match[0]);
+    const parsedData = JSON.parse(match[0]);
+    
+    // Process custom data after AI formatting
+    if (parsedData.custom_data) {
+      parsedData.custom_data = processCustomData(parsedData.custom_data);
+    }
+
+    return parsedData;
   } catch (error) {
     console.error("AI processing error:", error);
     throw error;
   }
 }
 
-// Fallback processing if AI fails
 function fallbackProcess(data: any) {
   const processed: any = {
     name: "",
@@ -114,10 +200,8 @@ function fallbackProcess(data: any) {
   };
 
   try {
-    // If data is a string, try to parse it as JSON
     const inputData = typeof data === "string" ? JSON.parse(data) : data;
-
-    // Handle array format
+    
     if (Array.isArray(inputData)) {
       inputData.forEach((field) => {
         const value = String(field.value || "").trim();
@@ -134,12 +218,11 @@ function fallbackProcess(data: any) {
         } else if (name.includes("message") || name.includes("comment")) {
           processed.message = value;
         } else {
-          processed.custom_data[name] = value;
+          const customData = processCustomData({ [name]: value });
+          processed.custom_data = { ...processed.custom_data, ...customData };
         }
       });
-    }
-    // Handle object format
-    else if (typeof inputData === "object") {
+    } else if (typeof inputData === "object") {
       Object.entries(inputData).forEach(([key, value]) => {
         const processedValue = String(value || "").trim();
         const processedKey = key.toLowerCase();
@@ -158,7 +241,8 @@ function fallbackProcess(data: any) {
         ) {
           processed.message = processedValue;
         } else {
-          processed.custom_data[processedKey] = processedValue;
+          const customData = processCustomData({ [key]: value });
+          processed.custom_data = { ...processed.custom_data, ...customData };
         }
       });
     }
@@ -166,7 +250,6 @@ function fallbackProcess(data: any) {
     return processed;
   } catch (error) {
     console.error("Fallback processing error:", error);
-    // Return original data in custom_data if all else fails
     return {
       name: "",
       email: "",
@@ -176,7 +259,6 @@ function fallbackProcess(data: any) {
     };
   }
 }
-
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
