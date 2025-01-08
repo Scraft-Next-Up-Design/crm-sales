@@ -31,7 +31,9 @@ import {
   Database,
   Loader2,
   Clipboard,
-  Check
+  Check,
+  Copy,
+  ChevronRight
 } from "lucide-react";
 import {
   Select,
@@ -51,9 +53,17 @@ import { useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
 import { toast } from "sonner";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
+  const [expandedItems, setExpandedItems] = useState<{ [key: number]: boolean }>({});
   const [updateLead] = useUpdateLeadMutation();
   const [addNotes] = useAddNotesMutation();
   const leadId = params?.id as string;
@@ -87,6 +97,7 @@ const IndividualLeadPage: React.FC = () => {
   const handleGoBack = () => {
     router.push("/leads");
   }
+
   // Show loading state
   if (isLoading) {
     return (
@@ -152,6 +163,18 @@ const IndividualLeadPage: React.FC = () => {
       toast.error("Failed to update lead status");
     }
   };
+  const truncate = (text: string, length = 50) => {
+    return text.length > length ? `${text.slice(0, length)}...` : text;
+  };
+
+  // Toggle the expanded state
+  const handleToggle = (index: number) => {
+    setExpandedItems((prev) => ({
+      ...prev,
+      [index]: !prev[index],
+    }));
+  };
+
 
   return (
     <div className="container mx-auto pt-2">
@@ -277,31 +300,31 @@ const IndividualLeadPage: React.FC = () => {
                         </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <ScrollArea className="h-[400px] pr-4">
-                            <div className="grid gap-3">
-                              {Object.entries(currentLead?.custom_data).map(([key, value], index) => (
-                                <Tooltip key={index}>
-                                  <TooltipTrigger asChild>
-                                    <div className="group relative flex items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
-                                      <div className="flex-1 min-w-0">
-                                        <div className="flex items-center gap-4">
-                                          <div className="min-w-[120px]">
-                                            <span className="inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-md bg-primary/10 text-primary">
-                                              {key}
-                                            </span>
-                                          </div>
-                                          <div className="flex-1 min-w-0">
-                                            <span className="block text-sm text-muted-foreground break-all">
-                                              {value as string}
-                                            </span>
-                                          </div>
+
+                            <div className="w-full max-w-2xl mx-auto space-y-2 ">
+                              {Object.entries(currentLead?.custom_data || {}).map(([question, answer], index) => (
+                                <Card key={index} className="border-0 shadow-none bg-accent/40 hover:bg-accent/60 transition-colors border-l-2 border-gray-500">
+                                  <Accordion type="single" collapsible className="w-full">
+                                    <AccordionItem value={`item-${index}`} className="border-0">
+                                      <AccordionTrigger
+                                        className="py-4 px-4 hover:no-underline"
+                                        onClick={() => handleToggle(index)}
+                                      >
+                                        <div className="flex text-left items-start justify-start w-full ">
+                                          <span className="text-auto  text-left font-medium  whitespace-normal break-words">
+                                            {expandedItems[index] ? question : truncate(question)} {/* Toggle full/truncated text */}
+                                          </span>
                                         </div>
-                                      </div>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="bg-popover">
-                                    <p className="text-popover-foreground">Click to copy</p>
-                                  </TooltipContent>
-                                </Tooltip>
+                                      </AccordionTrigger>
+                                      <AccordionContent className="px-4 pb-4 pt-1">
+                                        <p className="text-[14px] text-gray-800 leading-relaxed bg-orange-200 p-2 rounded-md">
+                                          {answer as string} {/* Answer displayed */}
+                                        </p>
+                                      </AccordionContent>
+
+                                    </AccordionItem>
+                                  </Accordion>
+                                </Card>
                               ))}
                             </div>
                           </ScrollArea>
