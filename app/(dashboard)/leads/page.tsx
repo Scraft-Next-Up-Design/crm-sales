@@ -642,7 +642,7 @@ const LeadManagement: React.FC = () => {
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                          {statusData.data.map((status: { name: string; color: string }) => (
+                          {statusData?.data.map((status: { name: string; color: string }) => (
                             <SelectItem
                               key={status.name}
                               value={JSON.stringify({ name: status?.name, color: status?.color })}
@@ -675,7 +675,7 @@ const LeadManagement: React.FC = () => {
 
                     <TableCell className="border-none">
                       <Select
-                        value={lead.assigne || "Pending"}
+                        value={lead?.assigne || "Pending"}
                         onValueChange={(value) => handleAssignChange(lead.id, value)} // Uncomment and use for status change handler
                       >
                         <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">

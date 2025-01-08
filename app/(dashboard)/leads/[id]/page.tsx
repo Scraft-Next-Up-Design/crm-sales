@@ -24,7 +24,7 @@ import {
   Phone,
   Calendar,
   Database,
-  Loader2,
+  Loader2
 } from "lucide-react";
 import {
   Select,
@@ -43,12 +43,16 @@ import { useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
 import { toast } from "sonner";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
+import { ImWhatsapp } from "react-icons/im";
+
 import {
   Accordion,
   AccordionContent,
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { extractUserNameAndTimestamp } from "@/utils/message";
+import { Player } from "@lottiefiles/react-lottie-player";
 
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
@@ -126,7 +130,8 @@ const IndividualLeadPage: React.FC = () => {
   const handleAddNote = () => {
     if (newNote.trim()) {
       const author = user?.firstName || user?.name || "Unknown";
-      const newNoteText = `${newNote} (added by ${author})`;
+      const timestamp = new Date().toLocaleString(); // Or use .toISOString() for a standard format
+      const newNoteText = `${newNote} (added by ${author} at ${timestamp})`;
       const newNoteObj = { message: newNoteText };
       const updatedNotes = [...notes, newNoteObj];
 
@@ -134,6 +139,7 @@ const IndividualLeadPage: React.FC = () => {
       setNewNote("");
       addNotes({ id: leadId, Note: updatedNotes });
     }
+
   };
 
   const handleStatusChange = async (id: number, value: string) => {
@@ -144,11 +150,6 @@ const IndividualLeadPage: React.FC = () => {
     try {
       updateLead({ id, leads: { name, color } });
       toast.success(`Lead status updated to ${name}`);
-      // setCurrentLead((prev: typeof currentLead) => ({
-      //   id: prev.id,
-      //   ...prev,
-      //   status: { name, color },
-      // }));
     } catch (error) {
       toast.error("Failed to update lead status");
     }
@@ -164,18 +165,40 @@ const IndividualLeadPage: React.FC = () => {
       [index]: !prev[index],
     }));
   };
-
-
+  const { userName, timestamp } = extractUserNameAndTimestamp(notes.map(note => note.message).join(' '));
+  const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
     <div className="container mx-auto pt-2">
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
-          <div>
+          <div className="flex items-center gap-4">
             <CardTitle>{currentLead?.name}</CardTitle>
             <CardDescription className="my-4">
               <Badge>{currentLead?.lead_source_id}</Badge>
             </CardDescription>
+            <button className="" onClick={() => { window.open(`tel:${currentLead?.phone}`, "_blank"); }}>
+              <Player
+                autoplay
+                loop
+                src="https://res.cloudinary.com/dyiso4ohk/raw/upload/v1736332984/Call_o3ga1m.json"
+                className="fixed-player"
+                style={{
+                  width: '60px',
+                }}
+              />
+            </button>
+            <button className="p-2 rounded-full hover:bg-gray-100" onClick={() => { window.open(`https://wa.me/${sanitizedPhone}`, "_blank"); }}>
+              <Player
+                autoplay
+                loop
+                src="https://res.cloudinary.com/dyiso4ohk/raw/upload/v1736331912/Whatsapp_vemsbg.json"
+                className="fixed-player"
+                style={{
+                  width: '60px',
+                }}
+              /></button>
           </div>
+
           <div className="flex space-x-2">
             <Button variant="outline" onClick={handleGoBack}>
               Back to Leads
@@ -293,7 +316,7 @@ const IndividualLeadPage: React.FC = () => {
 
                             <div className="w-full max-w-2xl mx-auto space-y-2 ">
                               {Object.entries(currentLead?.custom_data || {}).map(([question, answer], index) => (
-                                <Card key={index} className="border-0 shadow-none bg-accent/40 hover:bg-accent/60 transition-colors border-l-2 border-gray-500">
+                                <Card key={index} className="border-0 shadow-none bg-accent/40 hover:bg-accent/60 transition-colors">
                                   <Accordion type="single" collapsible className="w-full">
                                     <AccordionItem value={`item-${index}`} className="border-0">
                                       <AccordionTrigger
@@ -307,7 +330,7 @@ const IndividualLeadPage: React.FC = () => {
                                         </div>
                                       </AccordionTrigger>
                                       <AccordionContent className="px-4 pb-4 pt-1">
-                                        <p className="text-[14px] text-gray-800 leading-relaxed bg-gray-200 p-2 rounded-md">
+                                        <p className="text-[14px] text-gray-800 leading-relaxed bg-white p-2 rounded-md shadow-sm">
                                           {answer as string} {/* Answer displayed */}
                                         </p>
                                       </AccordionContent>
@@ -372,19 +395,27 @@ const IndividualLeadPage: React.FC = () => {
                   </div>
 
                   <div className="grid gap-3">
-                    <div className="grid grid-cols-4 gap-4 bg-primary text-white p-4 rounded-lg">
-                      {/* Table Headers */}
-                      <div className="font-semibold">Author</div>
-                      <div className="font-semibold">Message</div>
-                      <div className="font-semibold">Timestamp</div>
-                      <div className="font-semibold">Status</div>
+                    {/* Header */}
+                    <div className="grid grid-cols-12 gap-2 bg-primary text-white p-4 rounded-lg">
+                      <div className="col-span-4 font-semibold">Author</div>
+                      <div className="col-span-4 font-semibold pl-2">Message</div>
+                      <div className="col-span-4 font-semibold text-right">Timestamp</div>
                     </div>
+
+                    {/* Notes */}
                     {notes.map((noteItem, index) => (
                       <Tooltip key={index}>
                         <TooltipTrigger asChild>
-                          <div className="group grid grid-cols-4 gap-4 items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
-                            {/* Author */}
-
+                          <div className="group grid grid-cols-12 gap-2 items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
+                            <div className="col-span-4 text-sm text-muted-foreground">
+                              {userName || "Unknown"}
+                            </div>
+                            <div className="col-span-4 text-sm text-muted-foreground break-all pl-2">
+                              {noteItem?.message.replace(/\(.*?\)/g, '').trim()}
+                            </div>
+                            <div className="col-span-4 text-sm text-muted-foreground text-right">
+                              {timestamp || "Not available"}
+                            </div>
                           </div>
                         </TooltipTrigger>
                         <TooltipContent side="top" className="bg-popover">
@@ -410,18 +441,3 @@ export default IndividualLeadPage;
 
 
 
-// <div className="text-sm text-muted-foreground">
-//                               {noteItem?.author || "Unknown"}
-//                             </div>
-//                             {/* Message */}
-//                             <div className="text-sm text-muted-foreground break-all">
-//                               {noteItem?.message || "No message"}
-//                             </div>
-//                             {/* Timestamp */}
-//                             <div className="text-sm text-muted-foreground">
-//                               {noteItem?.timestamp || "Not available"}
-//                             </div>
-//                             {/* Status */}
-//                             <div className="text-sm text-muted-foreground">
-//                               {noteItem?.status || "Pending"}
-//                             </div>
