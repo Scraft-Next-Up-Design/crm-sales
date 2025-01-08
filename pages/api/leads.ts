@@ -11,7 +11,7 @@ Format Rules:
 1. Extract name parts to first_name and last_name
 2. Clean phone to digits and + only
 3. Email to lowercase
-4. Unknown fields go to custom_data
+4. Unknown fields go to custom_data and all unknown fields remove any underscore presenting characters
 5. Output format:
 {
   "name": "",
