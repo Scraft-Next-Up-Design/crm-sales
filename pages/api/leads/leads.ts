@@ -99,7 +99,6 @@ export default async function handler(
               .status(400)
               .json({ error: "Update data is required in 'text_area' field" });
           }
-
           // Authenticate the user using Supabase
           const {
             data: { user },
