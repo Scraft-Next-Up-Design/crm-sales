@@ -48,13 +48,16 @@ import {
   Bell,
   Tag,
   Edit2,
-  Plus
+  Plus,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useAddStatusMutation, useGetStatusQuery } from "@/lib/store/services/status";
-
+import { useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
+import { toast } from "sonner";
+import { useEffect } from "react";
 interface WorkspaceMember {
   id: string;
   email: string;
@@ -75,7 +78,7 @@ interface Status {
 interface WorkspaceSettings {
   name: string;
   industry: string;
-  size: string;
+  company_size: string;
   timezone: string;
   notifications: {
     email: boolean;
@@ -146,42 +149,9 @@ const StatusForm = ({ status, onSubmit }: any) => (
 );
 
 export default function WorkspaceSettingsPage() {
+  const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
   const [addStatus] = useAddStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
-  const [settings, setSettings] = useState<WorkspaceSettings>({
-    name: "Acme Corporation",
-    industry: "Technology",
-    size: "51-200",
-    timezone: "America/New_York",
-    notifications: {
-      email: true,
-      sms: false,
-      inApp: true,
-    },
-    security: {
-      twoFactor: true,
-      ipRestriction: false,
-    },
-    members: [
-      {
-        id: "1",
-        email: "john@acme.com",
-        role: "admin",
-        status: "active",
-        name: "John Doe",
-        profileImage: "/api/placeholder/32/32",
-      },
-      {
-        id: "2",
-        email: "sarah@acme.com",
-        role: "member",
-        status: "active",
-        name: "Sarah Smith",
-        profileImage: "/api/placeholder/32/32",
-      },
-    ],
-
-  });
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
   const [newInviteEmail, setNewInviteEmail] = useState("");
@@ -190,6 +160,25 @@ export default function WorkspaceSettingsPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
+  const { data: workspaceData, isLoading: isLoadingWorkspace } = useGetWorkspacesByIdQuery(workspaceId);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
+  const [settings, setSettings] = useState<WorkspaceSettings>({
+    name: "",
+    industry: "",
+    company_size: "",
+    timezone: "",
+    notifications: {
+      email: false,
+      sms: false,
+      inApp: false,
+    },
+    security: {
+      twoFactor: false,
+      ipRestriction: false,
+    },
+    members: []
+  });
 
   // Status Management States
   const [newStatus, setNewStatus] = useState({
@@ -256,7 +245,6 @@ export default function WorkspaceSettingsPage() {
       fileInputRef.current.value = "";
     }
   };
-
   // Status Management Functions
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
@@ -309,17 +297,35 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  useEffect(() => {
+    if (workspaceData?.data) {
+      setSettings(workspaceData.data);
+    }
+  }, [workspaceData]);
+
+
+  const handleEditClick = () => {
+    setIsEditMode(true);
+    setTempSettings({ ...settings }); // Store current settings for cancellation
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditMode(false);
+    setSettings(tempSettings!); // Restore original settings
+  };
   const handleSave = async () => {
-    setIsSaving(true);
     try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Settings saved:", settings);
+      setIsSaving(true);
+      await updateWorkspace({ id: workspaceId, data: settings });
+      setIsEditMode(false);
+      setTempSettings(settings);
+      toast.success("Settings saved successfully");
+    } catch (error) {
+      toast.error("Failed to save settings");
     } finally {
       setIsSaving(false);
     }
   };
-
   const TabButton = ({
     id,
     icon: Icon,
@@ -342,12 +348,38 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
+  if (isLoadingWorkspace) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
+  if (!workspaceData?.data) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <p>No workspace data available</p>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
           <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
+          {!isEditMode ? (
+            <Button
+              variant="outline"
+              size="sm"
+              style={{ marginLeft: "auto" }}
+              onClick={handleEditClick}
+              className="ml-2 text-red-600 border-red-600 hover:bg-red-600 hover:text-white dark:text-red-400 dark:border-red-400 dark:hover:bg-red-600 dark:hover:text-white focus:ring-2 focus:ring-red-600"
+            >
+              <Edit2 className="mr-2 h-4 w-4" />
+              Edit
+            </Button>
 
+          ) : null}
           {/* Responsive Tab Navigation */}
           <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
             <TabButton id="general" icon={Building} label="General" />
@@ -367,25 +399,29 @@ export default function WorkspaceSettingsPage() {
                 <CardDescription>
                   Manage your workspace core details
                 </CardDescription>
+
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4">
                   <div className="space-y-2">
                     <Label>Workspace Name</Label>
                     <Input
-                      value={settings.name}
+                      value={settings?.name}
                       onChange={(e) =>
                         setSettings({ ...settings, name: e.target.value })
                       }
+                      disabled={!isEditMode}
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label>Industry</Label>
                     <Select
-                      value={settings.industry}
+                      disabled={!isEditMode}
+                      value={settings?.industry}
                       onValueChange={(value) =>
                         setSettings({ ...settings, industry: value })
+
                       }
                     >
                       <SelectTrigger>
@@ -403,9 +439,10 @@ export default function WorkspaceSettingsPage() {
                   <div className="space-y-2">
                     <Label>Company Size</Label>
                     <Select
-                      value={settings.size}
+                      disabled={!isEditMode}
+                      value={settings?.company_size}
                       onValueChange={(value) =>
-                        setSettings({ ...settings, size: value })
+                        setSettings({ ...settings, company_size: value })
                       }
                     >
                       <SelectTrigger>
@@ -423,7 +460,8 @@ export default function WorkspaceSettingsPage() {
                   <div className="space-y-2">
                     <Label>Timezone</Label>
                     <Select
-                      value={settings.timezone}
+                      disabled={!isEditMode}
+                      value={settings?.timezone}
                       onValueChange={(value) =>
                         setSettings({ ...settings, timezone: value })
                       }
@@ -499,7 +537,7 @@ export default function WorkspaceSettingsPage() {
                 <div className="space-y-4">
                   <Label>Current Members & Pending Invites</Label>
                   <div className="space-y-2">
-                    {settings.members.map((member) => (
+                    {settings?.members.map((member) => (
                       <div
                         key={member.id}
                         className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary rounded-lg gap-4"
@@ -521,7 +559,7 @@ export default function WorkspaceSettingsPage() {
                               className="hidden"
                               ref={fileInputRef}
                               onChange={(e) =>
-                                handleProfileImageUpload(member.id, e)
+                                handleProfileImageUpload(member?.id, e)
                               }
                             />
                             <Button
@@ -535,13 +573,13 @@ export default function WorkspaceSettingsPage() {
                           </div>
                           <div>
                             <p className="font-medium">
-                              {member.name || member.email}
+                              {member?.name || member?.email}
                             </p>
                             <p className="text-sm text-muted-foreground">
-                              {member.email}
+                              {member?.email}
                             </p>
                             <p className="text-sm text-muted-foreground capitalize">
-                              {member.role} • {member.status}
+                              {member?.role} • {member?.status}
                             </p>
                           </div>
                         </div>
@@ -587,12 +625,12 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.notifications.email}
+                      checked={settings?.notifications.email}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
                           notifications: {
-                            ...settings.notifications,
+                            ...settings?.notifications,
                             email: checked,
                           },
                         })
@@ -607,12 +645,12 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.notifications.sms}
+                      checked={settings?.notifications.sms}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
                           notifications: {
-                            ...settings.notifications,
+                            ...settings?.notifications,
                             sms: checked,
                           },
                         })
@@ -627,12 +665,12 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.notifications.inApp}
+                      checked={settings?.notifications.inApp}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
                           notifications: {
-                            ...settings.notifications,
+                            ...settings?.notifications,
                             inApp: checked,
                           },
                         })
@@ -663,7 +701,7 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.security.twoFactor}
+                      checked={settings?.security?.twoFactor}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
@@ -683,12 +721,12 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings.security.ipRestriction}
+                      checked={settings?.security.ipRestriction}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
                           security: {
-                            ...settings.security,
+                            ...settings?.security,
                             ipRestriction: checked,
                           },
                         })
@@ -739,7 +777,7 @@ export default function WorkspaceSettingsPage() {
                                 <div
                                   className="w-3 h-3 rounded-full absolute"
                                   style={{
-                                    backgroundColor: status.color,
+                                    backgroundColor: status?.color,
                                     filter: `blur(4px)`,
                                     opacity: 0.7,
                                   }}
@@ -747,7 +785,7 @@ export default function WorkspaceSettingsPage() {
                                 <div
                                   className="w-3 h-3 rounded-full relative"
                                   style={{
-                                    backgroundColor: status.color,
+                                    backgroundColor: status?.color,
                                   }}
                                 />
                               </div>
@@ -757,14 +795,14 @@ export default function WorkspaceSettingsPage() {
                           <div className="flex items-center gap-4 flex-wrap justify-end">
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={status.count_statistics}
+                                checked={status?.count_statistics}
                                 disabled
                               />
                               <Label className="text-sm">Count in statistics</Label>
                             </div>
                             <div className="flex items-center gap-2">
                               <Checkbox
-                                checked={status.workspace_show}
+                                checked={status?.workspace_show}
                                 disabled
                               />
                               <Label className="text-sm">Show in workspace</Label>
@@ -798,18 +836,34 @@ export default function WorkspaceSettingsPage() {
         </div>
 
         {/* Save Button */}
-        {activeTab !== "status" && (
-          <div className="flex justify-end pt-6">
+        {activeTab !== "status" && isEditMode && (
+          <div className="flex justify-end gap-4 pt-6">
+            <Button
+              variant="outline"
+              onClick={handleCancelEdit}
+              disabled={isSaving}
+              className="w-full sm:w-auto"
+            >
+              Cancel
+            </Button>
             <Button
               onClick={handleSave}
               disabled={isSaving}
               className="w-full sm:w-auto"
             >
-              {isSaving ? "Saving..." : "Save Changes"}
+              {isSaving ? (
+                <div className="flex items-center">
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Saving...
+                </div>
+              ) : (
+                "Save Changes"
+              )}
             </Button>
           </div>
         )}
       </div>
+
       {/* Delete Member Confirmation Dialog */}
       <AlertDialog
         open={!!memberToDelete}

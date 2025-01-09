@@ -106,6 +106,47 @@ export default async function handler(
             return res.status(500).json({ error: "An error occurred" });
           }
         }
+        case "getWorkspacesById": {
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+          
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+        
+          const { workspaceId } = req.query; // Assuming the workspace ID is passed in the query parameters
+        
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+        
+          try {
+            // Fetch the workspace by ID for the authenticated user
+            const { data, error } = await supabase
+              .from("workspaces")
+              .select("*")
+              .eq("owner_id", user?.id) // Ensure the user is the owner
+              .eq("id", workspaceId) // Filter by workspace ID
+              .single(); // Expect only one workspace
+            if (error) {
+              return res.status(500).json({ error: error.message });
+            }
+            console.log(data);
+
+            if (!data) {
+              return res.status(404).json({ error: "Workspace not found" });
+            }
+        
+            return res
+              .status(200)
+              .json({ message: "Workspace fetched", data });
+          } catch (error) {
+            console.error(error);
+            return res.status(500).json({ error: "An error occurred" });
+          }
+        }
+        
         case "getActiveWorkspace": {
           const {
             data: { user },
@@ -201,47 +242,54 @@ export default async function handler(
       switch (action) {
         case "updateWorkspaceDetails": {
           const { id: workspace_id, data } = body;
-          if (!workspace_id || typeof status === "undefined") {
+          console.log(workspace_id, data);
+          if (!workspace_id || !data || typeof data !== "object") {
             return res.status(400).json({
-              error: "workspace_id, status, and user_id are required",
+              error: "workspace_id and valid data object are required",
             });
           }
-
+        
           try {
             const {
               data: { user },
             } = await supabase.auth.getUser(token);
+        
             if (!user) {
               return res
                 .status(401)
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
-            // Set all statuses to false for workspaces owned by the user
-            const resetStatus = await supabase
+        
+            // Ensure the workspace belongs to the user
+            const workspaceExists = await supabase
               .from("workspaces")
-              .update({ status: false })
-              .eq("owner_id", user.id); // Assuming `owner_id` is the column for workspace ownership
-
-            if (resetStatus.error) {
-              throw new Error(resetStatus.error.message);
-            }
-
-            // Update the specific workspace's status to true
-            const updateStatus = await supabase
-              .from("workspaces")
-              .update({ status: true })
+              .select("id")
               .eq("id", workspace_id)
-              .eq("owner_id", user.id); // Ensure the workspace belongs to the user
-
-            if (updateStatus.error) {
-              throw new Error(updateStatus.error.message);
+              .eq("owner_id", user.id)
+              .single();
+        
+            if (!workspaceExists.data) {
+              return res
+                .status(404)
+                .json({ error: "Workspace not found or access denied" });
             }
-
+        
+            // Update the workspace with the data from the request body
+            const updateWorkspace = await supabase
+              .from("workspaces")
+              .update(data)
+              .eq("id", workspace_id)
+              .eq("owner_id", user.id); // Ensure ownership
+        
+            if (updateWorkspace.error) {
+              throw new Error(updateWorkspace.error.message);
+            }
+        
             return res
               .status(200)
-              .json({ message: "Workspace status updated successfully" });
+              .json({ message: "Workspace updated successfully", data: updateWorkspace.data });
           } catch (error: any) {
-            console.error("Error updating workspace status:", error.message);
+            console.error("Error updating workspace:", error.message);
             return res.status(500).json({ error: "Internal server error" });
           }
         }

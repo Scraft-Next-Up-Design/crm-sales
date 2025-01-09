@@ -25,7 +25,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     // Update an existing workspace
     updateWorkspace: builder.mutation<WorkspaceRequest, WorkspaceResponse>({
       query: (data) => ({
-        url: "?action=updateWorkspace",
+        url: "?action=updateWorkspaceDetails",
         method: "PUT",
         body: data,
       }),
@@ -47,7 +47,13 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
-
+   // Fetch all workspaces
+   getWorkspacesById: builder.query<any, void>({
+    query: (id) => ({
+      url: `?action=getWorkspacesById&workspaceId=${id}`,
+      method: "GET",
+    }),
+  }),
     // Fetch workspaces by owner ID
     getWorkspacesByOwnerId: builder.query<any, { ownerId: string }>({
       query: ({ ownerId }) => ({
@@ -84,4 +90,5 @@ export const {
   useGetWorkspacesQuery,
   useGetWorkspacesByOwnerIdQuery,
   useUpdateWorkspaceStatusMutation,
+  useGetWorkspacesByIdQuery
 } = workspaceApis;

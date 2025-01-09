@@ -43,7 +43,6 @@ import { useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
 import { toast } from "sonner";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
-import { ImWhatsapp } from "react-icons/im";
 
 import {
   Accordion,
