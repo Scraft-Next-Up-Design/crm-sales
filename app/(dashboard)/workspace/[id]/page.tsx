@@ -58,8 +58,11 @@ import { useAddStatusMutation, useGetStatusQuery } from "@/lib/store/services/st
 import { useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
+import MemberManagement from "../inviteMember";
+import { useAddMemberMutation } from "@/lib/store/services/members";
+
 interface WorkspaceMember {
-  id: string;
+  id?: string;
   email: string;
   role: string;
   status: "active" | "pending";
@@ -89,7 +92,6 @@ interface WorkspaceSettings {
     twoFactor: boolean;
     ipRestriction: boolean;
   };
-  members: WorkspaceMember[];
 }
 
 // Status Form Component
@@ -150,14 +152,14 @@ const StatusForm = ({ status, onSubmit }: any) => (
 
 export default function WorkspaceSettingsPage() {
   const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
+  const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
+
   const [addStatus] = useAddStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
-  const [newInviteEmail, setNewInviteEmail] = useState("");
-  const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
   const { data: workspaceData, isLoading: isLoadingWorkspace } = useGetWorkspacesByIdQuery(workspaceId);
@@ -177,7 +179,6 @@ export default function WorkspaceSettingsPage() {
       twoFactor: false,
       ipRestriction: false,
     },
-    members: []
   });
 
   // Status Management States
@@ -190,62 +191,34 @@ export default function WorkspaceSettingsPage() {
   const [statusToDelete, setStatusToDelete] = useState<Status | null>(null);
   const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
   const [isAddingStatus, setIsAddingStatus] = useState(false);
+  const [members, setMembers] = useState<WorkspaceMember[]>([]);
 
-  const handleInviteMember = () => {
-    if (!newInviteEmail) return;
-
-    const newMember: WorkspaceMember = {
-      id: Math.random().toString(36).substr(2, 9),
-      email: newInviteEmail,
-      role: newInviteRole,
-      status: "pending",
-    };
-
-    setSettings({
-      ...settings,
-      members: [...settings.members, newMember],
-    });
-
-    setNewInviteEmail("");
-    setNewInviteRole("member");
+  // Member management handlers
+  const handleMemberAdd = async (newMember: WorkspaceMember) => {
+    try {
+      await addMember({ workspaceId, data: newMember });
+      setMembers([...members, newMember]);
+    } catch (error) {
+    }
   };
 
-  const handleDeleteMember = (member: WorkspaceMember) => {
-    setMemberToDelete(member);
+  const handleMemberDelete = (memberId: string) => {
+    setMembers(members.filter(member => member.id !== memberId));
   };
 
-  const confirmDeleteMember = () => {
+  const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
+    setMembers(members.map(member =>
+      member.id === updatedMember.id ? updatedMember : member
+    ));
+  };
+
+  const confirmDeleteMember = async () => {
     if (memberToDelete) {
-      setSettings({
-        ...settings,
-        members: settings.members.filter((m) => m.id !== memberToDelete.id),
-      });
+      // await deleteMember({ workspaceId, memberId: memberToDelete.id });
       setMemberToDelete(null);
     }
   };
 
-  const handleProfileImageUpload = async (
-    memberId: string,
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
-
-    // In a real app, you would upload to your server here
-    const imageUrl = "/api/placeholder/32/32";
-
-    setSettings({
-      ...settings,
-      members: settings.members.map((member) =>
-        member.id === memberId ? { ...member, profileImage: imageUrl } : member
-      ),
-    });
-
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-  // Status Management Functions
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
     const status: any = {
@@ -366,8 +339,7 @@ export default function WorkspaceSettingsPage() {
     <div className="min-h-screen bg-background">
       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
-          <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
-          {!isEditMode ? (
+          {activeTab === "general" && !isEditMode ? (
             <Button
               variant="outline"
               size="sm"
@@ -378,8 +350,10 @@ export default function WorkspaceSettingsPage() {
               <Edit2 className="mr-2 h-4 w-4" />
               Edit
             </Button>
-
           ) : null}
+          <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
+
+
           {/* Responsive Tab Navigation */}
           <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
             <TabButton id="general" icon={Building} label="General" />
@@ -492,120 +466,13 @@ export default function WorkspaceSettingsPage() {
 
           {/* Members Management */}
           {activeTab === "members" && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Members & Invitations</CardTitle>
-                <CardDescription>
-                  Manage workspace members and send invitations
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                {/* Invite Form */}
-                <div className="space-y-4">
-                  <Label>Invite New Member</Label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <Input
-                      type="email"
-                      placeholder="Email address"
-                      value={newInviteEmail}
-                      onChange={(e) => setNewInviteEmail(e.target.value)}
-                      className="flex-1"
-                    />
-                    <Select
-                      value={newInviteRole}
-                      onValueChange={setNewInviteRole}
-                    >
-                      <SelectTrigger className="w-full sm:w-[140px]">
-                        <SelectValue placeholder="Role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="admin">Admin</SelectItem>
-                        <SelectItem value="member">Member</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Button
-                      onClick={handleInviteMember}
-                      className="w-full sm:w-auto"
-                    >
-                      <Mail className="mr-2 h-4 w-4" />
-                      Invite
-                    </Button>
-                  </div>
-                </div>
-
-                {/* Members List */}
-                <div className="space-y-4">
-                  <Label>Current Members & Pending Invites</Label>
-                  <div className="space-y-2">
-                    {settings?.members.map((member) => (
-                      <div
-                        key={member.id}
-                        className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary rounded-lg gap-4"
-                      >
-                        <div className="flex items-center space-x-4">
-                          <div className="relative">
-                            {member.profileImage ? (
-                              <img
-                                src={member.profileImage}
-                                alt={member.name || member.email}
-                                className="w-10 h-10 rounded-full object-cover"
-                              />
-                            ) : (
-                              <UserCircle className="w-10 h-10" />
-                            )}
-                            <input
-                              type="file"
-                              accept="image/*"
-                              className="hidden"
-                              ref={fileInputRef}
-                              onChange={(e) =>
-                                handleProfileImageUpload(member?.id, e)
-                              }
-                            />
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute -bottom-1 -right-1 w-6 h-6 p-0 rounded-full bg-primary hover:bg-primary/90"
-                              onClick={() => fileInputRef.current?.click()}
-                            >
-                              <Upload className="w-3 h-3 text-white" />
-                            </Button>
-                          </div>
-                          <div>
-                            <p className="font-medium">
-                              {member?.name || member?.email}
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                              {member?.email}
-                            </p>
-                            <p className="text-sm text-muted-foreground capitalize">
-                              {member?.role} • {member?.status}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2 self-end sm:self-center">
-                          {member.status === "pending" && (
-                            <Button variant="outline" size="sm">
-                              Resend
-                            </Button>
-                          )}
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="text-destructive hover:text-destructive/90"
-                            onClick={() => handleDeleteMember(member)}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+            <MemberManagement
+              members={members}
+              onMemberAdd={handleMemberAdd}
+              onMemberDelete={handleMemberDelete}
+              onMemberUpdate={handleMemberUpdate}
+            />
           )}
-
           {/* Notifications Settings */}
           {activeTab === "notifications" && (
             <Card>
@@ -836,7 +703,7 @@ export default function WorkspaceSettingsPage() {
         </div>
 
         {/* Save Button */}
-        {activeTab !== "status" && isEditMode && (
+        {activeTab === "general" && isEditMode && (
           <div className="flex justify-end gap-4 pt-6">
             <Button
               variant="outline"

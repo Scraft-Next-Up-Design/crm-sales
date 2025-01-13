@@ -7,6 +7,7 @@ import { webhookApi } from "./base/webhooks";
 import { workspaceApi } from "./base/workspace";
 import { leadsApi } from "./base/leadsapi";
 import { statusApi } from "./base/status";
+import { membersApi } from "./base/members";
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
@@ -14,6 +15,7 @@ export const store = configureStore({
     [workspaceApi.reducerPath]: workspaceApi.reducer,
     [leadsApi.reducerPath]: leadsApi.reducer,
     [statusApi.reducerPath]: statusApi.reducer,
+    [membersApi.reducerPath]: membersApi.reducer,
     auth: authReducer,
     // leads: leadsReducer,
   },
@@ -23,8 +25,8 @@ export const store = configureStore({
       .concat(webhookApi.middleware)
       .concat(workspaceApi.middleware)
       .concat(leadsApi.middleware)
-      .concat(statusApi.middleware),
-
+      .concat(statusApi.middleware)
+      .concat(membersApi.middleware),
 });
 
 setupListeners(store.dispatch);
