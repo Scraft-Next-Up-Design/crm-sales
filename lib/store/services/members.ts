@@ -69,7 +69,7 @@ export const memberApi = membersApi.injectEndpoints({
   endpoints: (builder) => ({
     getMembers: builder.query<MembersResponse, string>({
       query: (workspaceId) => ({
-        url: `workspace/${workspaceId}/members`,
+        url: `?action=getWorkspaceMembers&workspaceId=${workspaceId}`,
         method: "GET",
       }),
     }),

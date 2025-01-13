@@ -34,7 +34,8 @@ import {
   Upload,
   UserCircle,
 } from "lucide-react";
-
+import { useGetMembersQuery } from "@/lib/store/services/members";
+import { useParams } from "next/navigation";
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -43,7 +44,6 @@ interface WorkspaceMember {
   profileImage?: string;
   name?: string;
 }
-
 interface MemberManagementProps {
   members: WorkspaceMember[];
   onMemberAdd: (member: WorkspaceMember) => void;
@@ -57,6 +57,9 @@ export default function MemberManagement({
   onMemberDelete,
   onMemberUpdate,
 }: MemberManagementProps) {
+  const searchParams = useParams();
+  const { id: workspaceId }: any = searchParams
+  const { data: membersData } = useGetMembersQuery(workspaceId);
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);

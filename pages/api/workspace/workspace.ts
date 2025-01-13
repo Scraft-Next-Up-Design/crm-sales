@@ -58,6 +58,13 @@ export default async function handler(
                 owner_id: user?.id,
               },
             ]);
+            await supabase.from("workspace_members").insert({
+              role: "SuperAdmin",
+              added_by: user?.id,
+              email: user.email,
+              status: "accepted",
+              user_id: user.id,
+            });
 
             if (error) {
               return res.status(500).json({ error: error.message });

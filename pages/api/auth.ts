@@ -85,12 +85,12 @@ export default async function handler(
                   .status(500)
                   .json({ error: "Failed to update workspace membership" });
               }
-              res.redirect("/dashboard");
+              // res.redirect("/dashboard");
               return res
                 .status(200)
                 .json({ message: "Invite accepted successfully" });
             } else {
-              res.redirect("/signup");
+              // res.redirect("/signup");
               return res
                 .status(404)
                 .json({ error: "No user found with the provided email" });
