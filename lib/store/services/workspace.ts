@@ -47,13 +47,13 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
-   // Fetch all workspaces
-   getWorkspacesById: builder.query<any, void>({
-    query: (id) => ({
-      url: `?action=getWorkspacesById&workspaceId=${id}`,
-      method: "GET",
+    // Fetch all workspaces
+    getWorkspacesById: builder.query<any, void>({
+      query: (id) => ({
+        url: `?action=getWorkspacesById&workspaceId=${id}`,
+        method: "GET",
+      }),
     }),
-  }),
     // Fetch workspaces by owner ID
     getWorkspacesByOwnerId: builder.query<any, { ownerId: string }>({
       query: ({ ownerId }) => ({
@@ -64,6 +64,12 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     getActiveWorkspace: builder.query<any, void>({
       query: () => ({
         url: `?action=getActiveWorkspace`,
+        method: "GET",
+      }),
+    }),
+    getRevenueByWorkspace: builder.query<any, void>({
+      query: (id) => ({
+        url: `?action=getLeadsRevenueByWorkspace&workspaceId=${id}`,
         method: "GET",
       }),
     }),
@@ -90,5 +96,6 @@ export const {
   useGetWorkspacesQuery,
   useGetWorkspacesByOwnerIdQuery,
   useUpdateWorkspaceStatusMutation,
-  useGetWorkspacesByIdQuery
+  useGetWorkspacesByIdQuery,
+  useGetRevenueByWorkspaceQuery,
 } = workspaceApis;

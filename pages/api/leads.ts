@@ -241,6 +241,7 @@ export default async function handler(
         color: "#FFA500",
       },
       work_id: req.query.workspaceId,
+      revenue: 0,
     };
 
     // Save to database

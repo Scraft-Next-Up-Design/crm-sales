@@ -177,6 +177,32 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+        case "getLeadsRevenueByWorkspace": {
+          const { workspaceId } = query;
+
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          try {
+            const { data, error } = await supabase.rpc(
+              "calculate_total_revenue",
+              {
+                workspace_id: workspaceId,
+              }
+            );
+
+            if (error) {
+              console.error("Error calculating revenue:", error);
+              return res.status(400).json({ error: error.message });
+            }
+
+            return res.status(200).json({ totalRevenue: data });
+          } catch (error) {
+            console.error("Error:", error);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
         default:
           return res.status(400).json({ error: "Invalid action" });
       }

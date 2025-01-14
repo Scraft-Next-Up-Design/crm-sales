@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   BarChart,
@@ -10,9 +10,9 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { Award, Users, TrendingUp, IndianRupee } from "lucide-react";
+import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
+import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery } from "@/lib/store/services/workspace";
 
-// Demo data
 const salesData = [
   { month: "Jan", sales: 4000 },
   { month: "Feb", sales: 3000 },
@@ -20,30 +20,6 @@ const salesData = [
   { month: "Apr", sales: 4500 },
   { month: "May", sales: 6000 },
   { month: "Jun", sales: 5500 },
-];
-
-const leadsData = [
-  {
-    id: 1,
-    name: "Acme Corp",
-    status: "Qualified",
-    value: "$50,000",
-    owner: "Sarah Johnson",
-  },
-  {
-    id: 2,
-    name: "Tech Innovations",
-    status: "Negotiation",
-    value: "$75,000",
-    owner: "Mike Chen",
-  },
-  {
-    id: 3,
-    name: "Global Solutions",
-    status: "Proposal",
-    value: "$35,000",
-    owner: "Emma Rodriguez",
-  },
 ];
 
 interface Workspace {
@@ -54,13 +30,27 @@ interface Workspace {
   status?: boolean;
   type?: string;
 }
+
 const SalesDashboard = () => {
+  const { data: activeWorkspace, isLoading: isWorkspaceLoading } = useGetActiveWorkspaceQuery();
+  const { data: workspaceRevenue, isLoading: isRevenueLoading } = useGetRevenueByWorkspaceQuery(
+    activeWorkspace?.data?.id,
+    {
+      skip: !activeWorkspace?.data?.id
+      ,
+    }
+  );
+  console.log(activeWorkspace)
+
+  const isLoading = isWorkspaceLoading || isRevenueLoading;
+  console.log(workspaceRevenue)
   const dashboardStats = [
     {
       icon: <IndianRupee className="text-green-500" />,
       title: "Revenue",
-      value: "456,789",
-      change: "+12.5%",
+      value: workspaceRevenue?.totalRevenue
+        || "0",
+      change: workspaceRevenue?.change || "+0%",
     },
     {
       icon: <Users className="text-blue-500" />,
@@ -81,6 +71,14 @@ const SalesDashboard = () => {
       change: "5 Deals",
     },
   ];
+
+  if (isLoading) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="w-full p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
@@ -131,53 +129,6 @@ const SalesDashboard = () => {
           </div>
         </CardContent>
       </Card>
-
-      {/* Leads Table */}
-      {/* <Card className="w-full">
-        <CardHeader className="p-4 sm:p-6">
-          <CardTitle className="text-base sm:text-lg">Active Leads</CardTitle>
-        </CardHeader>
-        <CardContent className="p-2 sm:p-6">
-          <div className="overflow-x-auto -mx-2 sm:mx-0">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="w-1/4 text-xs sm:text-sm">Company</TableHead>
-                  <TableHead className="w-1/4 text-xs sm:text-sm">Status</TableHead>
-                  <TableHead className="w-1/4 text-xs sm:text-sm">Value</TableHead>
-                  <TableHead className="w-1/4 text-xs sm:text-sm">Owner</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leadsData.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="truncate text-xs sm:text-sm">
-                      {lead.name}
-                    </TableCell>
-                    <TableCell>
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs inline-block 
-                          ${lead.status === "Qualified"
-                            ? "bg-green-100 text-green-800"
-                            : lead.status === "Negotiation"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-blue-100 text-blue-800"
-                          }`}
-                      >
-                        {lead.status}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-xs sm:text-sm">{lead.value}</TableCell>
-                    <TableCell className="truncate text-xs sm:text-sm">
-                      {lead.owner}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </CardContent>
-      </Card> */}
     </div>
   );
 };
