@@ -177,41 +177,9 @@ export default async function handler(
             return res.status(400).json({ error: "Workspace ID is required" });
           }
 
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-
-          if (!user) {
-            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          }
-
-          // Check if user is a member of the workspace
-          const { data: memberCheck } = await supabase
-            .from("workspace_members")
-            .select()
-            .eq("workspace_id", workspaceId)
-            .eq("user_id", user.id)
-            .single();
-
-          if (!memberCheck) {
-            return res
-              .status(403)
-              .json({ error: "Not a member of this workspace" });
-          }
-
           const { data, error } = await supabase
             .from("workspace_members")
-            .select(
-              `
-              *,
-              users:user_id (
-                id,
-                email,
-                full_name,
-                avatar_url
-              )
-            `
-            )
+            .select()
             .eq("workspace_id", workspaceId);
 
           if (error) {
