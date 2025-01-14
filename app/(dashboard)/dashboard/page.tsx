@@ -12,7 +12,6 @@ import {
 } from "recharts";
 import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
 import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery } from "@/lib/store/services/workspace";
-
 const salesData = [
   { month: "Jan", sales: 4000 },
   { month: "Feb", sales: 3000 },
@@ -40,15 +39,15 @@ const SalesDashboard = () => {
       ,
     }
   );
-  console.log(activeWorkspace)
-
   const isLoading = isWorkspaceLoading || isRevenueLoading;
   console.log(workspaceRevenue)
+  const updatedRevenue = workspaceRevenue?.totalRevenue.toFixed(2);
+
   const dashboardStats = [
     {
       icon: <IndianRupee className="text-green-500" />,
       title: "Revenue",
-      value: workspaceRevenue?.totalRevenue
+      value: updatedRevenue
         || "0",
       change: workspaceRevenue?.change || "+0%",
     },
