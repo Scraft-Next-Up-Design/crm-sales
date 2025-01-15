@@ -12,6 +12,7 @@ import {
 } from "recharts";
 import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
 import { useGetActiveWorkspaceQuery, useGetCountByWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 
 interface Workspace {
   id: string;
@@ -43,12 +44,22 @@ const SalesDashboard = () => {
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
+  const { data: webhooks } = useGetWebhooksBySourceIdQuery(
+    {
+      workspaceId: activeWorkspace?.data?.id,
+      id: ROC?.top_source_id // Using the top source ID from ROC data
+    },
+    {
+      skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
+    }
+  );
   const { arrivedLeadsCount
   } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
   const updatedRevenue = workspaceRevenue?.totalRevenue.toFixed(2);
   const { monthly_stats
   } = ROC || 0;
+
   const dashboardStats = [
     {
       icon: <IndianRupee className="text-green-500" />,
@@ -73,7 +84,7 @@ const SalesDashboard = () => {
     {
       icon: <Award className="text-yellow-500" />,
       title: "Top Performing Sources",
-      value: ROC?.top_source_id,
+      value: webhooks?.name,
       change: "5 Deals",
     },
   ];

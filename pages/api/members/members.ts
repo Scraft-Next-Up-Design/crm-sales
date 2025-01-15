@@ -46,12 +46,20 @@ export default async function handler(
               email: email,
               status: status,
             });
-
-          await sendMail(
-            email,
-            "You have been added to a workspace",
-            `You have been added to a workspace. Please login to your account to view the workspace ${`${process.env.PUBLIC_URL}api/auth?action=acceptInvite&workspaceId=${workspaceId}&email=${email}&status=${status}`}.`
-          );
+            await sendMail(
+              email,
+              "You have been added to a workspace",
+              `
+              <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
+              <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
+                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+                  Accept Invite
+                </button>
+              </form>
+              `
+            );
+            
+            
 
           if (error) {
             return res.status(400).json({ error: error.message });

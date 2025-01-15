@@ -103,7 +103,46 @@ export default async function handler(
           }
           return res.status(200).json({ data });
         }
-
+        case "getWebhooksBySourceId": {
+          const { sourceId, workspaceId } = query;
+        
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+        
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+        
+          if (!sourceId) {
+            return res.status(400).json({ error: "Source ID is required" });
+          }
+        
+          const webhookUrl = `${
+            process.env.NEXT_PUBLIC_BASE_URL
+          }/leads?action=getLeads&sourceId=${sourceId}&workspaceId=${workspaceId}`;
+          console.log(webhookUrl);
+        
+          // Query the webhooks table for matching webhook
+          const { data, error } = await supabase
+            .from("webhooks")
+            .select("id, name")
+            .eq("user_id", user.id)
+            .eq("webhook_url", webhookUrl);
+        
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+        console.log(data);
+          // If a matching webhook is found, return its name
+          if (data && data.length > 0) {
+            return res.status(200).json({ name: data[0].name });
+          }
+        
+          // If no webhook matches, return a suitable response
+          return res.status(404).json({ error: "No matching webhook found" });
+        }
+        
         default:
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
@@ -201,6 +240,7 @@ export default async function handler(
               .json({ error: "Server error", details: err.message });
           }
         }
+
         case "updateWebhook": {
           const { name, description, type } = body;
           const { id: webhook_id } = query;

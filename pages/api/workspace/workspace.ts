@@ -91,27 +91,61 @@ export default async function handler(
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
+
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+
           try {
             // Fetch workspaces owned by the authenticated user
-            const { data, error } = await supabase
+            const { data: ownedWorkspaces, error: ownedError } = await supabase
               .from("workspaces")
               .select("*")
-              .eq("owner_id", user?.id);
-            if (error) {
-              return res.status(500).json({ error: error.message });
+              .eq("owner_id", user.id);
+
+            if (ownedError) {
+              return res.status(500).json({ error: ownedError.message });
             }
 
+            // Fetch workspaces where the user is a member (not necessarily the owner)
+            const { data: memberWorkspaces, error: memberError } =
+              await supabase
+                .from("workspace_members")
+                .select("workspace_id")
+                .eq("email", user.email);
+
+            if (memberError) {
+              return res.status(500).json({ error: memberError.message });
+            }
+            const workspaceIds: any = [
+              ...new Set([
+                ...ownedWorkspaces.map((ws) => ws.id),
+                ...memberWorkspaces.map((ws) => ws.workspace_id),
+              ]),
+            ];
+            // Fetch full workspace details for both owned and member workspaces
+            const { data: allWorkspaces, error: allWorkspacesError } =
+              await supabase
+                .from("workspaces")
+                .select("*")
+                .in("id", workspaceIds);
+
+            if (allWorkspacesError) {
+              return res
+                .status(500)
+                .json({ error: allWorkspacesError.message });
+            }
+
+            // Return combined workspaces
             return res
               .status(200)
-              .json({ message: "Workspaces fetched", data });
+              .json({ message: "Workspaces fetched", data: allWorkspaces });
           } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "An error occurred" });
           }
         }
+
         case "getWorkspacesById": {
           const {
             data: { user },

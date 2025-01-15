@@ -44,6 +44,7 @@ export default async function handler(
 
         case "acceptInvite": {
           try {
+            console.log(req)
             const { email, workspaceId } = query;
 
             if (!email || !workspaceId) {
@@ -85,12 +86,14 @@ export default async function handler(
                   .status(500)
                   .json({ error: "Failed to update workspace membership" });
               }
-              // res.redirect("/dashboard");
+              res.setHeader("Location", "/dashboard");
+              res.status(302).end();
               return res
                 .status(200)
                 .json({ message: "Invite accepted successfully" });
             } else {
-              // res.redirect("/signup");
+              res.setHeader("Location", "/signup");
+              res.status(302).end();
               return res
                 .status(404)
                 .json({ error: "No user found with the provided email" });

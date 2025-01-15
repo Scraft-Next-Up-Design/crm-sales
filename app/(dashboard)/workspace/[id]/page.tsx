@@ -512,7 +512,7 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings?.notifications.sms}
+                      checked={settings?.notifications?.sms}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
@@ -532,7 +532,7 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings?.notifications.inApp}
+                      checked={settings?.notifications?.inApp}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
@@ -573,7 +573,7 @@ export default function WorkspaceSettingsPage() {
                         setSettings({
                           ...settings,
                           security: {
-                            ...settings.security,
+                            ...settings?.security,
                             twoFactor: checked,
                           },
                         })
@@ -588,7 +588,7 @@ export default function WorkspaceSettingsPage() {
                       </p>
                     </div>
                     <Switch
-                      checked={settings?.security.ipRestriction}
+                      checked={settings?.security?.ipRestriction}
                       onCheckedChange={(checked) =>
                         setSettings({
                           ...settings,
