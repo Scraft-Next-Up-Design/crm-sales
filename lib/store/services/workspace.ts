@@ -73,6 +73,18 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    getCountByWorkspace: builder.query<any, void>({
+      query: (id) => ({
+        url: `?action=getArrivedLeadsCount&workspaceId=${id}`,
+        method: "GET",
+      }),
+    }),
+    getROCByWorkspace: builder.query<any, void>({
+      query: (id) => ({
+        url: `?action=getTotalLeadsCount&workspaceId=${id}`,
+        method: "GET",
+      }),
+    }),
     // Update the status of a workspace
     updateWorkspaceStatus: builder.mutation<
       { id: string; status: boolean },
@@ -98,4 +110,6 @@ export const {
   useUpdateWorkspaceStatusMutation,
   useGetWorkspacesByIdQuery,
   useGetRevenueByWorkspaceQuery,
+  useGetCountByWorkspaceQuery,
+  useGetROCByWorkspaceQuery,
 } = workspaceApis;

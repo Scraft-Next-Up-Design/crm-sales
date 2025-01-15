@@ -8,7 +8,6 @@ export default async function handler(
 ) {
   const { method, body, query, headers } = req;
   const action = query.action as string;
-  console.log(method);
   switch (method) {
     case "POST": {
       if (!method) {
@@ -61,9 +60,9 @@ export default async function handler(
             await supabase.from("workspace_members").insert({
               role: "SuperAdmin",
               added_by: user?.id,
-              email: user.email,
+              email: user?.email,
               status: "accepted",
-              user_id: user.id,
+              user_id: user?.id,
             });
 
             if (error) {
@@ -203,6 +202,99 @@ export default async function handler(
             return res.status(500).json({ error: "Internal server error" });
           }
         }
+        case "getArrivedLeadsCount": {
+          const { workspaceId } = query;
+
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          // Convert workspaceId to integer
+          const workspaceIdInt = parseInt(workspaceId as string);
+          console.log(workspaceIdInt);
+          if (isNaN(workspaceIdInt)) {
+            return res
+              .status(400)
+              .json({ error: "Invalid workspace ID format" });
+          }
+
+          try {
+            const { data, error } = await supabase.rpc("count_arrived_leads", {
+              workspace_id: workspaceIdInt,
+            });
+
+            if (error) {
+              console.error("Error counting arrived leads:", error);
+              return res.status(400).json({ error: error.message });
+            }
+
+            return res.status(200).json({ arrivedLeadsCount: data });
+          } catch (error) {
+            console.error("Error:", error);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
+        case "getArrivedLeadsCount": {
+          const { workspaceId } = query;
+
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          // Convert workspaceId to integer
+          const workspaceIdInt = parseInt(workspaceId as string);
+          console.log(workspaceIdInt);
+          if (isNaN(workspaceIdInt)) {
+            return res
+              .status(400)
+              .json({ error: "Invalid workspace ID format" });
+          }
+
+          try {
+            const { data, error } = await supabase.rpc("count_arrived_leads", {
+              workspace_id: workspaceIdInt,
+            });
+
+            if (error) {
+              console.error("Error counting arrived leads:", error);
+              return res.status(400).json({ error: error.message });
+            }
+
+            return res.status(200).json({ arrivedLeadsCount: data });
+          } catch (error) {
+            console.error("Error:", error);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
+        case "getTotalLeadsCount": {
+          const { workspaceId } = query;
+
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          // Convert workspaceId to bigint
+          const workspaceIdBigInt = BigInt(workspaceId as string);
+          console.log(workspaceIdBigInt);
+
+          try {
+            const { data, error } = await supabase.rpc(
+              "calculate_conversion_metrics_with_monthly",
+              {
+                workspace_id: workspaceId, // Pass as string since JS BigInt isn't directly supported
+              }
+            );
+
+            if (error) {
+              console.error("Error calculating conversion metrics:", error);
+              return res.status(400).json({ error: error.message });
+            }
+            return res.status(200).json(data[0]);
+          } catch (error) {
+            console.error("Error:", error);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
         default:
           return res.status(400).json({ error: "Invalid action" });
       }
@@ -273,7 +365,6 @@ export default async function handler(
       switch (action) {
         case "updateWorkspaceDetails": {
           const { id: workspace_id, data } = body;
-          console.log(workspace_id, data);
           if (!workspace_id || !data || typeof data !== "object") {
             return res.status(400).json({
               error: "workspace_id and valid data object are required",

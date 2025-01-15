@@ -11,15 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
-import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery } from "@/lib/store/services/workspace";
-const salesData = [
-  { month: "Jan", sales: 4000 },
-  { month: "Feb", sales: 3000 },
-  { month: "Mar", sales: 5000 },
-  { month: "Apr", sales: 4500 },
-  { month: "May", sales: 6000 },
-  { month: "Jun", sales: 5500 },
-];
+import { useGetActiveWorkspaceQuery, useGetCountByWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery } from "@/lib/store/services/workspace";
 
 interface Workspace {
   id: string;
@@ -31,6 +23,7 @@ interface Workspace {
 }
 
 const SalesDashboard = () => {
+
   const { data: activeWorkspace, isLoading: isWorkspaceLoading } = useGetActiveWorkspaceQuery();
   const { data: workspaceRevenue, isLoading: isRevenueLoading } = useGetRevenueByWorkspaceQuery(
     activeWorkspace?.data?.id,
@@ -39,10 +32,23 @@ const SalesDashboard = () => {
       ,
     }
   );
+  const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
+    activeWorkspace?.data?.id,
+    {
+      skip: !activeWorkspace?.data?.id
+      ,
+    }
+  );
+  const { data: workspaceCount, isLoading: isCountLoading } = useGetCountByWorkspaceQuery(
+    activeWorkspace?.data?.id,
+    { skip: !activeWorkspace?.data?.id }
+  );
+  const { arrivedLeadsCount
+  } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
-  console.log(workspaceRevenue)
   const updatedRevenue = workspaceRevenue?.totalRevenue.toFixed(2);
-
+  const { monthly_stats
+  } = ROC || 0;
   const dashboardStats = [
     {
       icon: <IndianRupee className="text-green-500" />,
@@ -54,24 +60,29 @@ const SalesDashboard = () => {
     {
       icon: <Users className="text-blue-500" />,
       title: "New Leads",
-      value: "42",
+      value: arrivedLeadsCount || 0,
       change: "+8.3%",
     },
     {
       icon: <TrendingUp className="text-purple-500" />,
       title: "Conversion Rate",
-      value: "24.7%",
+      value: `${ROC?.conversion_rate}%`
+        || "0",
       change: "+3.2%",
     },
     {
       icon: <Award className="text-yellow-500" />,
-      title: "Top Performer",
-      value: "Sarah J.",
+      title: "Top Performing Sources",
+      value: ROC?.top_source_id,
       change: "5 Deals",
     },
   ];
+  const salesData = monthly_stats?.map((stat: { month: string; convertedLeads: number }) => ({
+    month: stat.month,
+    sales: stat.convertedLeads,
+  })) || [];
 
-  if (isLoading) {
+  if (isLoading || isCountLoading || isRevenueLoading || isRocLoading || isWorkspaceLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -93,17 +104,17 @@ const SalesDashboard = () => {
                 <p className="text-xs sm:text-sm text-muted-foreground truncate">
                   {stat.title}
                 </p>
-                <p className="text-lg sm:text-xl font-semibold truncate">
+                <p className="text-lg sm:text-xl font-semibold truncate cursor-pointer" onClick={() => console.log("clicked")}>
                   {stat.value}
                 </p>
-                <p
+                {/* <p
                   className={`text-xs ${stat.change.startsWith("+")
                     ? "text-green-600"
                     : "text-red-600"
                     }`}
                 >
                   {stat.change}
-                </p>
+                </p> */}
               </div>
             </CardContent>
           </Card>
