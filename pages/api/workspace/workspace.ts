@@ -57,13 +57,13 @@ export default async function handler(
                 owner_id: user?.id,
               },
             ]);
-            // await supabase.from("workspace_members").insert({
-            //   role: "SuperAdmin",
-            //   added_by: user?.id,
-            //   email: user?.email,
-            //   status: "accepted",
-            //   user_id: user?.id,
-            // });
+            await supabase.from("workspace_members").insert({
+              role: "SuperAdmin",
+              added_by: user?.id,
+              email: user?.email,
+              status: "accepted",
+              user_id: user?.id,
+            });
 
             if (error) {
               return res.status(500).json({ error: error.message });
@@ -118,15 +118,12 @@ export default async function handler(
               return res.status(500).json({ error: memberError.message });
             }
             const workspaceIds: any = [
-              ...new Set(
-                [
-                  ...ownedWorkspaces.map((ws) => ws.id),
-                  ...memberWorkspaces.map((ws) => ws.workspace_id),
-                ].filter((id) => id != null)
-              ), // Filters out null and undefined
-            ];
-
-            console.log(workspaceIds);
+              ...new Set([
+                ...ownedWorkspaces.map((ws) => ws.id),
+                ...memberWorkspaces.map((ws) => ws.workspace_id),
+              ]),
+            ].filter((id) => id !== null && id !== undefined); // Removes null or
+            
             // Fetch full workspace details for both owned and member workspaces
             const { data: allWorkspaces, error: allWorkspacesError } =
               await supabase
@@ -384,10 +381,10 @@ export default async function handler(
             }
             // Set all statuses to false for workspaces owned by the user
             const resetStatus = await supabase
-            .from("workspaces")
-            .update({ status: false })
-            .neq("company_type", ""); // null is correctly used without quotes
-          
+              .from("workspaces")
+              .update({ status: false })
+              .eq("owner_id", user.id); // Assuming `owner_id` is the column for workspace ownership
+
             if (resetStatus.error) {
               throw new Error(resetStatus.error.message);
             }
@@ -396,7 +393,8 @@ export default async function handler(
             const updateStatus = await supabase
               .from("workspaces")
               .update({ status: true })
-              .eq("id", workspace_id);
+              .eq("id", workspace_id)
+              .eq("owner_id", user.id); // Ensure the workspace belongs to the user
 
             if (updateStatus.error) {
               throw new Error(updateStatus.error.message);
@@ -407,7 +405,7 @@ export default async function handler(
               .json({ message: "Workspace status updated successfully" });
           } catch (error: any) {
             console.error("Error updating workspace status:", error.message);
-            return res.status(500).json({ error: error.message });
+            return res.status(500).json({ error: "Internal server error" });
           }
         }
       }
