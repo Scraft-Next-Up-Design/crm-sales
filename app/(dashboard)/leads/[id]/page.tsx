@@ -164,7 +164,10 @@ const IndividualLeadPage: React.FC = () => {
       [index]: !prev[index],
     }));
   };
-  const { userName, timestamp } = extractUserNameAndTimestamp(notes.map(note => note.message).join(' '));
+  // const { userName, timestamp } = extractUserNameAndTimestamp(notes.map(note => note.message).join(' '));
+  const result = extractUserNameAndTimestamp(notes.map(note => note?.message))
+  console.log(result)
+  // console.log(notes.map(note => note.message))
   const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
     <div className="container mx-auto pt-2">
@@ -402,18 +405,18 @@ const IndividualLeadPage: React.FC = () => {
                     </div>
 
                     {/* Notes */}
-                    {notes.map((noteItem, index) => (
+                    {result.map((noteItem, index) => (
                       <Tooltip key={index}>
                         <TooltipTrigger asChild>
                           <div className="group grid grid-cols-12 gap-2 items-center rounded-lg border border-border bg-card p-4 transition-all duration-200 hover:bg-accent hover:border-accent">
                             <div className="col-span-4 text-sm text-muted-foreground">
-                              {userName || "Unknown"}
+                              {noteItem?.userName || "Not Added"}
                             </div>
                             <div className="col-span-4 text-sm text-muted-foreground break-all pl-2">
-                              {noteItem?.message.replace(/\(.*?\)/g, '').trim()}
+                              {noteItem?.message || "Not Added"}
                             </div>
                             <div className="col-span-4 text-sm text-muted-foreground text-right">
-                              {timestamp || "Not available"}
+                              {noteItem?.timestamp || "Not Added"}
                             </div>
                           </div>
                         </TooltipTrigger>

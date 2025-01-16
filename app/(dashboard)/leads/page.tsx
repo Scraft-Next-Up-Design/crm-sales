@@ -57,7 +57,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
 import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation } from "@/lib/store/services/leadsApi";
-import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 // Zod validation schema for lead
@@ -106,7 +106,8 @@ const LeadManagement: React.FC = () => {
       pollingInterval: 2000, // Poll every 2 seconds (2000 ms)
     }
   );
-
+  const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(workspaceId);
+  console.log(workspaceMembers)
   const POLLING_INTERVAL = 2000
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
   useEffect(() => {
@@ -272,7 +273,7 @@ const LeadManagement: React.FC = () => {
   const openEditDialog = (lead: any) => {
     console.log(lead)
     form.reset({
-      name:lead.Name,
+      name: lead.Name,
       email: lead.email,
       phone: lead.phone,
       company: lead.company,
@@ -445,12 +446,23 @@ const LeadManagement: React.FC = () => {
   };
 
   const handleAssignChange = (id: number, assign: string) => {
+    const { name, role } = JSON.parse(assign);
     setLeads((prevLeads) =>
       prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, assign } : lead
+        lead.id === id ? { 
+          ...lead, 
+          assign: { name, role } // Update assign property instead of status
+        } : lead
       )
     );
+    
+    // You may want to add an API call here to persist the assignment change
+    // Similar to how updateLead is called in handleStatusChange
+    // Example:
+    // updateLead({ id, leads: { assign: { name, role } } });
+    toast.success(`Lead assigned to ${name}`);
   };
+
   const handleGoBack = () => {
     router.push("/dashboard");
   }
@@ -474,7 +486,7 @@ const LeadManagement: React.FC = () => {
       </div>
     );
   }
-  if (isLoadingStatus || isLoadingLeads) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
+  if (isLoadingStatus || isLoadingLeads || isLoadingMembers) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
   return (
@@ -508,12 +520,12 @@ const LeadManagement: React.FC = () => {
               className="hidden"
               onChange={handleImport}
             />
-            <Button
+            {/* <Button
               variant="outline"
               onClick={() => document.getElementById("import-leads")?.click()}
             >
               <FileUp className="mr-2 h-4 w-4" /> Import
-            </Button>
+            </Button> */}
 
             {/* Export Buttons */}
             <Button variant="outline" onClick={exportToCSV}>
@@ -675,17 +687,40 @@ const LeadManagement: React.FC = () => {
 
                     <TableCell className="border-none">
                       <Select
-                        value={lead?.assigne || "Pending"}
+                        defaultValue={JSON.stringify({
+                          name: lead?.assign?.name || "Not Assigned",
+                          role: lead?.assign?.role || "(Not Assigned)",
+                        })}
                         onValueChange={(value) => handleAssignChange(lead.id, value)} // Uncomment and use for status change handler
                       >
-                        <SelectTrigger className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
-                          <SelectValue placeholder="Select Status" />
+                        <SelectTrigger
+                          className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative">
+                              <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
+                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" />
+                            </div>
+                            <span className="text-sm font-medium">{lead?.assign?.name}</span>
+                          </div>
                         </SelectTrigger>
-                        <SelectContent className="bg-white dark:bg-gray-800 text-gray-900 dark:text-white border dark:border-gray-600">
-                          <SelectItem value="Pending">Pending</SelectItem>
-                          <SelectItem value="In Progress">In Progress</SelectItem>
-                          <SelectItem value="Completed">Completed</SelectItem>
+
+                        <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                          {workspaceMembers?.data.map((status: { name: string; role: string }) => (
+                            <SelectItem
+                              key={status.name}
+                              value={JSON.stringify({ name: status?.name, role: status?.role })}
+                              className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                            >
+                              <div className="flex items-center gap-3">
+                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                  {status.name}
+                                </span>
+                              </div>
+                            </SelectItem>
+                          ))}
                         </SelectContent>
+
                       </Select>
                     </TableCell>
                   </TableRow>

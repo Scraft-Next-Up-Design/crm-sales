@@ -297,8 +297,8 @@ export function Sidebar({
         </div>
 
         {/* Workspace Selector */}
-        <div className="px-4 mb-4" onClick={() => handleWorkspaceChange(selectedWorkspace.id)}>
-          <Select value={selectedWorkspace?.id || ""} onValueChange={handleWorkspaceChange}>
+        <div className="px-4 mb-4" >
+          <Select defaultValue="Select A Workspace" value={selectedWorkspace?.id || ""} onValueChange={handleWorkspaceChange}>
             <SelectTrigger className="w-full">
               <SelectValue placeholder="Select a workspace">
                 <div className="flex items-center">

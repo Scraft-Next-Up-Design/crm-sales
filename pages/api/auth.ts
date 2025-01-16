@@ -44,7 +44,6 @@ export default async function handler(
 
         case "acceptInvite": {
           try {
-            console.log(req)
             const { email, workspaceId } = query;
 
             if (!email || !workspaceId) {
@@ -73,7 +72,13 @@ export default async function handler(
               // Update workspace membership
               const { data: updateData, error: updateError } = await supabase
                 .from("workspace_members")
-                .update({ status: "accepted", user_id: matchingUsers[0]?.id })
+                .update({
+                  status: "accepted",
+                  user_id: matchingUsers[0]?.id,
+                  name:
+                    matchingUsers[0]?.user_metadata.name ||
+                    matchingUsers[0]?.user_metadata?.name?.first_name,
+                })
                 .eq("workspace_id", workspaceId)
                 .eq("email", matchingUsers[0]?.email); // Assuming you have a variable `matchingEmail` that holds the email to match
 
