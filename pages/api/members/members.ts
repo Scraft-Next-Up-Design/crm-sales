@@ -10,7 +10,6 @@ export default async function handler(
   const { method, query, headers } = req;
   const action = query.action as string;
   const authHeader = headers.authorization;
-
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
   }
@@ -180,7 +179,6 @@ export default async function handler(
       switch (action) {
         case "getWorkspaceMembers": {
           const { workspaceId } = query;
-
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }

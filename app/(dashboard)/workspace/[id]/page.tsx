@@ -55,12 +55,11 @@ import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { useAddStatusMutation, useGetStatusQuery } from "@/lib/store/services/status";
-import { useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
+import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
 import { useAddMemberMutation } from "@/lib/store/services/members";
-
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -151,6 +150,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
 );
 
 export default function WorkspaceSettingsPage() {
+
   const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
 
@@ -161,10 +161,12 @@ export default function WorkspaceSettingsPage() {
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
   // const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const { data: workspaceMembers, isLoading: isLoadingMembers, error } = useGetWorkspaceMembersQuery(workspaceId);
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
   const { data: workspaceData, isLoading: isLoadingWorkspace } = useGetWorkspacesByIdQuery(workspaceId);
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
+  console.log(workspaceMembers)
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "",
     industry: "",
@@ -276,6 +278,11 @@ export default function WorkspaceSettingsPage() {
     }
   }, [workspaceData]);
 
+  useEffect(() => {
+    if (workspaceMembers?.data) {
+      setMembers(workspaceMembers.data);
+    }
+  }, [workspaceMembers]);
 
   const handleEditClick = () => {
     setIsEditMode(true);
@@ -321,7 +328,8 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
-  if (isLoadingWorkspace) {
+  console.log(isLoadingMembers)
+  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <Loader2 className="w-8 h-8 animate-spin" />
@@ -467,6 +475,7 @@ export default function WorkspaceSettingsPage() {
           {/* Members Management */}
           {activeTab === "members" && (
             <MemberManagement
+              isLoading={isLoadingMembers}
               members={members}
               onMemberAdd={handleMemberAdd}
               onMemberDelete={handleMemberDelete}

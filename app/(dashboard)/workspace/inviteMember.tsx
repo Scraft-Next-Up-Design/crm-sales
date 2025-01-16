@@ -33,6 +33,7 @@ import {
   Trash2,
   Upload,
   UserCircle,
+  Loader2,
 } from "lucide-react";
 import { useGetMembersQuery } from "@/lib/store/services/members";
 import { useParams } from "next/navigation";
@@ -45,6 +46,7 @@ interface WorkspaceMember {
   name?: string;
 }
 interface MemberManagementProps {
+  isLoading?: boolean;
   members: WorkspaceMember[];
   onMemberAdd: (member: WorkspaceMember) => void;
   onMemberDelete: (memberId: string) => void;
@@ -52,6 +54,7 @@ interface MemberManagementProps {
 }
 
 export default function MemberManagement({
+  isLoading,
   members,
   onMemberAdd,
   onMemberDelete,
@@ -59,7 +62,7 @@ export default function MemberManagement({
 }: MemberManagementProps) {
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
-  const { data: membersData } = useGetMembersQuery(workspaceId);
+  // const { data: membersData } = useGetMembersQuery(workspaceId);
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
@@ -111,7 +114,13 @@ export default function MemberManagement({
       fileInputRef.current.value = "";
     }
   };
-
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
+    );
+  }
   return (
     <Card>
       <CardHeader>
@@ -165,15 +174,15 @@ export default function MemberManagement({
           <div className="space-y-2">
             {members.map((member) => (
               <div
-                key={member.id}
+                key={member?.id}
                 className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary rounded-lg gap-4"
               >
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    {member.profileImage ? (
+                    {member?.profileImage ? (
                       <img
-                        src={member.profileImage}
-                        alt={member.name || member.email}
+                        src={member?.profileImage || ""}
+                        alt={member?.name || member?.email}
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
@@ -184,7 +193,7 @@ export default function MemberManagement({
                       accept="image/*"
                       className="hidden"
                       ref={fileInputRef}
-                      onChange={(e) => member.id && handleProfileImageUpload(member.id, e)}
+                      onChange={(e) => member?.id && handleProfileImageUpload(member.id, e)}
                     />
                     <Button
                       variant="ghost"
@@ -197,18 +206,18 @@ export default function MemberManagement({
                   </div>
                   <div>
                     <p className="font-medium">
-                      {member.name || member.email}
+                      {member?.name || member?.email}
                     </p>
                     <p className="text-sm text-muted-foreground">
-                      {member.email}
+                      {member?.email}
                     </p>
                     <p className="text-sm text-muted-foreground capitalize">
-                      {member.role} • {member.status}
+                      {member?.role} • {member?.status}
                     </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2 self-end sm:self-center">
-                  {member.status === "pending" && (
+                  {member?.status === "pending" && (
                     <Button variant="outline" size="sm">
                       Resend
                     </Button>

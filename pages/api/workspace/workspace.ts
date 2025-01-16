@@ -146,6 +146,23 @@ export default async function handler(
             return res.status(500).json({ error: "An error occurred" });
           }
         }
+        case "getWorkspaceMembers": {
+          const { workspaceId } = query;
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          const { data, error } = await supabase
+            .from("workspace_members")
+            .select()
+            .eq("workspace_id", workspaceId);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
 
         case "getWorkspacesById": {
           const {
@@ -266,7 +283,6 @@ export default async function handler(
 
           // Convert workspaceId to integer
           const workspaceIdInt = parseInt(workspaceId as string);
-          console.log(workspaceIdInt);
           if (isNaN(workspaceIdInt)) {
             return res
               .status(400)
