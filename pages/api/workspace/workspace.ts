@@ -123,7 +123,7 @@ export default async function handler(
                 ...memberWorkspaces.map((ws) => ws.workspace_id),
               ]),
             ].filter((id) => id !== null && id !== undefined); // Removes null or
-            
+
             // Fetch full workspace details for both owned and member workspaces
             const { data: allWorkspaces, error: allWorkspacesError } =
               await supabase
