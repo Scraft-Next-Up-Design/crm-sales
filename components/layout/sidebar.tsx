@@ -126,16 +126,16 @@ export function Sidebar({
       href: "/leads",
       badge: totalLeads,
     },
-    {
-      label: "Contact",
-      icon: MessageSquare,
-      href: "/contact",
-    },
-    {
-      label: "Analytics",
-      icon: BarChart,
-      href: "/analytics",
-    },
+    // {
+    //   label: "Contact",
+    //   icon: MessageSquare,
+    //   href: "/contact",
+    // },
+    // {
+    //   label: "Analytics",
+    //   icon: BarChart,
+    //   href: "/analytics",
+    // },
     // {
     //   label: "Setting",
     //   icon: Settings,
@@ -297,19 +297,29 @@ export function Sidebar({
         </div>
 
         {/* Workspace Selector */}
-        <div className="px-4 mb-4">
-          <Select value={selectedWorkspace.id} onValueChange={handleWorkspaceChange}>
+        <div className="px-4 mb-4" onClick={() => handleWorkspaceChange(selectedWorkspace.id)}>
+          <Select value={selectedWorkspace?.id || ""} onValueChange={handleWorkspaceChange}>
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="Select Workspace">
+              <SelectValue placeholder="Select a workspace">
                 <div className="flex items-center">
                   <Folder className="mr-2 h-4 w-4" />
-                  {selectedWorkspace.name}
+                  {selectedWorkspace?.name || "Select a workspace"}
                 </div>
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               {workspaces?.map((workspace) => (
-                <SelectItem key={workspace.id} value={workspace.id} className="cursor-pointer">
+                <SelectItem
+                  key={workspace.id}
+                  value={workspace.id}
+                  className="cursor-pointer"
+                  onClick={(e) => {
+                    if (workspaces.length === 1) {
+                      e.preventDefault(); // Prevent default dropdown behavior if there's only one workspace
+                      handleWorkspaceChange(workspace.id); // Trigger change immediately
+                    }
+                  }}
+                >
                   <div className="grid grid-cols-[1fr,auto,auto] items-center w-full gap-2">
                     <div className="flex items-center min-w-0">
                       <Folder className="shrink-0 mr-2 h-4 w-4" />
@@ -330,6 +340,8 @@ export function Sidebar({
                   </div>
                 </SelectItem>
               ))}
+
+
               {/* Add Workspace Dialog */}
               <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                 <DialogTrigger asChild>
