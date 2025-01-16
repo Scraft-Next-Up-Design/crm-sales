@@ -96,7 +96,7 @@ export default async function handler(
             .from("webhooks")
             .select("*")
             .eq("workspace_id", workspace_id)
-            .eq("user_id", user.id);
+            // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error });

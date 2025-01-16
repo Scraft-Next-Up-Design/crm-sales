@@ -57,13 +57,13 @@ export default async function handler(
                 owner_id: user?.id,
               },
             ]);
-            await supabase.from("workspace_members").insert({
-              role: "SuperAdmin",
-              added_by: user?.id,
-              email: user?.email,
-              status: "accepted",
-              user_id: user?.id,
-            });
+            // await supabase.from("workspace_members").insert({
+            //   role: "SuperAdmin",
+            //   added_by: user?.id,
+            //   email: user?.email,
+            //   status: "accepted",
+            //   user_id: user?.id,
+            // });
 
             if (error) {
               return res.status(500).json({ error: error.message });
@@ -118,11 +118,15 @@ export default async function handler(
               return res.status(500).json({ error: memberError.message });
             }
             const workspaceIds: any = [
-              ...new Set([
-                ...ownedWorkspaces.map((ws) => ws.id),
-                ...memberWorkspaces.map((ws) => ws.workspace_id),
-              ]),
+              ...new Set(
+                [
+                  ...ownedWorkspaces.map((ws) => ws.id),
+                  ...memberWorkspaces.map((ws) => ws.workspace_id),
+                ].filter((id) => id != null)
+              ), // Filters out null and undefined
             ];
+
+            console.log(workspaceIds);
             // Fetch full workspace details for both owned and member workspaces
             const { data: allWorkspaces, error: allWorkspacesError } =
               await supabase
@@ -191,24 +195,44 @@ export default async function handler(
           } = await supabase.auth.getUser(token);
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          } // Extract userId from the query
-          if (!user) {
-            return res.status(400).json({ error: "User ID is required" });
           }
 
-          const { data, error } = await supabase
+          // First, try to find workspace where user is owner
+          let { data: ownerWorkspace, error: ownerError } = await supabase
             .from("workspaces")
             .select("*")
             .eq("status", true)
-            .eq("owner_id", user.id) // Match user_id
+            .eq("owner_id", user.id)
             .limit(1)
-            .single(); // Expect only one active workspace
+            .single();
 
-          if (error) {
-            return res.status(400).json({ error: error.message });
+          if (!ownerError && ownerWorkspace) {
+            return res.status(200).json({ data: ownerWorkspace });
           }
 
-          return res.status(200).json({ data });
+          // If not owner, check workspace_members table
+          const { data: memberWorkspace, error: memberError } = await supabase
+            .from("workspace_members")
+            .select(
+              `
+            *,
+            workspace:workspace_id (*)
+          `
+            )
+            .eq("status", "accepted")
+            .eq("user_id", user.id)
+            .limit(1)
+            .single();
+
+          if (memberError) {
+            return res.status(400).json({ error: memberError.message });
+          }
+
+          if (!memberWorkspace) {
+            return res.status(404).json({ error: "No active workspace found" });
+          }
+
+          return res.status(200).json({ data: memberWorkspace.workspace });
         }
         case "getLeadsRevenueByWorkspace": {
           const { workspaceId } = query;
@@ -360,10 +384,10 @@ export default async function handler(
             }
             // Set all statuses to false for workspaces owned by the user
             const resetStatus = await supabase
-              .from("workspaces")
-              .update({ status: false })
-              .eq("owner_id", user.id); // Assuming `owner_id` is the column for workspace ownership
-
+            .from("workspaces")
+            .update({ status: false })
+            .neq("company_type", ""); // null is correctly used without quotes
+          
             if (resetStatus.error) {
               throw new Error(resetStatus.error.message);
             }
@@ -372,8 +396,7 @@ export default async function handler(
             const updateStatus = await supabase
               .from("workspaces")
               .update({ status: true })
-              .eq("id", workspace_id)
-              .eq("owner_id", user.id); // Ensure the workspace belongs to the user
+              .eq("id", workspace_id);
 
             if (updateStatus.error) {
               throw new Error(updateStatus.error.message);
@@ -384,7 +407,7 @@ export default async function handler(
               .json({ message: "Workspace status updated successfully" });
           } catch (error: any) {
             console.error("Error updating workspace status:", error.message);
-            return res.status(500).json({ error: "Internal server error" });
+            return res.status(500).json({ error: error.message });
           }
         }
       }

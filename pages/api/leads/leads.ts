@@ -41,7 +41,7 @@ export default async function handler(
             .from("leads")
             .update({ status: body })
             .eq("id", id)
-            .eq("user_id", user.id);
+            // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -72,7 +72,7 @@ export default async function handler(
             .from("leads")
             .update(body)
             .eq("id", id)
-            .eq("user_id", user.id);
+            // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -113,7 +113,7 @@ export default async function handler(
             .from("leads")
             .update({ text_area: body }) // Update the `text_area` field
             .eq("id", id) // Match the ID
-            .eq("user_id", user.id); // Ensure the user owns the record
+            // .eq("user_id", user.id); // Ensure the user owns the record
 
           if (error) {
             console.error("Supabase Update Error:", error.message);
@@ -147,7 +147,7 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("source_id", sourceId)
-            .eq("user_id", user.id);
+            // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -165,7 +165,7 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("user_id", userId);
+            // .eq("user_id", userId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -193,7 +193,7 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("work_id", workspaceId)
-            .eq("user_id", user.id);
+            // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -220,7 +220,7 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("user_id", user.id)
+            // .eq("user_id", user.id)
             .eq("id", id);
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -252,7 +252,7 @@ export default async function handler(
       const { data, error } = await supabase
         .from("leads")
         .select("text_area") // Select only the 'text_area' field
-        .eq("user_id", user.id)
+        // .eq("user_id", user.id)
         .eq("id", id);
 
       if (error) {
