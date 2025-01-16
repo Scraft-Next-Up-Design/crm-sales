@@ -40,8 +40,40 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .update({ status: body })
-            .eq("id", id)
-            // .eq("user_id", user.id);
+            .eq("id", id);
+          // .eq("user_id", user.id);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
+        case "assignRoleById": {
+          const { id } = query;
+          const body = req.body;
+          console.log(body, id);
+          if (!id) {
+            return res.status(400).json({ error: "Lead ID is required" });
+          }
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          if (!body) {
+            return res.status(400).json({ error: "Update data is required" });
+          }
+
+          const { data, error } = await supabase
+            .from("leads")
+            .update({ assign_to: body })
+            .eq("id", id);
+          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -71,8 +103,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .update(body)
-            .eq("id", id)
-            // .eq("user_id", user.id);
+            .eq("id", id);
+          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -112,8 +144,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .update({ text_area: body }) // Update the `text_area` field
-            .eq("id", id) // Match the ID
-            // .eq("user_id", user.id); // Ensure the user owns the record
+            .eq("id", id); // Match the ID
+          // .eq("user_id", user.id); // Ensure the user owns the record
 
           if (error) {
             console.error("Supabase Update Error:", error.message);
@@ -146,8 +178,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("source_id", sourceId)
-            // .eq("user_id", user.id);
+            .eq("source_id", sourceId);
+          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -162,10 +194,8 @@ export default async function handler(
             return res.status(400).json({ error: "User ID is required" });
           }
 
-          const { data, error } = await supabase
-            .from("leads")
-            .select("*")
-            // .eq("user_id", userId);
+          const { data, error } = await supabase.from("leads").select("*");
+          // .eq("user_id", userId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -192,15 +222,15 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            .eq("work_id", workspaceId)
-            // .eq("user_id", user.id);
+            .eq("work_id", workspaceId);
+          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
           return res.status(200).json({ data });
         }
-        
+
         case "getLeadById": {
           const id = query.id as string;
           console.log(query);

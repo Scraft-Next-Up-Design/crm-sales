@@ -1,5 +1,5 @@
 "use client";
-import { Filter, Loader2 } from "lucide-react";
+import { Filter, Loader2, UserIcon } from "lucide-react";
 import FilterComponent from "./filter";
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -56,10 +56,11 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation } from "@/lib/store/services/leadsApi";
+import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
+
 // Zod validation schema for lead
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -88,15 +89,9 @@ const initialFilters: any = {
 const LeadManagement: React.FC = () => {
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
+  const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
-  const workspaceId = activeWorkspace?.data.id;
-
-  // const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
-  //   workspaceId ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) : ({} as { workspaceId: string }),
-  //   {
-  //     skip: !workspaceId || isLoadingWorkspace, // Skip if workspaceId is undefined or still loading
-  //   }
-  // );
+  const workspaceId = activeWorkspace?.data?.id;
   const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
     workspaceId
       ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
@@ -125,6 +120,7 @@ const LeadManagement: React.FC = () => {
             owner: lead.owner || "Unknown",
             status: lead.status || "New",
             revenue: lead.revenue || "",
+            assign_to: lead.assign_to || "Not Assigned",
             createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),  // Ensure valid date format
           }))
           .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Sort by most recent
@@ -245,6 +241,7 @@ const LeadManagement: React.FC = () => {
       position: "",
       contact_method: undefined,
       revenue: "",
+
     },
   });
 
@@ -447,22 +444,27 @@ const LeadManagement: React.FC = () => {
 
   const handleAssignChange = (id: number, assign: string) => {
     const { name, role } = JSON.parse(assign);
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead.id === id ? { 
-          ...lead, 
-          assign: { name, role } // Update assign property instead of status
-        } : lead
-      )
-    );
-    
+    try {
+      assignRole({ id, data: { name, role } });
+      setLeads((prevLeads) =>
+        prevLeads.map((lead) =>
+          lead.id === id ? {
+            ...lead,
+            assign: { name, role }
+          } : lead
+        )
+      );
+    } catch (error) {
+      console.log(error);
+    }
+
     // You may want to add an API call here to persist the assignment change
     // Similar to how updateLead is called in handleStatusChange
     // Example:
     // updateLead({ id, leads: { assign: { name, role } } });
     toast.success(`Lead assigned to ${name}`);
   };
-
+  console.log(leads)
   const handleGoBack = () => {
     router.push("/dashboard");
   }
@@ -688,10 +690,10 @@ const LeadManagement: React.FC = () => {
                     <TableCell className="border-none">
                       <Select
                         defaultValue={JSON.stringify({
-                          name: lead?.assign?.name || "Not Assigned",
-                          role: lead?.assign?.role || "(Not Assigned)",
+                          name: lead?.assign_to?.name || "Not Assigned",
+                          role: lead?.assign_to?.role || "(Not Assigned)",
                         })}
-                        onValueChange={(value) => handleAssignChange(lead.id, value)} // Uncomment and use for status change handler
+                        onValueChange={(value) => handleAssignChange(lead?.id, value)} // Uncomment and use for status change handler
                       >
                         <SelectTrigger
                           className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
@@ -699,9 +701,11 @@ const LeadManagement: React.FC = () => {
                           <div className="flex items-center gap-3">
                             <div className="relative">
                               <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
-                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" />
+                              <div className="relative">
+                                <UserIcon className="h-6 w-6 text-gray-400" />
+                              </div>
                             </div>
-                            <span className="text-sm font-medium">{lead?.assign?.name}</span>
+                            <span className="text-sm font-medium">{lead?.assign_to?.name}</span>
                           </div>
                         </SelectTrigger>
 
