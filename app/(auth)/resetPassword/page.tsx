@@ -1,4 +1,6 @@
-import React from "react";
+'use client';
+
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,42 +12,30 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabaseClient";
 
-// Schema for new password
-const resetPasswordSchema = z.object({
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
-
 export default function ResetPasswordPage() {
   const router = useRouter();
-  const [isLoading, setIsLoading] = React.useState(true);
-  const [error, setError] = React.useState<string | null>(null);
-
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting },
-  } = useForm<z.infer<typeof resetPasswordSchema>>({
-    resolver: zodResolver(resetPasswordSchema),
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Form state
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [formErrors, setFormErrors] = useState({
+    password: "",
+    confirmPassword: ""
   });
 
   // Verify that we have a valid reset token
-  React.useEffect(() => {
+  useEffect(() => {
     const checkSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
         
-        // If no session with reset token, show error
         if (!session) {
           setError("Invalid or expired reset link. Please request a new password reset.");
         }
@@ -59,10 +49,39 @@ export default function ResetPasswordPage() {
     checkSession();
   }, []);
 
-  const onSubmit = async (data: z.infer<typeof resetPasswordSchema>) => {
+  const validateForm = () => {
+    const errors = {
+      password: "",
+      confirmPassword: ""
+    };
+    let isValid = true;
+
+    if (password.length < 6) {
+      errors.password = "Password must be at least 6 characters";
+      isValid = false;
+    }
+
+    if (password !== confirmPassword) {
+      errors.confirmPassword = "Passwords don't match";
+      isValid = false;
+    }
+
+    setFormErrors(errors);
+    return isValid;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!validateForm()) {
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
       const { error: updateError } = await supabase.auth.updateUser({
-        password: data.password,
+        password: password,
       });
 
       if (updateError) throw updateError;
@@ -71,6 +90,8 @@ export default function ResetPasswordPage() {
       router.push("/login");
     } catch (err: any) {
       toast.error(err.message || "Failed to update password");
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -116,18 +137,19 @@ export default function ResetPasswordPage() {
             Please enter your new password
           </CardDescription>
         </CardHeader>
-        <form onSubmit={handleSubmit(onSubmit)}>
+        <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="password">New Password</Label>
               <Input
                 id="password"
                 type="password"
-                {...register("password")}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
               />
-              {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+              {formErrors.password && (
+                <p className="text-sm text-red-500">{formErrors.password}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -135,11 +157,12 @@ export default function ResetPasswordPage() {
               <Input
                 id="confirmPassword"
                 type="password"
-                {...register("confirmPassword")}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
                 placeholder="••••••••"
               />
-              {errors.confirmPassword && (
-                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+              {formErrors.confirmPassword && (
+                <p className="text-sm text-red-500">{formErrors.confirmPassword}</p>
               )}
             </div>
           </CardContent>
