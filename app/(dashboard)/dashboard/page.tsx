@@ -13,6 +13,7 @@ import {
 import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
 import { useGetActiveWorkspaceQuery, useGetCountByWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
+import { UserPlus } from "lucide-react";
 
 interface Workspace {
   id: string;
@@ -69,6 +70,13 @@ const SalesDashboard = () => {
       change: workspaceRevenue?.change || "+0%",
     },
     {
+      icon: <UserPlus className="text-green-500" />,
+      title: "Qualified Leads",
+      value: updatedRevenue
+        || "0",
+      change: workspaceRevenue?.change || "+0%",
+    },
+    {
       icon: <Users className="text-blue-500" />,
       title: "New Leads",
       value: arrivedLeadsCount || 0,
@@ -104,7 +112,7 @@ const SalesDashboard = () => {
   return (
     <div className="w-full p-2 sm:p-4 lg:p-6 space-y-4 sm:space-y-6">
       {/* Dashboard Stats */}
-      <div className="grid grid-cols-1 xs:grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+      <div className="grid grid-cols-1 xs:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
         {dashboardStats.map((stat, index) => (
           <Card key={index} className="hover:shadow-md transition-shadow">
             <CardContent className="p-3 sm:p-6 flex items-center space-x-2 sm:space-x-4">

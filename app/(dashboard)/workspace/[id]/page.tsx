@@ -122,7 +122,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
       <div className="flex items-center space-x-2">
         <Checkbox
           id="countInStatistics"
-          checked={status.countInStatistics}
+          checked={status?.count_statistics}
           onCheckedChange={(checked) =>
             onSubmit({
               ...status,
@@ -130,9 +130,9 @@ const StatusForm = ({ status, onSubmit }: any) => (
             })
           }
         />
-        <Label htmlFor="countInStatistics">Count in statistics</Label>
+        <Label htmlFor="countInStatistics">Count in Qualified</Label>
       </div>
-      <div className="flex items-center space-x-2">
+      {/* <div className="flex items-center space-x-2">
         <Checkbox
           id="showInWorkspace"
           checked={status.showInWorkspace}
@@ -144,7 +144,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
           }
         />
         <Label htmlFor="showInWorkspace">Show in workspace</Label>
-      </div>
+      </div> */}
     </div>
   </div>
 );
@@ -671,18 +671,19 @@ export default function WorkspaceSettingsPage() {
                           <div className="flex items-center gap-4 flex-wrap justify-end">
                             <div className="flex items-center gap-2">
                               <Checkbox
+
                                 checked={status?.count_statistics}
                                 disabled
                               />
-                              <Label className="text-sm">Count in statistics</Label>
+                              <Label className="text-sm">Count in Qualified</Label>
                             </div>
-                            <div className="flex items-center gap-2">
+                            {/* <div className="flex items-center gap-2">
                               <Checkbox
                                 checked={status?.workspace_show}
                                 disabled
                               />
                               <Label className="text-sm">Show in workspace</Label>
-                            </div>
+                            </div> */}
                             <div className="flex items-center gap-2">
                               <Button
                                 variant="outline"
