@@ -161,41 +161,61 @@ export default async function handler(
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
-
+        
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-
-          const { workspaceId } = req.query; // Assuming the workspace ID is passed in the query parameters
-
+        
+          const { workspaceId } = req.query;
+        
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
-
+        
           try {
-            // Fetch the workspace by ID for the authenticated user
-            const { data, error } = await supabase
+            const { data: workspace, error: workspaceError } = await supabase
               .from("workspaces")
               .select("*")
-              .eq("owner_id", user?.id) // Ensure the user is the owner
-              .eq("id", workspaceId) // Filter by workspace ID
-              .single(); // Expect only one workspace
-            if (error) {
-              return res.status(500).json({ error: error.message });
+              .eq("id", workspaceId)
+              .single();
+        
+            if (workspaceError) {
+              return res.status(500).json({ error: workspaceError.message });
             }
-            console.log(data);
-
-            if (!data) {
+        
+            if (!workspace) {
               return res.status(404).json({ error: "Workspace not found" });
             }
-
-            return res.status(200).json({ message: "Workspace fetched", data });
+        
+            // Check if the user is the owner
+            if (workspace.owner_id === user.id) {
+              return res.status(200).json({ message: "Workspace fetched", data: workspace });
+            }
+        
+            // Check if the user is a member
+            const { data: membership, error: membershipError } = await supabase
+              .from("workspace_members")
+              .select("*")
+              .eq("workspace_id", workspaceId)
+              .eq("user_id", user.id)
+              .single(); // Expect only one match
+        
+            if (membershipError) {
+              return res.status(500).json({ error: membershipError.message });
+            }
+        
+            if (!membership) {
+              return res.status(403).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+            }
+        
+            // Return workspace data if the user is a member
+            return res.status(200).json({ message: "Workspace fetched", data: workspace });
           } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "An error occurred" });
           }
         }
-
+        
         case "getActiveWorkspace": {
           const {
             data: { user },
