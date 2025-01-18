@@ -38,13 +38,11 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          // Validate input fields (you can improve this validation)
           if (!name || !status || !companyType || !companySize || !industry) {
             return res.status(400).json({ error: "Missing required fields" });
           }
 
           try {
-            // Insert the data into the 'workspaces' table
             const { data, error } = await supabase.from("workspaces").insert([
               {
                 name,
@@ -97,7 +95,6 @@ export default async function handler(
           }
 
           try {
-            // Fetch workspaces owned by the authenticated user
             const { data: ownedWorkspaces, error: ownedError } = await supabase
               .from("workspaces")
               .select("*")
@@ -107,7 +104,6 @@ export default async function handler(
               return res.status(500).json({ error: ownedError.message });
             }
 
-            // Fetch workspaces where the user is a member (not necessarily the owner)
             const { data: memberWorkspaces, error: memberError } =
               await supabase
                 .from("workspace_members")
@@ -122,9 +118,8 @@ export default async function handler(
                 ...ownedWorkspaces.map((ws) => ws.id),
                 ...memberWorkspaces.map((ws) => ws.workspace_id),
               ]),
-            ].filter((id) => id !== null && id !== undefined); // Removes null or
+            ].filter((id) => id !== null && id !== undefined);
 
-            // Fetch full workspace details for both owned and member workspaces
             const { data: allWorkspaces, error: allWorkspacesError } =
               await supabase
                 .from("workspaces")
@@ -136,8 +131,6 @@ export default async function handler(
                 .status(500)
                 .json({ error: allWorkspacesError.message });
             }
-
-            // Return combined workspaces
             return res
               .status(200)
               .json({ message: "Workspaces fetched", data: allWorkspaces });
