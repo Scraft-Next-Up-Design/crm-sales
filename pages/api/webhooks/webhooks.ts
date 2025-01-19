@@ -95,8 +95,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("webhooks")
             .select("*")
-            .eq("workspace_id", workspace_id)
-            // .eq("user_id", user.id);
+            .eq("workspace_id", workspace_id);
+          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error });
@@ -105,44 +105,42 @@ export default async function handler(
         }
         case "getWebhooksBySourceId": {
           const { sourceId, workspaceId } = query;
-        
+
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
-        
+
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-        
+
           if (!sourceId) {
             return res.status(400).json({ error: "Source ID is required" });
           }
-        
-          const webhookUrl = `${
-            process.env.NEXT_PUBLIC_BASE_URL
-          }/leads?action=getLeads&sourceId=${sourceId}&workspaceId=${workspaceId}`;
+
+          const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/leads?action=getLeads&sourceId=${sourceId}&workspaceId=${workspaceId}`;
           console.log(webhookUrl);
-        
+
           // Query the webhooks table for matching webhook
           const { data, error } = await supabase
             .from("webhooks")
             .select("id, name")
             .eq("user_id", user.id)
             .eq("webhook_url", webhookUrl);
-        
+
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-        console.log(data);
+          console.log(data);
           // If a matching webhook is found, return its name
           if (data && data.length > 0) {
             return res.status(200).json({ name: data[0].name });
           }
-        
+
           // If no webhook matches, return a suitable response
           return res.status(404).json({ error: "No matching webhook found" });
         }
-        
+
         default:
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
@@ -221,11 +219,65 @@ export default async function handler(
 
             const user = session.user;
 
-            // Update webhook status if it belongs to the user
+            // Fetch the webhook details
+            const { data: webhook, error: webhookError } = await supabase
+              .from("webhooks")
+              .select("user_id, workspace_id")
+              .eq("id", webhook_id)
+              .single();
+
+            if (webhookError) {
+              return res.status(500).json({ error: webhookError.message });
+            }
+
+            if (!webhook) {
+              return res.status(404).json({ error: "Webhook not found" });
+            }
+
+            const { user_id, workspace_id } = webhook;
+
+            // Check if the user owns the webhook
+            if (user_id === user.id) {
+              // Allow the owner to change the webhook status
+              const { data, error } = await supabase
+                .from("webhooks")
+                .update({ status })
+                .eq("id", webhook_id)
+                .single();
+
+              if (error) {
+                return res.status(400).json({ error: error.message });
+              }
+
+              return res.status(200).json({ data });
+            }
+
+            // If not the owner, check if the user is an admin in the workspace
+            const { data: membership, error: membershipError } = await supabase
+              .from("workspace_members")
+              .select("role")
+              .eq("workspace_id", workspace_id)
+              .eq("user_id", user.id)
+              .single();
+
+            if (membershipError) {
+              return res.status(500).json({ error: membershipError.message });
+            }
+
+            if (!membership || membership.role !== "admin") {
+              // Only admins can change the status if not the owner
+              return res
+                .status(403)
+                .json({
+                  error:
+                    "You do not have permission to change the webhook status",
+                });
+            }
+
+            // Allow admins to change the webhook status
             const { data, error } = await supabase
               .from("webhooks")
               .update({ status })
-              .eq("user_id", user.id)
               .eq("id", webhook_id)
               .single();
 
@@ -235,6 +287,7 @@ export default async function handler(
 
             return res.status(200).json({ data });
           } catch (err: any) {
+            console.error(err);
             return res
               .status(500)
               .json({ error: "Server error", details: err.message });
