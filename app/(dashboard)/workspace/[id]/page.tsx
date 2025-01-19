@@ -70,7 +70,7 @@ interface WorkspaceMember {
 }
 
 interface Status {
-  id: string;
+  id?: string;
   name: string;
   color: string;
   count_statistics: boolean;
@@ -130,7 +130,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
             })
           }
         />
-        <Label htmlFor="countInStatistics">Count in Qualified</Label>
+        <Label htmlFor="countInStatistics">Count in statistics</Label>
       </div>
       {/* <div className="flex items-center space-x-2">
         <Checkbox
@@ -154,7 +154,7 @@ export default function WorkspaceSettingsPage() {
   const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
 
-  const [addStatus] = useAddStatusMutation();
+  const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -187,13 +187,14 @@ export default function WorkspaceSettingsPage() {
   const [newStatus, setNewStatus] = useState({
     name: "",
     color: "#0ea5e9",
-    countInStatistics: true,
-    showInWorkspace: true,
+    countInStatistics: false,
+    showInWorkspace: false,
   });
-  const [statusToDelete, setStatusToDelete] = useState<Status | null>(null);
+  const [statusToDelete, setStatusToDelete] = useState<any | null>(null);
   const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
   const [isAddingStatus, setIsAddingStatus] = useState(false);
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
+  const [statuses, setStatuses] = useState<Status[]>([]);
 
   // Member management handlers
   const handleMemberAdd = async (newMember: WorkspaceMember) => {
@@ -220,55 +221,86 @@ export default function WorkspaceSettingsPage() {
       setMemberToDelete(null);
     }
   };
+  useEffect(() => {
+    if (statusData?.data) {
+      setStatuses(statusData.data);
+    }
+  }, [statusData]);
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
     const status: any = {
       id: "",
       ...newStatus,
+      countInStatistics: newStatus.countInStatistics,
+      showInWorkspace: newStatus.showInWorkspace,
     };
-    const response = await addStatus({ statusData: status, workspaceId })
-    console.log(response);
-    console.log(status);
-    setNewStatus({
-      name: "",
-      color: "#0ea5e9",
-      countInStatistics: false,
-      showInWorkspace: false,
-    });
-    setIsAddingStatus(false);
+
+    try {
+      const response = await addStatus({ statusData: status, workspaceId });
+      // Add new status to local state
+
+      // Reset form
+      setStatuses((prevStatuses) => [
+        ...prevStatuses,
+        {
+          id: response.data?.id || "",
+          name: status.name,
+          color: status.color,
+          count_statistics: status.countInStatistics,
+          workspace_show: status.showInWorkspace,
+        },
+      ]);
+      setIsAddingStatus(false);
+    } catch (error) {
+      console.error('Failed to add status:', error);
+      toast.error('Failed to add status');
+    }
   };
 
   const handleEditStatus = (status: Status) => {
     setStatusToEdit({ ...status });
   };
 
-  const handleUpdateStatus = () => {
+  const handleUpdateStatus = async () => {
     if (!statusToEdit) return;
 
-    const updatedStatus = statusData?.data.map((status: Status) =>
-      status.id === statusToEdit.id ? statusToEdit : status
-    );
+    try {
+      // Update the status in the backend (assuming you have an updateStatus mutation)
+      // await updateStatus({ statusData: statusToEdit, workspaceId });
 
-    setSettings({
-      ...statusData?.data,
-      updatedStatus,
-    });
-    console.log(updatedStatus)
-    setStatusToEdit(null);
-  };
-
-  const confirmDeleteStatus = () => {
-    if (statusToDelete) {
-      const updatedStatus = statusData?.data.filter(
-        (s: Status) => s.id !== statusToDelete.id
+      // Update local state
+      setStatuses(prevStatuses =>
+        prevStatuses.map(status =>
+          status.id === statusToEdit.id ? statusToEdit : status
+        )
       );
 
-      setSettings({
-        ...statusData?.data,
-        updatedStatus,
-      });
+      setStatusToEdit(null);
+      toast.success('Status updated successfully');
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast.error('Failed to update status');
+    }
+  };
+
+  const confirmDeleteStatus = async () => {
+    if (!statusToDelete) return;
+
+    try {
+      // Delete the status in the backend (assuming you have a deleteStatus mutation)
+      // await deleteStatus({ statusId: statusToDelete.id, workspaceId });
+
+      // Update local state
+      setStatuses(prevStatuses =>
+        prevStatuses.filter(status => status.id !== statusToDelete.id)
+      );
+
       setStatusToDelete(null);
+      toast.success('Status deleted successfully');
+    } catch (error) {
+      console.error('Failed to delete status:', error);
+      toast.error('Failed to delete status');
     }
   };
 
@@ -639,7 +671,7 @@ export default function WorkspaceSettingsPage() {
                   {/* Status List */}
                   <div className="space-y-4">
                     <div className="grid gap-4">
-                      {statusData?.data?.map((status: Status) => (
+                      {statuses.map((status: Status) => (
                         <div
                           key={status.id}
                           className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
@@ -788,7 +820,20 @@ export default function WorkspaceSettingsPage() {
             >
               Cancel
             </Button>
-            <Button onClick={handleAddStatus}>Add Status</Button>
+            <Button
+              onClick={handleAddStatus}
+              className="flex items-center gap-2"
+              disabled={isAddingStat} // Disable while loading
+            >
+              {isAddingStat ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  <span>Adding...</span>
+                </div>
+              ) : (
+                "Add Status"
+              )}
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

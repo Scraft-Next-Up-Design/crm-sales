@@ -45,27 +45,68 @@ export default async function handler(
           !name ||
           !workspaceId ||
           !color ||
-          !countInStatistics ||
-          !showInWorkspace
+          typeof countInStatistics === "undefined" ||
+          typeof showInWorkspace === "undefined"
         ) {
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
         }
 
-        // Insert status into the database
-        const { data, error } = await supabase.from("status").insert({
-          name,
-          color,
-          count_statistics: countInStatistics,
-          workspace_show: showInWorkspace,
-          work_id: workspaceId,
-          user_id: user.id,
-        });
+        try {
+          // Fetch the workspace details to verify ownership or membership
+          const { data: workspace, error: workspaceError } = await supabase
+            .from("workspaces")
+            .select("*")
+            .eq("id", workspaceId)
+            .single(); // Expect only one workspace
 
-        if (error) {
-          return res.status(400).json({ error });
+          if (workspaceError) {
+            return res.status(500).json({ error: workspaceError.message });
+          }
+
+          if (!workspace) {
+            return res.status(404).json({ error: "Workspace not found" });
+          }
+
+          // Check if the user is the owner
+          if (workspace.owner_id !== user.id) {
+            // If not the owner, check if the user is a member
+            const { data: membership, error: membershipError } = await supabase
+              .from("workspace_members")
+              .select("*")
+              .eq("workspace_id", workspaceId)
+              .eq("user_id", user.id)
+              .single(); // Expect only one match
+
+            if (membershipError) {
+              return res.status(500).json({ error: membershipError.message });
+            }
+
+            if (!membership) {
+              return res
+                .status(403)
+                .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+            }
+          }
+
+          // Insert status into the database
+          const { data, error } = await supabase.from("status").insert({
+            name,
+            color,
+            count_statistics: countInStatistics,
+            workspace_show: showInWorkspace,
+            work_id: workspaceId,
+            user_id: user.id,
+          });
+
+          if (error) {
+            return res.status(400).json({ error });
+          }
+
+          return res.status(200).json({ data });
+        } catch (error) {
+          console.error(error);
+          return res.status(500).json({ error: "An error occurred" });
         }
-
-        return res.status(200).json({ data });
       }
       return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
     }
