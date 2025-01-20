@@ -11,10 +11,9 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
-import { useGetActiveWorkspaceQuery, useGetCountByWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useGetActiveWorkspaceQuery, useGetCountByWorkspaceQuery, useGetQualifiedCountQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery } from "@/lib/store/services/workspace";
 import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import { UserPlus } from "lucide-react";
-
 interface Workspace {
   id: string;
   name: string;
@@ -41,6 +40,10 @@ const SalesDashboard = () => {
       ,
     }
   );
+  const { data: qualifiedCount, isLoading: isQualifiedCountLoading } = useGetQualifiedCountQuery(
+    activeWorkspace?.data?.id,
+    { skip: !activeWorkspace?.data?.id }
+  );
   const { data: workspaceCount, isLoading: isCountLoading } = useGetCountByWorkspaceQuery(
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
@@ -54,6 +57,7 @@ const SalesDashboard = () => {
       skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
     }
   );
+  console.log(qualifiedCount)
   const { arrivedLeadsCount
   } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
@@ -70,11 +74,11 @@ const SalesDashboard = () => {
       change: workspaceRevenue?.change || "+0%",
     },
     {
-      icon: <UserPlus className="text-green-500" />,
+      icon: <UserPlus className="text-orange-500" />,
       title: "Qualified Leads",
-      value: updatedRevenue
+      value: qualifiedCount?.qualifiedLeadsCount
         || "0",
-      change: workspaceRevenue?.change || "+0%",
+      // change: workspaceRevenue?.change || "+0%",
     },
     {
       icon: <Users className="text-blue-500" />,
@@ -101,7 +105,7 @@ const SalesDashboard = () => {
     sales: stat.convertedLeads,
   })) || [];
 
-  if (isLoading || isCountLoading || isRevenueLoading || isRocLoading || isWorkspaceLoading) {
+  if (isLoading || isCountLoading || isRevenueLoading || isRocLoading || isWorkspaceLoading || isQualifiedCountLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

@@ -161,37 +161,39 @@ export default async function handler(
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
-        
+
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-        
+
           const { workspaceId } = req.query;
-        
+
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
-        
+
           try {
             const { data: workspace, error: workspaceError } = await supabase
               .from("workspaces")
               .select("*")
               .eq("id", workspaceId)
               .single();
-        
+
             if (workspaceError) {
               return res.status(500).json({ error: workspaceError.message });
             }
-        
+
             if (!workspace) {
               return res.status(404).json({ error: "Workspace not found" });
             }
-        
+
             // Check if the user is the owner
             if (workspace.owner_id === user.id) {
-              return res.status(200).json({ message: "Workspace fetched", data: workspace });
+              return res
+                .status(200)
+                .json({ message: "Workspace fetched", data: workspace });
             }
-        
+
             // Check if the user is a member
             const { data: membership, error: membershipError } = await supabase
               .from("workspace_members")
@@ -199,23 +201,27 @@ export default async function handler(
               .eq("workspace_id", workspaceId)
               .eq("user_id", user.id)
               .single(); // Expect only one match
-        
+
             if (membershipError) {
               return res.status(500).json({ error: membershipError.message });
             }
-        
+
             if (!membership) {
-              return res.status(403).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+              return res
+                .status(403)
+                .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
-        
+
             // Return workspace data if the user is a member
-            return res.status(200).json({ message: "Workspace fetched", data: workspace });
+            return res
+              .status(200)
+              .json({ message: "Workspace fetched", data: workspace });
           } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "An error occurred" });
           }
         }
-        
+
         case "getActiveWorkspace": {
           const {
             data: { user },
@@ -282,6 +288,53 @@ export default async function handler(
             }
 
             return res.status(200).json({ totalRevenue: data });
+          } catch (error) {
+            console.error("Error:", error);
+            return res.status(500).json({ error: "Internal server error" });
+          }
+        }
+        case "getQualifiedLeadsCount": {
+          const { workspaceId } = query;
+
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+
+          try {
+            // First, get all statuses where count_statistics is true
+            const { data: qualifiedStatuses, error: statusError } =
+              await supabase
+                .from("status")
+                .select("name")
+                .eq("count_statistics", true);
+
+            if (statusError) {
+              console.error("Error fetching qualified statuses:", statusError);
+              return res.status(400).json({ error: statusError.message });
+            }
+
+            // Extract status names that should be counted
+            const qualifiedStatusNames = qualifiedStatuses.map(
+              (status) => status.name
+            );
+            console.error(qualifiedStatusNames);
+
+            // Count leads that match the qualified status names for the given workspace
+            // Using ->> operator to access the name field within the status JSON object
+            const { data: leadsCount, error: leadsError } = await supabase
+              .from("leads")
+              .select("id", { count: "exact" })
+              .eq("work_id", workspaceId)
+              .filter("status->>name", "in", `(${qualifiedStatusNames})`);
+            if (leadsError) {
+              console.error("Error counting qualified leads:", leadsError);
+              return res.status(400).json({ error: leadsError.message });
+            }
+
+            return res.status(200).json({
+              qualifiedLeadsCount: leadsCount?.length,
+              qualifiedStatuses: qualifiedStatusNames,
+            });
           } catch (error) {
             console.error("Error:", error);
             return res.status(500).json({ error: "Internal server error" });

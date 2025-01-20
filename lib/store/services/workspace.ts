@@ -91,6 +91,12 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
+    getQualifiedCount: builder.query<any, void>({
+      query: (workspaceId) => ({
+        url: `?action=getQualifiedLeadsCount&workspaceId=${workspaceId}`,
+        method: "GET",
+      }),
+    }),
     // Update the status of a workspace
     updateWorkspaceStatus: builder.mutation<
       { id: string; status: boolean },
@@ -119,4 +125,5 @@ export const {
   useGetCountByWorkspaceQuery,
   useGetROCByWorkspaceQuery,
   useGetWorkspaceMembersQuery,
+  useGetQualifiedCountQuery,
 } = workspaceApis;
