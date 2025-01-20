@@ -323,8 +323,8 @@ export default async function handler(
         const { data, error } = await supabase
           .from("leads")
           .delete()
+          .eq("owner_id", user.id) // Ensure the user owns the records
           .in("id", id); // Use `.in()` to delete multiple rows by their IDs
-console.log(id)
         if (error) {
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });
