@@ -54,12 +54,13 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useAddStatusMutation, useGetStatusQuery } from "@/lib/store/services/status";
+import { useAddStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
 import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
 import { useAddMemberMutation } from "@/lib/store/services/members";
+
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -130,7 +131,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
             })
           }
         />
-        <Label htmlFor="countInStatistics">Count in statistics</Label>
+        <Label htmlFor="countInStatistics">Count in Qualified</Label>
       </div>
       {/* <div className="flex items-center space-x-2">
         <Checkbox
@@ -153,7 +154,7 @@ export default function WorkspaceSettingsPage() {
 
   const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
-
+  const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
@@ -267,8 +268,7 @@ export default function WorkspaceSettingsPage() {
 
     try {
       // Update the status in the backend (assuming you have an updateStatus mutation)
-      // await updateStatus({ statusData: statusToEdit, workspaceId });
-
+      // await updateStatus({ id: statusToEdit.id, ...statusToEdit, workspaceId });
       // Update local state
       setStatuses(prevStatuses =>
         prevStatuses.map(status =>

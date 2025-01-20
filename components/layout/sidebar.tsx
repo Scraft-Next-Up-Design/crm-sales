@@ -462,7 +462,6 @@ export function Sidebar({
           </Select>
         </div>
 
-        {/* Rest of the component remains the same */}
         {/* Navigation Routes */}
         <div className="space-y-4 py-4 px-3">
           <div className="space-y-1">
