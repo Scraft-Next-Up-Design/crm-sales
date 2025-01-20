@@ -33,9 +33,9 @@ export const statusApis = statusApi.injectEndpoints({
         body: statusData,
       }),
     }),
-    updateStatus: builder.mutation<Status, UpdatedStatus>({
+    updateStatus: builder.mutation<void , { id: any; updatedStatus: any}>({
       query: ({ id, ...updatedStatus }) => ({
-        url: `?action=updateStatus/${id}`,
+        url: `?action=updateStatus&id=${id}`,
         method: "PUT",
         body: updatedStatus,
       }),

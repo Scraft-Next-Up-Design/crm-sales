@@ -123,29 +123,16 @@ const StatusForm = ({ status, onSubmit }: any) => (
       <div className="flex items-center space-x-2">
         <Checkbox
           id="countInStatistics"
-          checked={status?.count_statistics}
+          checked={status.count_statistics}
           onCheckedChange={(checked) =>
             onSubmit({
               ...status,
-              countInStatistics: checked as boolean,
+              count_statistics: checked,
             })
           }
         />
         <Label htmlFor="countInStatistics">Count in Qualified</Label>
       </div>
-      {/* <div className="flex items-center space-x-2">
-        <Checkbox
-          id="showInWorkspace"
-          checked={status.showInWorkspace}
-          onCheckedChange={(checked) =>
-            onSubmit({
-              ...status,
-              showInWorkspace: checked as boolean,
-            })
-          }
-        />
-        <Label htmlFor="showInWorkspace">Show in workspace</Label>
-      </div> */}
     </div>
   </div>
 );
@@ -268,7 +255,7 @@ export default function WorkspaceSettingsPage() {
 
     try {
       // Update the status in the backend (assuming you have an updateStatus mutation)
-      // await updateStatus({ id: statusToEdit.id, ...statusToEdit, workspaceId });
+      await updateStatus({ id: statusToEdit.id, updatedStatus: statusToEdit });
       // Update local state
       setStatuses(prevStatuses =>
         prevStatuses.map(status =>
@@ -360,7 +347,6 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
-  console.log(isLoadingMembers)
   if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus) {
     return (
       <div className="flex items-center justify-center min-h-screen">

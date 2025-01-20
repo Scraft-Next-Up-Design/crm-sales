@@ -113,67 +113,87 @@ export default async function handler(
 
     case "PUT": {
       if (action === "updateStatus") {
-        const { id, name, description, workspaceId }: UpdatedStatusRequest =
-          body;
+        const { id } = query as any;
 
-        if (!id || !workspaceId) {
-          return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+        if (!id) {
+          return res.status(400).json({ error: "Status ID is required" });
         }
 
         try {
-          // Fetch the workspace details to verify ownership or membership
-          const { data: workspace, error: workspaceError } = await supabase
-            .from("workspaces")
-            .select("*")
-            .eq("id", workspaceId)
-            .single(); // Expect only one workspace
+          const { id } = query as any;
+          const { updatedStatus }: any = body;
+          const { name, color, count_statistics }: UpdatedStatusRequest =
+            updatedStatus;
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
 
-          if (workspaceError) {
-            return res.status(500).json({ error: workspaceError.message });
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          if (!workspace) {
-            return res.status(404).json({ error: "Workspace not found" });
+          // First, get the status and its workspace_id
+          const { data: statusData, error: statusError } = await supabase
+            .from("status")
+            .select("*, work_id")
+            .eq("id", id)
+            .single();
+
+          if (statusError || !statusData) {
+            return res.status(404).json({ error: "Status not found" });
           }
 
-          // Check if the user is the owner
-          if (workspace.owner_id !== user.id) {
-            // If not the owner, check if the user is a member
-            const { data: membership, error: membershipError } = await supabase
+          // If user is not the owner, check workspace membership and role
+          if (statusData.user_id !== user.id) {
+            const { data: memberData, error: memberError } = await supabase
               .from("workspace_members")
-              .select("*")
-              .eq("workspace_id", workspaceId)
+              .select("role")
+              .eq("workspace_id", statusData.work_id)
               .eq("user_id", user.id)
-              .single(); // Expect only one match
+              .single();
 
-            if (membershipError) {
-              return res.status(500).json({ error: membershipError.message });
-            }
-
-            if (!membership) {
+            if (memberError || !memberData) {
               return res
                 .status(403)
-                .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+                .json({ error: "Not a member of the workspace" });
+            }
+
+            // Check if user is admin
+            if (memberData.role !== "admin") {
+              return res.status(403).json({
+                error: "Only workspace admins can update other users' statuses",
+              });
             }
           }
-
-          // Update the status in the database
+          console.log(name);
+          // If we reach here, user is either the owner or an admin
           const { data, error } = await supabase
-            .from("statuses")
-            .update({ name, description, workspace_id: workspaceId })
+            .from("status")
+            .update({
+              color: color,
+              name: name,
+              count_statistics: count_statistics,
+            })
             .eq("id", id)
-            .eq("workspace_id", workspaceId); // Ensure the status belongs to the workspace
+            .select();
 
           if (error) {
+            console.error("Update error:", error);
             return res.status(400).json({ error: error.message });
           }
 
-          return res.status(200).json({ data });
+          return res
+            .status(200)
+            .json({ message: "Status updated successfully", data });
         } catch (error) {
-          console.error(error);
-          return res.status(500).json({ error: "An error occurred" });
+          console.error("Unexpected error:", error);
+          return res
+            .status(500)
+            .json({ error: "An unexpected error occurred" });
         }
       }
+
+      return res.status(400).json({ error: "Invalid action" });
     }
     case "DELETE": {
       if (action === "deleteStatus") {

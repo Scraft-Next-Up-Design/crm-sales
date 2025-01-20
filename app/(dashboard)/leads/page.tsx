@@ -545,9 +545,9 @@ const LeadManagement: React.FC = () => {
             </Button>
 
             {/* Add Lead Button */}
-            <Button onClick={openCreateDialog}>
+            {/* <Button onClick={openCreateDialog}>
               <Plus className="mr-2 h-4 w-4" /> Add Lead
-            </Button>
+            </Button> */}
           </div>
         </CardHeader>
         <CardContent>
