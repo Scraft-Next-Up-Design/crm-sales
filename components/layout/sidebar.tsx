@@ -322,13 +322,13 @@ export function Sidebar({
                 >
                   <div className="grid grid-cols-[1fr,auto,auto] items-center w-full gap-2">
                     <div className="flex items-center min-w-0">
-                      <Folder className="shrink-0 mr-2 h-4 w-4" />
+                      <Folder className="shrink-0 mr-1 h-4 w-auto" />
                       <span className="truncate">{workspace.name}</span>
                     </div>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-6 w-20 absolute right-0 ml-2"
+                      className="h-6 truncate block w-auto absolute right-0 mx-2"
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
