@@ -61,6 +61,7 @@ import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/s
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 import { calculateDaysAgo } from "@/utils/diffinFunc";
+import { X } from "lucide-react";
 
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -442,7 +443,9 @@ const LeadManagement: React.FC = () => {
     updateLead({ id, leads: { name, color } });
     toast.success(`Lead status updated to ${name}`);
   };
-
+  const deselectAll = () => {
+    setSelectedLeads([]);
+  };
   const handleAssignChange = (id: number, assign: string) => {
     const { name, role } = JSON.parse(assign);
     try {
@@ -546,13 +549,20 @@ const LeadManagement: React.FC = () => {
         <CardContent>
           {/* Delete Selected Button */}
           {selectedLeads.length > 0 && (
-            <div className="mb-4">
+            <div className="mb-4 flex space-x-2">
               <Button
                 variant="destructive"
                 onClick={() => setDialogMode("delete")}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete {selectedLeads.length} Selected
+              </Button>
+              <Button
+                variant="secondary"
+                onClick={deselectAll}
+              >
+                <X className="mr-2 h-4 w-4" />
+                Deselect All
               </Button>
             </div>
           )}
