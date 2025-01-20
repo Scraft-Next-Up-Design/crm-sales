@@ -60,6 +60,7 @@ import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMu
 import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
+import { calculateDaysAgo } from "@/utils/diffinFunc";
 
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -464,7 +465,6 @@ const LeadManagement: React.FC = () => {
     // updateLead({ id, leads: { assign: { name, role } } });
     toast.success(`Lead assigned to ${name}`);
   };
-  console.log(leads)
   const handleGoBack = () => {
     router.push("/dashboard");
   }
@@ -575,7 +575,7 @@ const LeadManagement: React.FC = () => {
                   <TableHead>Name</TableHead>
                   <TableHead>Email</TableHead>
                   <TableHead>Phone</TableHead>
-                  <TableHead>Contact Method</TableHead>
+                  <TableHead>Generated At</TableHead>
                   <TableHead>Actions</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Assign</TableHead>
@@ -590,11 +590,14 @@ const LeadManagement: React.FC = () => {
                         onCheckedChange={() => toggleLeadSelection(lead.id)}
                       />
                     </TableCell>
-                    <TableCell>{lead.Name}</TableCell>
+                    <TableCell> {lead.Name}
+                      <br />
+                      <span style={{ fontSize: '0.85em', color: 'gray' }}>
+                        {calculateDaysAgo(lead.createdAt)} days ago
+                      </span></TableCell>
                     <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.phone}</TableCell>
-
-                    <TableCell>{lead.contact_method}</TableCell>
+                    <TableCell>{lead.createdAt}</TableCell>
                     <TableCell>
                       <div className="flex space-x-2">
                         <Button
