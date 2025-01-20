@@ -56,13 +56,12 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation } from "@/lib/store/services/leadsApi";
+import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation, useBulkDeleteLeadsMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 import { calculateDaysAgo } from "@/utils/diffinFunc";
 import { X } from "lucide-react";
-
 // Zod validation schema for lead
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -92,6 +91,7 @@ const LeadManagement: React.FC = () => {
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
+  const [deleteLeadsData] = useBulkDeleteLeadsMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
   const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
@@ -327,11 +327,15 @@ const LeadManagement: React.FC = () => {
   };
 
   // Delete selected leads
-  const handleDelete = () => {
-    setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
-    setSelectedLeads([]);
-    setDialogMode(null);
-    toast.success("Selected leads deleted successfully");
+  const handleDelete = async () => {
+    try {
+      await deleteLeadsData({ id: selectedLeads });
+      setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
+      setSelectedLeads([]);
+      setDialogMode(null);
+      toast.success("Selected leads deleted successfully");
+    } catch (error) {
+    }
   };
 
   // Toggle lead selection

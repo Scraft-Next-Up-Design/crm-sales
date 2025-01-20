@@ -300,5 +300,42 @@ export default async function handler(
         error: AUTH_MESSAGES.API_ERROR,
         message: `Method ${method} is not allowed.`,
       });
+    case "DELETE": {
+      if (action === "deleteLeads") {
+        const { id } = req.body; // Extract the IDs from the request body
+
+        if (!id || !Array.isArray(id) || id.length === 0) {
+          return res
+            .status(400)
+            .json({ error: "A list of Lead IDs is required" });
+        }
+
+        // Authenticate the user using Supabase
+        const {
+          data: { user },
+        } = await supabase.auth.getUser(token);
+
+        if (!user) {
+          return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+        }
+
+        // Perform bulk deletion in the `leads` table
+        const { data, error } = await supabase
+          .from("leads")
+          .delete()
+          .in("id", id); // Use `.in()` to delete multiple rows by their IDs
+console.log(id)
+        if (error) {
+          console.error("Supabase Delete Error:", error.message);
+          return res.status(400).json({ error: error.message });
+        }
+
+        return res
+          .status(200)
+          .json({ message: "Leads deleted successfully", data });
+      }
+
+      return res.status(400).json({ error: `Unknown action: ${action}` });
+    }
   }
 }
