@@ -74,7 +74,7 @@ const leadSchema = z.object({
   contact_method: z.enum(["WhatsApp", "SMS", "Call"], {
     required_error: "Please select a contact method",
   }),
-  revenue: z.string().optional(),
+  revenue: z.number().optional(),
 });
 
 const initialFilters: any = {
@@ -121,13 +121,35 @@ const LeadManagement: React.FC = () => {
             contact_method: lead.contact_method,
             owner: lead.owner || "Unknown",
             status: lead.status || "New",
-            revenue: lead.revenue || "",
+            revenue: lead.revenue || 0,
             assign_to: lead.assign_to || "Not Assigned",
-            createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),  // Ensure valid date format
+            createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),
+            isDuplicate: false  // Ensure valid date format
           }))
-          .sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()); // Sort by most recent
+        const duplicates = new Set();
+        fetchedLeads.forEach((lead:any) => {
+          const duplicate = fetchedLeads.find(
+            (l:any) => l.id !== lead.id && (l.email === lead.email || l.phone === lead.phone)
+          );
+          if (duplicate) {
+            duplicates.add(lead.id);
+            duplicates.add(duplicate.id);
+          }
+        });
 
-        setLeads(fetchedLeads);
+        // Mark duplicates
+        const updatedLeads = fetchedLeads.map((lead:any) => ({
+          ...lead,
+          isDuplicate: duplicates.has(lead.id),
+        }));
+
+        // Sort by most recent
+        setLeads(
+          updatedLeads.sort(
+            (a: any, b: any) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+        );
       }
     };
 
@@ -242,7 +264,7 @@ const LeadManagement: React.FC = () => {
       company: "",
       position: "",
       contact_method: undefined,
-      revenue: "",
+      revenue: 0,
 
     },
   });
@@ -256,7 +278,7 @@ const LeadManagement: React.FC = () => {
       company: "",
       position: "",
       contact_method: undefined,
-      revenue: "",
+      revenue: 0,
     })
     setEditingLead(null);
     setDialogMode(null);
@@ -295,7 +317,7 @@ const LeadManagement: React.FC = () => {
           ...data,
           company: data.company || "",
           position: data.position || "",
-          revenue: data.revenue || "",
+          revenue: data.revenue || 0,
         },
         // console.log(leads),
       ]);
@@ -604,11 +626,15 @@ const LeadManagement: React.FC = () => {
                         onCheckedChange={() => toggleLeadSelection(lead.id)}
                       />
                     </TableCell>
-                    <TableCell> {lead.Name}
+                    <TableCell>
+                      {lead.Name}
                       <br />
-                      <span style={{ fontSize: '0.85em', color: 'gray' }}>
-                        {calculateDaysAgo(lead.createdAt)} days ago
-                      </span></TableCell>
+                      {lead.isDuplicate && (
+                        <span style={{ color: "red", fontSize: "0.85em" }}>
+                          Duplicate Lead
+                        </span>
+                      )}
+                    </TableCell>
                     <TableCell>{lead.email}</TableCell>
                     <TableCell>{lead.phone}</TableCell>
                     <TableCell>{lead.createdAt}</TableCell>
@@ -907,14 +933,17 @@ const LeadManagement: React.FC = () => {
                     <FormControl>
                       <Input
                         placeholder="Enter revenue"
-                        type="text"
+                        type="number"
                         {...field}
+                        value={field.value ? String(field.value) : ""}
+                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
                       />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
+
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">

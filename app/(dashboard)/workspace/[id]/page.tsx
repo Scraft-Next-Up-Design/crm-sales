@@ -147,14 +147,12 @@ export default function WorkspaceSettingsPage() {
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
-  // const fileInputRef = useRef<HTMLInputElement>(null);
   const [isSaving, setIsSaving] = useState(false);
   const { data: workspaceMembers, isLoading: isLoadingMembers, error } = useGetWorkspaceMembersQuery(workspaceId);
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
   const { data: workspaceData, isLoading: isLoadingWorkspace } = useGetWorkspacesByIdQuery(workspaceId);
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
-  console.log(workspaceMembers)
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "",
     industry: "",
