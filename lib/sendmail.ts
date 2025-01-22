@@ -13,7 +13,7 @@ const transporter = nodemailer.createTransport({
 export const sendMail = async (to: string, subject: string, html: string) => {
   try {
     const info = await transporter.sendMail({
-      from: `"TrackerHR" <${process.env.SMTP_USER}>`,
+      from: `"PRE CRM" <${process.env.SMTP_USER}>`,
       to,
       subject,
       html,
