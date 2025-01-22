@@ -61,6 +61,9 @@ import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/s
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 import { calculateDaysAgo } from "@/utils/diffinFunc";
+import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 import { X } from "lucide-react";
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -88,6 +91,9 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
+
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
+
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
@@ -127,9 +133,9 @@ const LeadManagement: React.FC = () => {
             isDuplicate: false  // Ensure valid date format
           }))
         const duplicates = new Set();
-        fetchedLeads.forEach((lead:any) => {
+        fetchedLeads.forEach((lead: any) => {
           const duplicate = fetchedLeads.find(
-            (l:any) => l.id !== lead.id && (l.email === lead.email || l.phone === lead.phone)
+            (l: any) => l.id !== lead.id && (l.email === lead.email || l.phone === lead.phone)
           );
           if (duplicate) {
             duplicates.add(lead.id);
@@ -138,7 +144,7 @@ const LeadManagement: React.FC = () => {
         });
 
         // Mark duplicates
-        const updatedLeads = fetchedLeads.map((lead:any) => ({
+        const updatedLeads = fetchedLeads.map((lead: any) => ({
           ...lead,
           isDuplicate: duplicates.has(lead.id),
         }));
@@ -521,8 +527,10 @@ const LeadManagement: React.FC = () => {
     <Loader2 className="h-8 w-8 animate-spin" />
   </div>;
   return (
-    <div className="w-full p-4 md:p-6 lg:p-8 ">
-      <Card className="w-full overflow-x-auto">
+    <div
+      className={`transition-all duration-500 ease-in-out ${isCollapsed ? "ml-[80px]" : "ml-[250px] max-w-[calc(100vw-256px)]"
+        } w-full overflow-hidden`}
+    >     <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
             values={filters}

@@ -28,7 +28,7 @@ export default function DashboardLayout({
     <div className="min-h-screen">
       <Navbar />
       <div className="flex">
-        <aside className="hidden md:block w-64 border-r min-h-[calc(100vh-4rem)]">
+        <aside className="hidden md:block border-r min-h-[calc(100vh-4rem)]">
           <Sidebar />
         </aside>
         <main className="flex-1">{children}</main>

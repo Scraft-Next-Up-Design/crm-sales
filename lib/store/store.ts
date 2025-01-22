@@ -8,6 +8,7 @@ import { workspaceApi } from "./base/workspace";
 import { leadsApi } from "./base/leadsapi";
 import { statusApi } from "./base/status";
 import { membersApi } from "./base/members";
+import sidebarReducer from "./slices/sideBar";
 export const store = configureStore({
   reducer: {
     [api.reducerPath]: api.reducer,
@@ -17,6 +18,7 @@ export const store = configureStore({
     [statusApi.reducerPath]: statusApi.reducer,
     [membersApi.reducerPath]: membersApi.reducer,
     auth: authReducer,
+    sidebar: sidebarReducer,
     // leads: leadsReducer,
   },
   middleware: (getDefaultMiddleware) =>
