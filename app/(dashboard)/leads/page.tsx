@@ -65,6 +65,7 @@ import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { X } from "lucide-react";
+import { formatDate } from "@/utils/date";
 // Zod validation schema for lead
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -528,8 +529,8 @@ const LeadManagement: React.FC = () => {
   </div>;
   return (
     <div
-      className={`transition-all duration-500 ease-in-out ${isCollapsed ? "ml-[80px]" : "ml-[250px] max-w-[calc(100vw-256px)]"
-        } w-full overflow-hidden`}
+      className={`transition-all duration-500 ease-in-out ${isCollapsed ? "ml-[80px]" : "ml-[250px] "
+        } w-auto overflow-hidden`}
     >     <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
@@ -601,11 +602,11 @@ const LeadManagement: React.FC = () => {
             </div>
           )}
 
-          <div className="">
-            <Table>
+          <div className="text-xs">
+            <Table className="text-xs">
               <TableHeader>
                 <TableRow>
-                  <TableHead>
+                  <TableHead className="px-2 py-1">
                     <Checkbox
                       checked={
                         paginatedLeads.length > 0 &&
@@ -616,76 +617,75 @@ const LeadManagement: React.FC = () => {
                       onCheckedChange={toggleSelectAllOnPage}
                     />
                   </TableHead>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Phone</TableHead>
-                  <TableHead>Generated At</TableHead>
-                  <TableHead>Actions</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Assign</TableHead>
+                  <TableHead className="px-2 py-1">Name</TableHead>
+                  <TableHead className="px-2 py-1">Email</TableHead>
+                  <TableHead className="px-2 py-1">Phone</TableHead>
+                  <TableHead className="px-2 py-1">Generated At</TableHead>
+                  <TableHead className="px-2 py-1">Actions</TableHead>
+                  <TableHead className="px-2 py-1">Status</TableHead>
+                  <TableHead className="px-2 py-1">Assign</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {paginatedLeads.map((lead) => (
                   <TableRow key={lead.id}>
-                    <TableCell>
+                    <TableCell className="px-2 py-1">
                       <Checkbox
                         checked={selectedLeads.includes(lead.id)}
                         onCheckedChange={() => toggleLeadSelection(lead.id)}
                       />
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="px-2 py-1">
                       {lead.Name}
                       <br />
                       {lead.isDuplicate && (
-                        <span style={{ color: "red", fontSize: "0.85em" }}>
+                        <span style={{ color: "red", fontSize: "0.7em" }}>
                           Duplicate Lead
                         </span>
                       )}
                     </TableCell>
-                    <TableCell>{lead.email}</TableCell>
-                    <TableCell>{lead.phone}</TableCell>
-                    <TableCell>{lead.createdAt}</TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
+                    <TableCell className="px-2 py-1">{lead.email}</TableCell>
+                    <TableCell className="px-2 py-1">{lead.phone}</TableCell>
+                    <TableCell className="px-2 py-1">{formatDate(lead.createdAt)}</TableCell>
+                    <TableCell className="px-2 py-1">
+                      <div className="flex space-x-1">
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() =>
                             initiateDirectContact(lead, lead.contact_method)
                           }
-                          className="h-8 w-8"
+                          className="h-6 w-6"
                           title={`Contact via ${lead.contact_method}`}
                         >
                           {lead.contact_method === "WhatsApp" && (
-                            <Send className="h-4 w-4" />
+                            <Send className="h-3 w-3" />
                           )}
                           {lead.contact_method === "Call" && (
-                            <Phone className="h-4 w-4" />
+                            <Phone className="h-3 w-3" />
                           )}
                           {lead.contact_method === "SMS" && (
-                            <MessageCircle className="h-4 w-4" />
+                            <MessageCircle className="h-3 w-3" />
                           )}
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() => openEditDialog(lead)}
-                          className="h-8 w-8"
+                          className="h-6 w-6"
                         >
-                          <Pencil className="h-4 w-4" />
+                          <Pencil className="h-3 w-3" />
                         </Button>
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() => handleView(lead.id)}
-                          className="h-8 w-8"
+                          className="h-6 w-6"
                         >
-                          <Eye className="h-4 w-4" />
+                          <Eye className="h-3 w-3" />
                         </Button>
                       </div>
                     </TableCell>
-
                     <TableCell className="border-none">
                       <Select
                         defaultValue={JSON.stringify({
@@ -783,6 +783,7 @@ const LeadManagement: React.FC = () => {
               </TableBody>
             </Table>
           </div>
+
 
           {/* Pagination */}
           {/* <div className="flex justify-between items-center mt-4">
