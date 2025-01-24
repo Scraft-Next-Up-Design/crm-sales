@@ -3,6 +3,7 @@ import { Filter, Loader2, UserIcon } from "lucide-react";
 import FilterComponent from "./filter";
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Check } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -643,50 +644,52 @@ const LeadManagement: React.FC = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell
-                      className={`p-3 relative overflow-hidden ${lead.is_email_valid === false
-                        ? 'bg-gradient-to-r from-red-50 to-white'
-                        : 'bg-gradient-to-r from-emerald-50 to-white'
-                        }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_email_valid === false
-                          ? 'bg-red-500'
-                          : 'bg-emerald-500'
-                          }`}></div>
+                    <TableCell className="p-3">
+                      <div className="flex items-center space-x-2">
+                        {lead.is_email_valid ? (
+                          <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
+                        ) : (
+                          <X className="w-5 h-5 text-red-600 stroke-[3]" />
+                        )}
                         <div>
-                          <span className={`font-medium ${lead.is_email_valid === false
-                            ? 'text-red-700'
-                            : 'text-emerald-700'
-                            }`}>
+                          <span className={`
+        font-medium tracking-tight 
+        ${lead.is_email_valid
+                              ? 'text-emerald-800'
+                              : 'text-red-800'
+                            }`}
+                          >
                             {lead.email}
                           </span>
-                          {lead.is_email_valid === false && (
-                            <div className="text-xs text-red-500 mt-1">Invalid Email</div>
+                          {!lead.is_email_valid && (
+                            <div className="text-xs text-red-600 mt-0.5">
+                              Invalid Email
+                            </div>
                           )}
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell
-                      className={`p-3 relative overflow-hidden ${lead.is_phone_valid === false
-                        ? 'bg-gradient-to-r from-red-50 to-white'
-                        : 'bg-gradient-to-r from-emerald-50 to-white'
-                        }`}
-                    >
-                      <div className="flex items-center space-x-3">
-                        <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_phone_valid === false
-                          ? 'bg-red-500'
-                          : 'bg-emerald-500'
-                          }`}></div>
+                    <TableCell className="p-3">
+                      <div className="flex items-center space-x-2">
+                        {lead.is_phone_valid ? (
+                          <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
+                        ) : (
+                          <X className="w-5 h-5 text-red-600 stroke-[3]" />
+                        )}
                         <div>
-                          <span className={`font-medium ${lead.is_phone_valid === false
-                            ? 'text-red-700'
-                            : 'text-emerald-700'
-                            }`}>
+                          <span className={`
+        font-medium tracking-tight 
+        ${lead.is_phone_valid
+                              ? 'text-emerald-800'
+                              : 'text-red-800'
+                            }`}
+                          >
                             {lead.phone}
                           </span>
-                          {lead.is_phone_valid === false && (
-                            <div className="text-xs text-red-500 mt-1">Invalid Phone</div>
+                          {!lead.is_phone_valid && (
+                            <div className="text-xs text-red-600 mt-0.5">
+                              Invalid Phone
+                            </div>
                           )}
                         </div>
                       </div>
