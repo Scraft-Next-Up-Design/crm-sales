@@ -365,21 +365,8 @@ export default function WorkspaceSettingsPage() {
       className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
     >       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
-          {activeTab === "general" && !isEditMode ? (
-            <Button
-              variant="outline"
-              size="sm"
-              style={{ marginLeft: "auto" }}
-              onClick={handleEditClick}
-              className="ml-2 text-red-600 border-red-600 hover:bg-red-600 hover:text-white dark:text-red-400 dark:border-red-400 dark:hover:bg-red-600 dark:hover:text-white focus:ring-2 focus:ring-red-600"
-            >
-              <Edit2 className="mr-2 h-4 w-4" />
-              Edit
-            </Button>
-          ) : null}
+
           <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
-
-
           {/* Responsive Tab Navigation */}
           <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
             <TabButton id="general" icon={Building} label="General" />
@@ -395,7 +382,30 @@ export default function WorkspaceSettingsPage() {
           {activeTab === "general" && (
             <Card>
               <CardHeader>
-                <CardTitle>Basic Information</CardTitle>
+                <CardTitle className="flex items-center justify-between w-full">
+                  <span>Basic Information</span>
+                  {activeTab === "general" && !isEditMode ? (
+                    <button
+                      onClick={handleEditClick}
+                      className="group relative flex items-center justify-center 
+         h-8 w-8 rounded-full 
+         bg-red-100 text-red-700 
+         dark:bg-red-800 dark:text-red-300 
+         hover:bg-red-200 dark:hover:bg-red-700 
+         transition-all duration-300 
+         ease-in-out 
+         transform hover:scale-105 
+         focus:outline-none 
+         focus:ring-2 
+         focus:ring-offset-2 
+         focus:ring-red-300"
+                      aria-label="Edit"
+                    >
+                      <Edit2 className="h-4 w-4 transition-transform group-hover:rotate-6" />
+                    </button>
+                  ) : null}
+                </CardTitle>
+
                 <CardDescription>
                   Manage your workspace core details
                 </CardDescription>

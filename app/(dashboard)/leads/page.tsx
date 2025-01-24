@@ -740,7 +740,7 @@ const LeadManagement: React.FC = () => {
                           name: lead.status?.name || "Pending",
                           color: lead.status?.color || "#ea1212",
                         })}
-                        onValueChange={(value) => handleStatusChange(lead.id, value)} // Uncomment and use for status change handler
+                        onValueChange={(value) => handleStatusChange(lead.id, value)}
                       >
                         <SelectTrigger
                           className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"

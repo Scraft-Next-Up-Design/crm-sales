@@ -189,7 +189,7 @@ const IndividualLeadPage: React.FC = () => {
                 src="https://res.cloudinary.com/dyiso4ohk/raw/upload/v1736332984/Call_o3ga1m.json"
                 className="fixed-player"
                 style={{
-                  width: '60px',
+                  width: '50px',
                 }}
               />
             </button>
@@ -200,7 +200,7 @@ const IndividualLeadPage: React.FC = () => {
                 src="https://res.cloudinary.com/dyiso4ohk/raw/upload/v1736331912/Whatsapp_vemsbg.json"
                 className="fixed-player"
                 style={{
-                  width: '60px',
+                  width: '50px',
                 }}
               /></button>
           </div>
@@ -302,21 +302,11 @@ const IndividualLeadPage: React.FC = () => {
 
                 <Card>
                   <CardHeader>
-                    <CardTitle>Additional Information</CardTitle>
+                    <CardTitle>Lead Information</CardTitle>
                   </CardHeader>
                   <CardContent>
                     {currentLead?.custom_data && (
                       <Card className="relative border-border/40">
-                        <CardHeader className="space-y-0 pb-4">
-                          <div className="flex items-center gap-3">
-                            <div className="rounded-md bg-primary/10 p-1">
-                              <Database className="h-4 w-4 text-primary" />
-                            </div>
-                            <CardTitle className="text-lg font-semibold text-foreground">
-                              Custom Fields
-                            </CardTitle>
-                          </div>
-                        </CardHeader>
                         <CardContent className="p-4 pt-0">
                           <ScrollArea className="h-[400px] pr-4">
 
@@ -355,7 +345,7 @@ const IndividualLeadPage: React.FC = () => {
               </div>
 
               <div className="mt-6 flex items-center space-x-4">
-                <Badge variant="secondary">
+                <Badge variant="secondary" style={{ backgroundColor: currentLead?.status?.color }}>
                   Status: {currentLead?.status?.name || "Pending"}
                 </Badge>
               </div>

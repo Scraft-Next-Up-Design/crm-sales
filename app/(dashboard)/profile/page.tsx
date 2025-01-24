@@ -29,7 +29,8 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { supabase } from '@/lib/supabaseClient';
 import { toast } from 'sonner';
 import { CRM_MESSAGES } from '@/lib/constant/crm';
-
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 interface ProfileDetails {
   personalInfo: {
     firstName: string;
@@ -223,6 +224,7 @@ function EditProfileDialog({
 }
 
 export default function ProfileDetailsPage() {
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState<any | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -343,10 +345,11 @@ export default function ProfileDetailsPage() {
   }
 
   return (
-    <div className="container mx-auto p-4 md:p-6 space-y-4 md:space-y-6">
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+    <div
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+    >      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Profile Details</h1>
-        <Button variant="outline" onClick={() => setIsEditDialogOpen(true)}>
+        <Button variant="outline" className='my-2' onClick={() => setIsEditDialogOpen(true)}>
           Edit Profile
         </Button>
       </div>
@@ -436,7 +439,7 @@ export default function ProfileDetailsPage() {
       </div>
 
       {/* Social Links */}
-      <Card>
+      <Card className='mt-6'>
         <CardHeader>
           <CardTitle>Connect with Me</CardTitle>
         </CardHeader>
