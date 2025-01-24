@@ -55,14 +55,14 @@ const isValidLead = (data: any): boolean => {
 async function validateEmail(email: string): Promise<boolean> {
   try {
     const response = await axios.get(
-      `https://api-bdc.net/data/email-verify?emailAddress=${email}&key=bdc_a38fe464805a4a87a7da7dc81ff059cd`
+      `https://emailverifier.reoon.com/api/v1/verify?email=${email}&key=XL7ZTf8wKJLCBtE1pCLMvPr53zfHPRIw&mode=quick`
     );
 
     // Check if email is valid based on API response
     return (
-      response.data.isValid &&
-      response.data.isSyntaxValid &&
-      response.data.isMailServerDefined
+      response.data.is_valid_syntax &&
+      response.data.mx_accepts_mail &&
+      response.data.status
     );
   } catch (error) {
     console.error("Email validation error:", error);
