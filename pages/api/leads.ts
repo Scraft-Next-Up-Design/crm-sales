@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../lib/supabaseServer";
 import Together from "together-ai";
+import axios from "axios";
 
 // Initialize Together AI client
 const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
-
 const SYSTEM_PROMPT = `You are a JSON formatter. Format the input data into a JSON object. ONLY OUTPUT THE JSON OBJECT, NO OTHER TEXT.
 
 Format Rules:
@@ -52,6 +52,54 @@ const isValidLead = (data: any): boolean => {
   return Boolean(hasName || hasPhone);
 };
 
+async function validateEmail(email: string): Promise<boolean> {
+  try {
+    const response = await axios.get("https://api-bdc.net/data/email-verify", {
+      params: {
+        emailAddress: email,
+        key: process.env.BIG_DATA_CLOUD_API_KEY, // Store API key in environment variables
+      },
+    });
+
+    // Check if email is valid based on API response
+    return (
+      response.data.isValid &&
+      response.data.formatCheck === "VALID" &&
+      response.data.mxCheck === "VALID"
+    );
+  } catch (error) {
+    console.error("Email validation error:", error);
+    return false;
+  }
+}
+
+// Phone number validation function
+async function validatePhoneNumber(
+  phoneNumber: string,
+  countryCode: string = "us"
+): Promise<boolean> {
+  try {
+    const response = await axios.get(
+      "https://api-bdc.net/data/phone-number-validate",
+      {
+        params: {
+          number: phoneNumber,
+          countryCode: countryCode,
+          localityLanguage: "en",
+          key: process.env.BIG_DATA_CLOUD_API_KEY, // Store API key in environment variables
+        },
+      }
+    );
+
+    // Check if phone number is valid based on API response
+    return (
+      response.data.isValidNumber && response.data.numberType !== "INVALID"
+    );
+  } catch (error) {
+    console.error("Phone number validation error:", error);
+    return false;
+  }
+}
 // Process data with Together AI
 async function processWithAI(inputData: any) {
   try {
@@ -228,6 +276,10 @@ export default async function handler(
       console.error("Webhook deactivated or not found.");
       throw new Error("Webhook deactivated.");
     }
+
+    const isEmailValid = await validateEmail(body.email);
+    const isPhoneValid = await validatePhoneNumber(body.phone);
+    console.log(isEmailValid, isPhoneValid);
     // Add metadata
     const leadData = {
       ...processedData,
@@ -242,6 +294,8 @@ export default async function handler(
       },
       work_id: req.query.workspaceId,
       revenue: 0,
+      is_email_valid: isEmailValid || false,
+      is_phone_valid: isPhoneValid || false,
     };
 
     // Save to database

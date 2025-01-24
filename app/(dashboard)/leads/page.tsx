@@ -62,7 +62,7 @@ import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 import { calculateDaysAgo } from "@/utils/diffinFunc";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { X } from "lucide-react";
 import { formatDate } from "@/utils/date";
