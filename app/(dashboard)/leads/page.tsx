@@ -645,19 +645,19 @@ const LeadManagement: React.FC = () => {
                     </TableCell>
                     <TableCell
                       className={`p-3 relative overflow-hidden ${lead.is_email_valid === false
-                          ? 'bg-gradient-to-r from-red-50 to-white'
-                          : 'bg-gradient-to-r from-emerald-50 to-white'
+                        ? 'bg-gradient-to-r from-red-50 to-white'
+                        : 'bg-gradient-to-r from-emerald-50 to-white'
                         }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_email_valid === false
-                            ? 'bg-red-500'
-                            : 'bg-emerald-500'
+                          ? 'bg-red-500'
+                          : 'bg-emerald-500'
                           }`}></div>
                         <div>
                           <span className={`font-medium ${lead.is_email_valid === false
-                              ? 'text-red-700'
-                              : 'text-emerald-700'
+                            ? 'text-red-700'
+                            : 'text-emerald-700'
                             }`}>
                             {lead.email}
                           </span>
@@ -669,19 +669,19 @@ const LeadManagement: React.FC = () => {
                     </TableCell>
                     <TableCell
                       className={`p-3 relative overflow-hidden ${lead.is_phone_valid === false
-                          ? 'bg-gradient-to-r from-red-50 to-white'
-                          : 'bg-gradient-to-r from-emerald-50 to-white'
+                        ? 'bg-gradient-to-r from-red-50 to-white'
+                        : 'bg-gradient-to-r from-emerald-50 to-white'
                         }`}
                     >
                       <div className="flex items-center space-x-3">
                         <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_phone_valid === false
-                            ? 'bg-red-500'
-                            : 'bg-emerald-500'
+                          ? 'bg-red-500'
+                          : 'bg-emerald-500'
                           }`}></div>
                         <div>
                           <span className={`font-medium ${lead.is_phone_valid === false
-                              ? 'text-red-700'
-                              : 'text-emerald-700'
+                            ? 'text-red-700'
+                            : 'text-emerald-700'
                             }`}>
                             {lead.phone}
                           </span>
