@@ -277,8 +277,8 @@ export default async function handler(
       throw new Error("Webhook deactivated.");
     }
 
-    const isEmailValid = await validateEmail(body.email);
-    const isPhoneValid = await validatePhoneNumber(body.phone);
+    const isEmailValid = await validateEmail(processedData.email)
+    const isPhoneValid = await validatePhoneNumber(processedData.phone);
     console.log(isEmailValid, isPhoneValid);
     // Add metadata
     const leadData = {
