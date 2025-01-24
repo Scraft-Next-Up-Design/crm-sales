@@ -129,7 +129,7 @@ const LeadManagement: React.FC = () => {
             revenue: lead.revenue || 0,
             assign_to: lead.assign_to || "Not Assigned",
             createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),
-            isDuplicate: false , // Ensure valid date format 
+            isDuplicate: false, // Ensure valid date format 
             is_email_valid: lead.is_email_valid,
             is_phone_valid: lead.is_phone_valid
           }))
@@ -643,60 +643,54 @@ const LeadManagement: React.FC = () => {
                         </span>
                       )}
                     </TableCell>
-                    <TableCell 
-  className={`p-3 relative overflow-hidden ${
-    lead.is_email_valid === false 
-      ? 'bg-gradient-to-r from-red-50 to-white' 
-      : 'bg-gradient-to-r from-emerald-50 to-white'
-  }`}
->
-  <div className="flex items-center space-x-3">
-    <div className={`w-2 h-2 rounded-full animate-pulse ${
-      lead.is_email_valid === false 
-        ? 'bg-red-500' 
-        : 'bg-emerald-500'
-    }`}></div>
-    <div>
-      <span className={`font-medium ${
-        lead.is_email_valid === false 
-          ? 'text-red-700' 
-          : 'text-emerald-700'
-      }`}>
-        {lead.email}
-      </span>
-      {lead.is_email_valid === false && (
-        <div className="text-xs text-red-500 mt-1">Invalid Email</div>
-      )}
-    </div>
-  </div>
-</TableCell>
-<TableCell 
-  className={`p-3 relative overflow-hidden ${
-    lead.is_phone_valid === false 
-      ? 'bg-gradient-to-r from-red-50 to-white' 
-      : 'bg-gradient-to-r from-emerald-50 to-white'
-  }`}
->
-  <div className="flex items-center space-x-3">
-    <div className={`w-2 h-2 rounded-full animate-pulse ${
-      lead.is_phone_valid === false 
-        ? 'bg-red-500' 
-        : 'bg-emerald-500'
-    }`}></div>
-    <div>
-      <span className={`font-medium ${
-        lead.is_phone_valid === false 
-          ? 'text-red-700' 
-          : 'text-emerald-700'
-      }`}>
-        {lead.phone}
-      </span>
-      {lead.is_phone_valid === false && (
-        <div className="text-xs text-red-500 mt-1">Invalid Phone</div>
-      )}
-    </div>
-  </div>
-</TableCell>
+                    <TableCell
+                      className={`p-3 relative overflow-hidden ${lead.is_email_valid === false
+                          ? 'bg-gradient-to-r from-red-50 to-white'
+                          : 'bg-gradient-to-r from-emerald-50 to-white'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_email_valid === false
+                            ? 'bg-red-500'
+                            : 'bg-emerald-500'
+                          }`}></div>
+                        <div>
+                          <span className={`font-medium ${lead.is_email_valid === false
+                              ? 'text-red-700'
+                              : 'text-emerald-700'
+                            }`}>
+                            {lead.email}
+                          </span>
+                          {lead.is_email_valid === false && (
+                            <div className="text-xs text-red-500 mt-1">Invalid Email</div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell
+                      className={`p-3 relative overflow-hidden ${lead.is_phone_valid === false
+                          ? 'bg-gradient-to-r from-red-50 to-white'
+                          : 'bg-gradient-to-r from-emerald-50 to-white'
+                        }`}
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full animate-pulse ${lead.is_phone_valid === false
+                            ? 'bg-red-500'
+                            : 'bg-emerald-500'
+                          }`}></div>
+                        <div>
+                          <span className={`font-medium ${lead.is_phone_valid === false
+                              ? 'text-red-700'
+                              : 'text-emerald-700'
+                            }`}>
+                            {lead.phone}
+                          </span>
+                          {lead.is_phone_valid === false && (
+                            <div className="text-xs text-red-500 mt-1">Invalid Phone</div>
+                          )}
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell className="px-2 py-1">{formatDate(lead.createdAt)}</TableCell>
                     <TableCell className="px-2 py-1">
                       <div className="flex space-x-1">
