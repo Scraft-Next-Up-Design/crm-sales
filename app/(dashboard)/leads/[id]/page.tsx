@@ -173,8 +173,8 @@ const IndividualLeadPage: React.FC = () => {
   const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
     <div
-    className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
-  >
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+    >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-4">

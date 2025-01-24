@@ -477,10 +477,10 @@ const LeadManagement: React.FC = () => {
   const deselectAll = () => {
     setSelectedLeads([]);
   };
-  const handleAssignChange = (id: number, assign: string) => {
+  const handleAssignChange = async (id: number, assign: string) => {
     const { name, role } = JSON.parse(assign);
     try {
-      assignRole({ id, data: { name, role } });
+      await assignRole({ id, data: { name, role } });
       setLeads((prevLeads) =>
         prevLeads.map((lead) =>
           lead.id === id ? {
@@ -527,8 +527,8 @@ const LeadManagement: React.FC = () => {
   </div>;
   return (
     <div
-    className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
-  >     <Card className="w-full overflow-x-auto">
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+    >     <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
             values={filters}

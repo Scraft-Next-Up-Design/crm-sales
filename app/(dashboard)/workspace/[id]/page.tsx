@@ -60,7 +60,8 @@ import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
 import { useAddMemberMutation } from "@/lib/store/services/members";
-
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -138,7 +139,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
 );
 
 export default function WorkspaceSettingsPage() {
-
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
   const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
@@ -360,8 +361,9 @@ export default function WorkspaceSettingsPage() {
     );
   }
   return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+    <div
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+    >       <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
           {activeTab === "general" && !isEditMode ? (
             <Button
