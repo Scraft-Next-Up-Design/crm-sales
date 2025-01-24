@@ -54,18 +54,15 @@ const isValidLead = (data: any): boolean => {
 
 async function validateEmail(email: string): Promise<boolean> {
   try {
-    const response = await axios.get("https://api-bdc.net/data/email-verify", {
-      params: {
-        emailAddress: email,
-        key: process.env.BIG_DATA_CLOUD_API_KEY, // Store API key in environment variables
-      },
-    });
+    const response = await axios.get(
+      `https://api-bdc.net/data/email-verify?emailAddress=${email}&key=bdc_a38fe464805a4a87a7da7dc81ff059cd`
+    );
 
     // Check if email is valid based on API response
     return (
       response.data.isValid &&
-      response.data.formatCheck === "VALID" &&
-      response.data.mxCheck === "VALID"
+      response.data.isSyntaxValid &&
+      response.data.isMailServerDefined
     );
   } catch (error) {
     console.error("Email validation error:", error);
@@ -74,27 +71,14 @@ async function validateEmail(email: string): Promise<boolean> {
 }
 
 // Phone number validation function
-async function validatePhoneNumber(
-  phoneNumber: string,
-  countryCode: string = "us"
-): Promise<boolean> {
+async function validatePhoneNumber(phoneNumber: string): Promise<boolean> {
   try {
     const response = await axios.get(
-      "https://api-bdc.net/data/phone-number-validate",
-      {
-        params: {
-          number: phoneNumber,
-          countryCode: countryCode,
-          localityLanguage: "en",
-          key: process.env.BIG_DATA_CLOUD_API_KEY, // Store API key in environment variables
-        },
-      }
+      `https://api-bdc.net/data/phone-number-validate?number=${phoneNumber}&countryCode=IN&localityLanguage=en&key=bdc_a38fe464805a4a87a7da7dc81ff059cd`
     );
 
     // Check if phone number is valid based on API response
-    return (
-      response.data.isValidNumber && response.data.numberType !== "INVALID"
-    );
+    return response.data.isValid;
   } catch (error) {
     console.error("Phone number validation error:", error);
     return false;
@@ -277,7 +261,7 @@ export default async function handler(
       throw new Error("Webhook deactivated.");
     }
 
-    const isEmailValid = await validateEmail(processedData.email)
+    const isEmailValid = await validateEmail(processedData.email);
     const isPhoneValid = await validatePhoneNumber(processedData.phone);
     console.log(isEmailValid, isPhoneValid);
     // Add metadata
