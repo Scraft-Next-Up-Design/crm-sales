@@ -92,9 +92,7 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
-
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
@@ -529,9 +527,8 @@ const LeadManagement: React.FC = () => {
   </div>;
   return (
     <div
-      className={`transition-all duration-500 ease-in-out ${isCollapsed ? "ml-[80px]" : "ml-[250px] "
-        } w-auto overflow-hidden`}
-    >     <Card className="w-full overflow-x-auto">
+    className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+  >     <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
             values={filters}

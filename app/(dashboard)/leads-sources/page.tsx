@@ -40,6 +40,8 @@ import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),
@@ -60,6 +62,7 @@ export type Source = {
   workspace_id?: string | null; // Can be a string or null
 };
 const LeadSourceManager: React.FC = () => {
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const { data: workspacesData, isLoading: workspaceLoading, error: workspaceError } = useGetActiveWorkspaceQuery();
   const [changeWebhookStatus] = useChangeWebhookStatusMutation()
   const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
@@ -196,7 +199,9 @@ const LeadSourceManager: React.FC = () => {
   </div>
 
   return (
-    <div className="w-full p-4 md:p-6 lg:p-8">
+    <div
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+    >
       <Card className="w-full">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <CardTitle className="text-lg md:text-xl lg:text-2xl">

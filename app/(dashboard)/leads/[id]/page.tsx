@@ -52,10 +52,12 @@ import {
 } from "@/components/ui/accordion";
 import { extractUserNameAndTimestamp } from "@/utils/message";
 import { Player } from "@lottiefiles/react-lottie-player";
-
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
+  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const [expandedItems, setExpandedItems] = useState<{ [key: number]: boolean }>({});
   const [updateLead] = useUpdateLeadMutation();
   const [addNotes] = useAddNotesMutation();
@@ -170,7 +172,9 @@ const IndividualLeadPage: React.FC = () => {
   // console.log(notes.map(note => note.message))
   const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
-    <div className="container mx-auto pt-2">
+    <div
+    className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+  >
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div className="flex items-center gap-4">
