@@ -47,11 +47,8 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "GET",
       }),
     }),
-    getWebhooksBySourceId: builder.query<
-      any,
-      { id: string; workspaceId: string }
-    >({
-      query: ({ id ,workspaceId}) => ({
+    getWebhooksBySourceId: builder.query<any,{ id: string; workspaceId: string }>({
+      query: ({ id, workspaceId }) => ({
         url: `?action=getWebhooksBySourceId&sourceId=${id}&workspaceId=${workspaceId}`, // Include the id as a query parameter
         method: "GET",
       }),

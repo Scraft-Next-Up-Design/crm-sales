@@ -49,7 +49,7 @@ const SalesDashboard = () => {
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
-  const { data: webhooks } = useGetWebhooksBySourceIdQuery(
+  const { data: webhooks, isLoading: isWebhooksLoading } = useGetWebhooksBySourceIdQuery(
     {
       workspaceId: activeWorkspace?.data?.id,
       id: ROC?.top_source_id // Using the top source ID from ROC data
@@ -58,6 +58,8 @@ const SalesDashboard = () => {
       skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
     }
   );
+  console.log(webhooks)
+
   console.log(qualifiedCount)
   const { arrivedLeadsCount } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
@@ -101,7 +103,7 @@ const SalesDashboard = () => {
     sales: stat.convertedLeads,
   })) || [];
 
-  if (isLoading || isCountLoading || isRevenueLoading || isRocLoading || isWorkspaceLoading || isQualifiedCountLoading) {
+  if (isLoading || isCountLoading || isRevenueLoading || isRocLoading || isWorkspaceLoading || isQualifiedCountLoading || isWebhooksLoading) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />

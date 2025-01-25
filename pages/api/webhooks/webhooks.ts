@@ -117,7 +117,7 @@ export default async function handler(
           if (!sourceId) {
             return res.status(400).json({ error: "Source ID is required" });
           }
-
+          console.log("sell",workspaceId, sourceId);
           const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/leads?action=getLeads&sourceId=${sourceId}&workspaceId=${workspaceId}`;
           console.log(webhookUrl);
 
@@ -125,7 +125,7 @@ export default async function handler(
           const { data, error } = await supabase
             .from("webhooks")
             .select("id, name")
-            .eq("user_id", user.id)
+            // .eq("user_id", user.id)
             .eq("webhook_url", webhookUrl);
 
           if (error) {
@@ -266,12 +266,10 @@ export default async function handler(
 
             if (!membership || membership.role !== "admin") {
               // Only admins can change the status if not the owner
-              return res
-                .status(403)
-                .json({
-                  error:
-                    "You do not have permission to change the webhook status",
-                });
+              return res.status(403).json({
+                error:
+                  "You do not have permission to change the webhook status",
+              });
             }
 
             // Allow admins to change the webhook status
