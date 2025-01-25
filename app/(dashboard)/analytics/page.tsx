@@ -25,12 +25,13 @@ import {
 import {
   Users,
   TrendingUp,
-  DollarSign
+  DollarSign,
+  Loader2
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-
+import { useGetActiveWorkspaceQuery, useGetWorkspaceDetailsAnalyticsQuery } from '@/lib/store/services/workspace';
 // Enhanced TypeScript Interfaces
 interface LeadMetrics {
   total: number;
@@ -58,7 +59,13 @@ const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
 export default function AdvancedAnalyticsDashboard() {
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
+  const { data: analyticsDetails, isLoading: isLoadingAnalytics } = useGetWorkspaceDetailsAnalyticsQuery(
+    activeWorkspace?.data?.id,
+    { skip: !activeWorkspace?.data?.id }
+  );
+  console.log(analyticsDetails);
+  const workspaceId = activeWorkspace?.data?.id;
   const analyticsData: AnalyticsData = useMemo(() => ({
     leads: {
       total: 1245,
@@ -89,10 +96,16 @@ export default function AdvancedAnalyticsDashboard() {
       { month: 'Jun', leads: 550, revenue: 38000, processedLeads: 400, conversionRate: 26 }
     ]
   }), []);
-
+  if (isLoadingAnalytics || isLoadingWorkspace) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
   return (
-    <div 
-      className={`transition-all duration-300 px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto`}
+    <div
+      className={`transition-all duration-300 px-4 py-6 ${isCollapsed ? "lg:ml-[80px]" : "lg:ml-[250px]"} w-auto`}
     >
       <h1 className="text-3xl font-bold mb-6">Sales Analytics</h1>
 
@@ -104,8 +117,8 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Leads</p>
               <p className="text-2xl font-bold">{analyticsData.leads.total}</p>
-              <Badge 
-                variant={analyticsData.leads.monthlyGrowth > 0 ? 'default' : 'destructive'} 
+              <Badge
+                variant={analyticsData.leads.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.leads.monthlyGrowth}% Growth
@@ -123,8 +136,8 @@ export default function AdvancedAnalyticsDashboard() {
               <p className="text-2xl font-bold">
                 ${analyticsData.revenue.total.toLocaleString('en-US')}
               </p>
-              <Badge 
-                variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'} 
+              <Badge
+                variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.revenue.monthlyGrowth}% Growth
@@ -191,11 +204,11 @@ export default function AdvancedAnalyticsDashboard() {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="conversionRate" 
-                  stroke="#82ca9d" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="conversionRate"
+                  stroke="#82ca9d"
+                  strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>
@@ -264,11 +277,11 @@ export default function AdvancedAnalyticsDashboard() {
                 <XAxis dataKey="month" />
                 <YAxis />
                 <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="processedLeads" 
-                  stroke="#8884d8" 
-                  strokeWidth={2} 
+                <Line
+                  type="monotone"
+                  dataKey="processedLeads"
+                  stroke="#8884d8"
+                  strokeWidth={2}
                 />
               </LineChart>
             </ResponsiveContainer>

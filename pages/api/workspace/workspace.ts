@@ -371,33 +371,39 @@ export default async function handler(
             return res.status(500).json({ error: "Internal server error" });
           }
         }
-        case "getArrivedLeadsCount": {
+        case "getWorkspaceAnalytics": {
           const { workspaceId } = query;
-
+          const token = authHeader.split(" ")[1];
+        
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
-
-          // Convert workspaceId to integer
+        
           const workspaceIdInt = parseInt(workspaceId as string);
-          console.log(workspaceIdInt);
           if (isNaN(workspaceIdInt)) {
-            return res
-              .status(400)
-              .json({ error: "Invalid workspace ID format" });
+            return res.status(400).json({ error: "Invalid workspace ID format" });
           }
-
+        
           try {
-            const { data, error } = await supabase.rpc("count_arrived_leads", {
-              workspace_id: workspaceIdInt,
+            const {
+              data: { user },
+            } = await supabase.auth.getUser(token);
+            const { data, error } = await supabase.rpc("get_workspace_analytics", {
+              p_workspace_id: workspaceIdInt,
+              p_user_id: user?.id,
             });
-
+        console.log(error)
             if (error) {
-              console.error("Error counting arrived leads:", error);
+              console.error("Error retrieving workspace analytics:", error);
               return res.status(400).json({ error: error.message });
             }
-
-            return res.status(200).json({ arrivedLeadsCount: data });
+        
+            // If data is not authorized, handle accordingly
+            if (data.error) {
+              return res.status(403).json({ error: data.error });
+            }
+        
+            return res.status(200).json(data);
           } catch (error) {
             console.error("Error:", error);
             return res.status(500).json({ error: "Internal server error" });

@@ -132,7 +132,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
             })
           }
         />
-        <Label htmlFor="countInStatistics">Count in Qualified</Label>
+        <Label htmlFor="countInStatistics">Count As Qualified</Label>
       </div>
     </div>
   </div>
@@ -768,7 +768,7 @@ export default function WorkspaceSettingsPage() {
                                 checked={status?.count_statistics}
                                 disabled
                               />
-                              <Label className="text-sm">Count in Qualified</Label>
+                              <Label className="text-sm">Count As Qualified</Label>
                             </div>
                             {/* <div className="flex items-center gap-2">
                               <Checkbox
