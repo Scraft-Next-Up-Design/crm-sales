@@ -480,21 +480,86 @@ export default function WorkspaceSettingsPage() {
                         <SelectValue placeholder="Select Timezone" />
                       </SelectTrigger>
                       <SelectContent>
+                        {/* American Timezones */}
                         <SelectItem value="America/New_York">
-                          Eastern Time (EST)
+                          Eastern Time (EST, UTC-05:00)
                         </SelectItem>
                         <SelectItem value="America/Chicago">
-                          Central Time (CST)
+                          Central Time (CST, UTC-06:00)
                         </SelectItem>
                         <SelectItem value="America/Denver">
-                          Mountain Time (MST)
+                          Mountain Time (MST, UTC-07:00)
                         </SelectItem>
                         <SelectItem value="America/Los_Angeles">
-                          Pacific Time (PST)
+                          Pacific Time (PST, UTC-08:00)
+                        </SelectItem>
+
+                        {/* European Timezones */}
+                        <SelectItem value="Europe/London">
+                          Greenwich Mean Time (GMT, UTC+00:00)
+                        </SelectItem>
+                        <SelectItem value="Europe/Paris">
+                          Central European Time (CET, UTC+01:00)
+                        </SelectItem>
+                        <SelectItem value="Europe/Moscow">
+                          Moscow Standard Time (MSK, UTC+03:00)
+                        </SelectItem>
+
+                        {/* Asian Timezones */}
+                        <SelectItem value="Asia/Kolkata">
+                          India Standard Time (IST, UTC+05:30)
+                        </SelectItem>
+                        <SelectItem value="Asia/Tokyo">
+                          Japan Standard Time (JST, UTC+09:00)
+                        </SelectItem>
+                        <SelectItem value="Asia/Shanghai">
+                          China Standard Time (CST, UTC+08:00)
+                        </SelectItem>
+                        <SelectItem value="Asia/Dubai">
+                          Gulf Standard Time (GST, UTC+04:00)
+                        </SelectItem>
+
+                        {/* Australian Timezones */}
+                        <SelectItem value="Australia/Sydney">
+                          Australian Eastern Time (AET, UTC+10:00)
+                        </SelectItem>
+                        <SelectItem value="Australia/Adelaide">
+                          Australian Central Time (ACT, UTC+09:30)
+                        </SelectItem>
+                        <SelectItem value="Australia/Perth">
+                          Australian Western Time (AWT, UTC+08:00)
+                        </SelectItem>
+
+                        {/* African Timezones */}
+                        <SelectItem value="Africa/Johannesburg">
+                          South Africa Standard Time (SAST, UTC+02:00)
+                        </SelectItem>
+                        <SelectItem value="Africa/Cairo">
+                          Eastern European Time (EET, UTC+02:00)
+                        </SelectItem>
+
+                        {/* South American Timezones */}
+                        <SelectItem value="America/Sao_Paulo">
+                          Brasilia Time (BRT, UTC-03:00)
+                        </SelectItem>
+                        <SelectItem value="America/Argentina/Buenos_Aires">
+                          Argentina Time (ART, UTC-03:00)
+                        </SelectItem>
+
+                        {/* Other Timezones */}
+                        <SelectItem value="Pacific/Auckland">
+                          New Zealand Standard Time (NZST, UTC+12:00)
+                        </SelectItem>
+                        <SelectItem value="Pacific/Honolulu">
+                          Hawaii-Aleutian Time (HST, UTC-10:00)
+                        </SelectItem>
+                        <SelectItem value="UTC">
+                          Coordinated Universal Time (UTC, UTC+00:00)
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
+
                 </div>
               </CardContent>
             </Card>
