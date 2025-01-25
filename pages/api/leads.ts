@@ -2,7 +2,8 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../lib/supabaseServer";
 import Together from "together-ai";
 import axios from "axios";
-
+import cors from "cors";
+import { runMiddleware } from "@/utils/runMiddleware";
 // Initialize Together AI client
 const together = new Together({ apiKey: process.env.TOGETHER_API_KEY });
 const SYSTEM_PROMPT = `You are a JSON formatter. Format the input data into a JSON object. ONLY OUTPUT THE JSON OBJECT, NO OTHER TEXT.
@@ -205,9 +206,12 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  res.setHeader("Access-Control-Allow-Origin", "*"); // Allow all origins
-  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  const corsHandler = cors({
+    origin: '*', // Allow all origins (use specific origins in production)
+    methods: ['POST', 'OPTIONS'], // Allowed methods
+    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+  });
+  await runMiddleware(req, res, corsHandler);
 
   const { method, body, query, headers } = req;
   const action = query.action as string;
