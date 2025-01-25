@@ -63,7 +63,7 @@ async function validateEmail(email: string): Promise<boolean> {
     return (
       response.data.is_valid_syntax &&
       response.data.mx_accepts_mail &&
-      response.data.status
+      response.data.status === "valid"
     );
   } catch (error) {
     console.error("Email validation error:", error);
@@ -135,7 +135,7 @@ function fallbackProcess(data: any) {
     name: "",
     email: "",
     phone: "",
-    // message: "",
+    message: "",
     custom_data: {},
   };
 
@@ -239,7 +239,6 @@ export default async function handler(
       processedData = fallbackProcess(data);
     }
 
-    // Merge any additional custom data
     if (customData) {
       processedData.custom_data = {
         ...processedData.custom_data,
