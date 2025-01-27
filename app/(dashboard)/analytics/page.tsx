@@ -31,7 +31,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-import { useGetActiveWorkspaceQuery, useGetWorkspaceDetailsAnalyticsQuery } from '@/lib/store/services/workspace';
+import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery, useGetCountByWorkspaceQuery } from '@/lib/store/services/workspace';
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+
 // Enhanced TypeScript Interfaces
 interface LeadMetrics {
   total: number;
@@ -60,21 +62,36 @@ const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 export default function AdvancedAnalyticsDashboard() {
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
-  const { data: analyticsDetails, isLoading: isLoadingAnalytics } = useGetWorkspaceDetailsAnalyticsQuery(
+  const { data: analyticsDetails, isLoading: isLoadingAnalytics } = useGetRevenueByWorkspaceQuery(
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
-  console.log(analyticsDetails);
-  const workspaceId = activeWorkspace?.data?.id;
-  const analyticsData: AnalyticsData = useMemo(() => ({
+  const { data: totalLeads, isLoading: loadingTotalLeads }: any = useGetLeadsByWorkspaceQuery(
+    { workspaceId: activeWorkspace?.data?.id },
+    { skip: !activeWorkspace?.data?.id }
+  );
+  const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
+    activeWorkspace?.data?.id,
+    {
+      skip: !activeWorkspace?.data?.id,
+    }
+  );
+  const { data: workspaceCount, isLoading: isCountLoading } = useGetCountByWorkspaceQuery(
+    activeWorkspace?.data?.id,
+    { skip: !activeWorkspace?.data?.id }
+  );
+  const { arrivedLeadsCount } = workspaceCount || 0;
+
+  console.log(ROC);
+  const analyticsData: any = useMemo(() => ({
     leads: {
-      total: 1245,
+      total: ROC?.total_leads ?? 0,
       monthlyGrowth: 12.5,
       byStatus: [
-        { status: 'New', count: 450 },
-        { status: 'Qualified', count: 350 },
-        { status: 'Negotiation', count: 250 },
-        { status: 'Converted', count: 195 }
+        { status: 'Converted', count: ROC?.converted_leads ?? 0 },
+        { status: 'Arrived', count: arrivedLeadsCount },
+        { status: 'Processed', count: ROC?.total_leads - arrivedLeadsCount },
+        { status: 'Total Leads', count: ROC?.total_leads }
       ],
       bySource: [
         { source: 'Website', count: 500 },
@@ -84,18 +101,18 @@ export default function AdvancedAnalyticsDashboard() {
       ]
     },
     revenue: {
-      total: 156000,
+      total: analyticsDetails?.totalRevenue || 0,
       monthlyGrowth: 8.3
     },
-    chartData: [
-      { month: 'Jan', leads: 400, revenue: 24000, processedLeads: 250, conversionRate: 20 },
-      { month: 'Feb', leads: 300, revenue: 29000, processedLeads: 200, conversionRate: 22 },
-      { month: 'Mar', leads: 500, revenue: 35000, processedLeads: 350, conversionRate: 25 },
-      { month: 'Apr', leads: 450, revenue: 32000, processedLeads: 300, conversionRate: 23 },
-      { month: 'May', leads: 600, revenue: 40000, processedLeads: 450, conversionRate: 27 },
-      { month: 'Jun', leads: 550, revenue: 38000, processedLeads: 400, conversionRate: 26 }
-    ]
-  }), []);
+    chartData: ROC?.monthly_stats?.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
+      month: stat.month.split(" ")[0], // Extract month name from "January 2025"
+      leads: stat.totalLeads,
+      revenue: 0, // Assuming revenue data is unavailable in ROC
+      processedLeads: stat.totalLeads, // Assuming all leads are processed
+      conversionRate: parseFloat(stat.conversionRate.replace('%', '')) // Convert "41.18%" to 41.18
+    })) || []
+  }), [ROC, analyticsDetails, arrivedLeadsCount]);
+
   if (isLoadingAnalytics || isLoadingWorkspace) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
@@ -105,8 +122,10 @@ export default function AdvancedAnalyticsDashboard() {
   }
   return (
     <div
-      className={`transition-all duration-300 px-4 py-6 ${isCollapsed ? "lg:ml-[80px]" : "lg:ml-[250px]"} w-auto`}
+      className={`transition-all duration-300 px-4 py-6 
+      ${isCollapsed ? "lg:ml-[80px] md:ml-[80px]" : "lg:ml-[250px] md:ml-[250px]"} w-auto`}
     >
+
       <h1 className="text-3xl font-bold mb-6">Sales Analytics</h1>
 
       {/* Performance Metrics Grid */}
@@ -134,7 +153,7 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
               <p className="text-2xl font-bold">
-                ${analyticsData.revenue.total.toLocaleString('en-US')}
+                ₹{analyticsData.revenue.total.toLocaleString('en-US')}
               </p>
               <Badge
                 variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'}
@@ -181,7 +200,7 @@ export default function AdvancedAnalyticsDashboard() {
                   outerRadius={90}
                   label
                 >
-                  {analyticsData.leads.byStatus.map((entry, index) => (
+                  {analyticsData.leads.byStatus.map((entry: { status: string; count: number }, index: number) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -232,7 +251,7 @@ export default function AdvancedAnalyticsDashboard() {
                   outerRadius={90}
                   label
                 >
-                  {analyticsData.leads.bySource.map((entry, index) => (
+                  {analyticsData.leads.bySource.map((entry: { source: string; count: number }, index: number) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>

@@ -58,8 +58,6 @@ const SalesDashboard = () => {
       skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
     }
   );
-  console.log(webhooks)
-
   console.log(qualifiedCount)
   const { arrivedLeadsCount } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
@@ -97,6 +95,7 @@ const SalesDashboard = () => {
       change: "5 Deals",
     },
   ];
+  console.log(webhooks)
 
   const salesData = monthly_stats?.map((stat: { month: string; convertedLeads: number }) => ({
     month: stat.month,
