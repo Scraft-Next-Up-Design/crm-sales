@@ -160,7 +160,6 @@ const LeadManagement: React.FC = () => {
         );
       }
     };
-
     // Initial fetch
     fetchLeads();
 
@@ -170,6 +169,7 @@ const LeadManagement: React.FC = () => {
     // Cleanup
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
+  console.log(activeWorkspace);
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);

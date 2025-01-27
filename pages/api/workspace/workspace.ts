@@ -55,13 +55,13 @@ export default async function handler(
                 owner_id: user?.id,
               },
             ]);
-            await supabase.from("workspace_members").insert({
-              role: "SuperAdmin",
-              added_by: user?.id,
-              email: user?.email,
-              status: "accepted",
-              user_id: user?.id,
-            });
+            // await supabase.from("workspace_members").insert({
+            //   role: "SuperAdmin",
+            //   added_by: user?.id,
+            //   email: user?.email,
+            //   status: "accepted",
+            //   user_id: user?.id,
+            // });
 
             if (error) {
               return res.status(500).json({ error: error.message });
@@ -256,7 +256,7 @@ export default async function handler(
             .eq("user_id", user.id)
             .limit(1)
             .single();
-
+          console.log(memberWorkspace);
           if (memberError) {
             return res.status(400).json({ error: memberError.message });
           }
