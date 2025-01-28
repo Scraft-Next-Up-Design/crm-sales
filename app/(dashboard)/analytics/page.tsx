@@ -31,7 +31,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery, useGetCountByWorkspaceQuery } from '@/lib/store/services/workspace';
+import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery, useGetCountByWorkspaceQuery, useGetWorkspaceDetailsAnalyticsQuery } from '@/lib/store/services/workspace';
 import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 
 // Enhanced TypeScript Interfaces
@@ -70,6 +70,10 @@ export default function AdvancedAnalyticsDashboard() {
     { workspaceId: activeWorkspace?.data?.id },
     { skip: !activeWorkspace?.data?.id }
   );
+  const { data: analyticsDatas, isLoading: isLoadingAnalyticsData }: any = useGetWorkspaceDetailsAnalyticsQuery(
+    activeWorkspace?.data?.id,
+    { skip: !activeWorkspace?.data?.id }
+  );
   const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
     activeWorkspace?.data?.id,
     {
@@ -82,7 +86,7 @@ export default function AdvancedAnalyticsDashboard() {
   );
   const { arrivedLeadsCount } = workspaceCount || 0;
 
-  console.log(ROC);
+  console.log(analyticsDatas);
   const analyticsData: any = useMemo(() => ({
     leads: {
       total: ROC?.total_leads ?? 0,
@@ -94,10 +98,10 @@ export default function AdvancedAnalyticsDashboard() {
         { status: 'Total Leads', count: ROC?.total_leads }
       ],
       bySource: [
-        { source: 'Website', count: 500 },
-        { source: 'Referral', count: 300 },
-        { source: 'Social Media', count: 250 },
-        { source: 'Direct', count: 195 }
+        ...analyticsDatas.map((data: { webhook_name: string; lead_count: number }) => ({
+          source: data.webhook_name,
+          count: data.lead_count
+        }))
       ]
     },
     revenue: {

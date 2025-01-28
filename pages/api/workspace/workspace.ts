@@ -43,7 +43,6 @@ export default async function handler(
           }
 
           try {
-            
             const { data: membershipData, error: membershipError } =
               await supabase
                 .from("workspace_members")
@@ -418,28 +417,63 @@ export default async function handler(
               return res.status(401).json({ error: "Unauthorized" });
             }
 
-            // Call the RPC function with workspace ID only
-            const { data, error } = await supabase.rpc(
-              "get_workspace_metrics",
-              {
-                p_workspace_id: workspaceIdInt,
-              }
-            );
+            // Fetch webhooks for the workspace
+            const { data: webhooks, error: webhooksError } = await supabase
+              .from("webhooks")
+              .select("*")
+              .eq("workspace_id", workspaceIdInt);
 
-            // Handle database errors
-            if (error) {
-              console.error("Error retrieving workspace analytics:", error);
-              return res.status(400).json({ error: error.message });
+            if (webhooksError) {
+              console.error("Error fetching webhooks:", webhooksError);
+              return res
+                .status(500)
+                .json({ error: "Failed to fetch webhooks" });
             }
 
-            // Return the metrics data
-            return res.status(200).json({
-              total_leads: data.total_leads,
-              total_revenue: data.total_revenue,
-              growth: data.growth,
-              status_distribution: data.status_distribution,
-              source_distribution: data.source_distribution,
-            });
+            // Get lead counts for each webhook
+            const webhookAnalytics = await Promise.all(
+              webhooks.map(async (webhook) => {
+                // Extract source_id from webhook URL
+                const url = new URL(webhook.webhook_url);
+                const sourceId = url.searchParams.get("sourceId");
+
+                if (!sourceId) {
+                  return {
+                    webhook_name: webhook.name,
+                    lead_count: 0,
+                    webhook_url: webhook.webhook_url,
+                  };
+                }
+
+                // Fetch leads count for this webhook's source
+                const { count, error: leadsError } = await supabase
+                  .from("leads")
+                  .select("*", { count: "exact", head: true })
+                  .eq("work_id", workspaceIdInt)
+                  .eq("lead_source_id", sourceId);
+
+                if (leadsError) {
+                  console.error(
+                    `Error fetching leads for webhook ${webhook.name}:`,
+                    leadsError
+                  );
+                  return {
+                    webhook_name: webhook.name,
+                    lead_count: 0,
+                    webhook_url: webhook.webhook_url,
+                    error: "Failed to fetch leads count",
+                  };
+                }
+
+                return {
+                  webhook_name: webhook.name,
+                  lead_count: count || 0,
+                  webhook_url: webhook.webhook_url,
+                };
+              })
+            );
+
+            return res.status(200).json(webhookAnalytics);
           } catch (error) {
             console.error("Error:", error);
             return res.status(500).json({ error: "Internal server error" });
