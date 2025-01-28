@@ -225,19 +225,24 @@ export default function WorkspaceSettingsPage() {
 
     try {
       const response = await addStatus({ statusData: status, workspaceId });
-      // Add new status to local state
-
-      // Reset form
+      console.log(status)
       setStatuses((prevStatuses) => [
         ...prevStatuses,
         {
           id: response.data?.id || "",
           name: status.name,
           color: status.color,
-          count_statistics: status.countInStatistics,
+          count_statistics: status.count_statistics,
           workspace_show: status.showInWorkspace,
         },
       ]);
+      setNewStatus({
+        name: "",
+        color: "#0ea5e9",
+        countInStatistics: false,
+        showInWorkspace: false,
+      });
+
       setIsAddingStatus(false);
     } catch (error) {
       console.error('Failed to add status:', error);

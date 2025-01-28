@@ -40,12 +40,12 @@ export default async function handler(
     case "POST": {
       if (action === "createStatus") {
         const { workspaceId } = query;
-        const { name, color, countInStatistics, showInWorkspace } = body;
+        const { name, color, count_statistics, showInWorkspace } = body;
         if (
           !name ||
           !workspaceId ||
           !color ||
-          typeof countInStatistics === "undefined" ||
+          typeof count_statistics === "undefined" ||
           typeof showInWorkspace === "undefined"
         ) {
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
@@ -92,7 +92,7 @@ export default async function handler(
           const { data, error } = await supabase.from("status").insert({
             name,
             color,
-            count_statistics: countInStatistics,
+            count_statistics,
             workspace_show: showInWorkspace,
             work_id: workspaceId,
             user_id: user.id,

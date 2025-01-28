@@ -43,22 +43,23 @@ export default async function handler(
           }
 
           try {
-            // const { data: membershipData, error: membershipError } =
-            //   await supabase
-            //     .from("workspace_members")
-            //     .select("*")
-            //     .eq("user_id", user.id);
+            
+            const { data: membershipData, error: membershipError } =
+              await supabase
+                .from("workspace_members")
+                .select("*")
+                .eq("user_id", user.id);
 
-            // if (membershipError) {
-            //   return res.status(500).json({ error: membershipError.message });
-            // }
+            if (membershipError) {
+              return res.status(500).json({ error: membershipError.message });
+            }
 
-            // if (membershipData && membershipData.length > 0) {
-            //   return res.status(403).json({
-            //     error:
-            //       "User is already a member of a workspace and cannot create a new one",
-            //   });
-            // }
+            if (membershipData && membershipData.length > 0) {
+              return res.status(403).json({
+                error:
+                  "User is already a member of a workspace and cannot create a new one",
+              });
+            }
 
             const { data, error } = await supabase.from("workspaces").insert([
               {
@@ -72,6 +73,14 @@ export default async function handler(
                 owner_id: user?.id,
               },
             ]);
+
+            // await supabase.from("workspace_members").insert({
+            //   role: "SuperAdmin",
+            //   added_by: user?.id,
+            //   email: user?.email,
+            //   status: "accepted",
+            //   user_id: user?.id,
+            // });
 
             if (error) {
               return res.status(500).json({ error: error.message });
@@ -384,49 +393,53 @@ export default async function handler(
         case "getWorkspaceAnalytics": {
           const { workspaceId } = query;
           const token = authHeader.split(" ")[1];
-        
+
           // Validate workspace ID presence
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
-        
+
           // Parse and validate workspace ID format
           const workspaceIdInt = parseInt(workspaceId as string);
           if (isNaN(workspaceIdInt)) {
-            return res.status(400).json({ error: "Invalid workspace ID format" });
+            return res
+              .status(400)
+              .json({ error: "Invalid workspace ID format" });
           }
-        
+
           try {
             // Get user from token
-            const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-            
+            const {
+              data: { user },
+              error: userError,
+            } = await supabase.auth.getUser(token);
+
             if (userError) {
               return res.status(401).json({ error: "Unauthorized" });
             }
-        
+
             // Call the RPC function with workspace ID only
             const { data, error } = await supabase.rpc(
               "get_workspace_metrics",
               {
-                p_workspace_id: workspaceIdInt
+                p_workspace_id: workspaceIdInt,
               }
             );
-        
+
             // Handle database errors
             if (error) {
               console.error("Error retrieving workspace analytics:", error);
               return res.status(400).json({ error: error.message });
             }
-        
+
             // Return the metrics data
             return res.status(200).json({
               total_leads: data.total_leads,
               total_revenue: data.total_revenue,
               growth: data.growth,
               status_distribution: data.status_distribution,
-              source_distribution: data.source_distribution
+              source_distribution: data.source_distribution,
             });
-        
           } catch (error) {
             console.error("Error:", error);
             return res.status(500).json({ error: "Internal server error" });
