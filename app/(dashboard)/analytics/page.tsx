@@ -66,11 +66,11 @@ export default function AdvancedAnalyticsDashboard() {
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
-  const { data: totalLeads, isLoading: loadingTotalLeads }: any = useGetLeadsByWorkspaceQuery(
+  const { data: totalLeads, isLoading: loadingTotalLeads } = useGetLeadsByWorkspaceQuery(
     { workspaceId: activeWorkspace?.data?.id },
     { skip: !activeWorkspace?.data?.id }
   );
-  const { data: analyticsDatas, isLoading: isLoadingAnalyticsData }: any = useGetWorkspaceDetailsAnalyticsQuery(
+  const { data: analyticsDatas, isLoading: isLoadingAnalyticsData } = useGetWorkspaceDetailsAnalyticsQuery(
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
@@ -84,52 +84,64 @@ export default function AdvancedAnalyticsDashboard() {
     activeWorkspace?.data?.id,
     { skip: !activeWorkspace?.data?.id }
   );
-  const { arrivedLeadsCount } = workspaceCount || 0;
+  const arrivedLeadsCount = workspaceCount?.arrivedLeadsCount ?? 0;
 
-  console.log(analyticsDatas);
-  const analyticsData: any = useMemo(() => ({
+  const analyticsData = useMemo(() => ({
     leads: {
       total: ROC?.total_leads ?? 0,
       monthlyGrowth: 12.5,
       byStatus: [
         { status: 'Converted', count: ROC?.converted_leads ?? 0 },
         { status: 'Arrived', count: arrivedLeadsCount },
-        { status: 'Processed', count: ROC?.total_leads - arrivedLeadsCount },
-        { status: 'Total Leads', count: ROC?.total_leads }
+        { status: 'Processed', count: (ROC?.total_leads ?? 0) - arrivedLeadsCount },
+        { status: 'Total Leads', count: ROC?.total_leads ?? 0 }
       ],
-      bySource: [
-        ...analyticsDatas?.map((data: { webhook_name: string; lead_count: number }) => ({
-          source: data?.webhook_name,
-          count: data?.lead_count
-        }))
-      ]
+      bySource: Array.isArray(analyticsDatas) 
+        ? analyticsDatas.map((data) => ({
+            source: data?.webhook_name ?? 'Unknown',
+            count: data?.lead_count ?? 0
+          }))
+        : []
     },
     revenue: {
       total: analyticsDetails?.totalRevenue || 0,
       monthlyGrowth: 8.3
     },
-    chartData: ROC?.monthly_stats?.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
-      month: stat.month.split(" ")[0], // Extract month name from "January 2025"
-      leads: stat.totalLeads,
-      revenue: 0, // Assuming revenue data is unavailable in ROC
-      processedLeads: stat.totalLeads, // Assuming all leads are processed
-      conversionRate: parseFloat(stat.conversionRate.replace('%', '')) // Convert "41.18%" to 41.18
-    })) || []
-  }), [ROC, analyticsDetails, arrivedLeadsCount]);
+    chartData: Array.isArray(ROC?.monthly_stats)
+      ? ROC.monthly_stats.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
+          month: stat?.month?.split(" ")[0] ?? 'Unknown',
+          leads: stat?.totalLeads ?? 0,
+          revenue: 0,
+          processedLeads: stat?.totalLeads ?? 0,
+          conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
+        }))
+      : []
+  }), [ROC, analyticsDetails, arrivedLeadsCount, analyticsDatas]);
 
-  if (isLoadingAnalytics || isLoadingWorkspace) {
+  // Show loading state while any critical data is loading
+  if (isLoadingAnalytics || isLoadingWorkspace || isRocLoading || isLoadingAnalyticsData) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  // Early return if no workspace is selected
+  if (!activeWorkspace?.data?.id) {
+    return (
+      <div className="w-full h-screen flex items-center justify-center">
+        <p className="text-lg text-muted-foreground">Please select a workspace to view analytics</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`transition-all duration-300 px-4 py-6 
       ${isCollapsed ? "lg:ml-[80px] md:ml-[80px]" : "lg:ml-[250px] md:ml-[250px]"} w-auto`}
     >
-
+      {/* Rest of the component remains the same */}
       <h1 className="text-3xl font-bold mb-6">Sales Analytics</h1>
 
       {/* Performance Metrics Grid */}
@@ -204,7 +216,7 @@ export default function AdvancedAnalyticsDashboard() {
                   outerRadius={90}
                   label
                 >
-                  {analyticsData.leads.byStatus.map((entry: { status: string; count: number }, index: number) => (
+                  {analyticsData.leads.byStatus.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
@@ -255,7 +267,7 @@ export default function AdvancedAnalyticsDashboard() {
                   outerRadius={90}
                   label
                 >
-                  {analyticsData.leads.bySource.map((entry: { source: string; count: number }, index: number) => (
+                  {analyticsData.leads.bySource.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
                   ))}
                 </Pie>
