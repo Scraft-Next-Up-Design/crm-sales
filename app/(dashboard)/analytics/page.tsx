@@ -98,9 +98,9 @@ export default function AdvancedAnalyticsDashboard() {
         { status: 'Total Leads', count: ROC?.total_leads }
       ],
       bySource: [
-        ...analyticsDatas.map((data: { webhook_name: string; lead_count: number }) => ({
-          source: data.webhook_name,
-          count: data.lead_count
+        ...analyticsDatas?.map((data: { webhook_name: string; lead_count: number }) => ({
+          source: data?.webhook_name,
+          count: data?.lead_count
         }))
       ]
     },
