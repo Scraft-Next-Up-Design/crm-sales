@@ -83,7 +83,7 @@ export default function SignupPage() {
         description: "Account created successfully!",
       });
 
-      router.push("/dashboard");
+      // router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",
