@@ -26,15 +26,16 @@ export const leadsApis = leadsApi.injectEndpoints({
         url: `?action=getLeadById&id=${id}`,
       }),
     }),
-    createLead: builder.mutation<Lead, { userId: string; body: Partial<Lead> }>(
-      {
-        query: ({ userId, body }) => ({
-          url: `?userId=${userId}`,
-          method: "POST",
-          body,
-        }),
-      }
-    ),
+    createLead: builder.mutation<
+      Lead,
+      { workspaceId: string; body: Partial<Lead> }
+    >({
+      query: ({ workspaceId, body }) => ({
+        url: `?action=createLead&workspaceId=${workspaceId}`,
+        method: "POST",
+        body,
+      }),
+    }),
     updateLead: builder.mutation<any, { id: any; leads: any }>({
       query: ({ id, leads }) => ({
         url: `?action=updateLeadById&id=${id}`,
@@ -76,7 +77,7 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    bulkDeleteLeads: builder.mutation<void, { id: any; }>({
+    bulkDeleteLeads: builder.mutation<void, { id: any }>({
       query: ({ id }) => ({
         url: `?action=deleteLeads`,
         method: "DELETE",

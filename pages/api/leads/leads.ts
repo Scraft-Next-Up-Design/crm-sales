@@ -15,6 +15,51 @@ export default async function handler(
 
   const token = authHeader.split(" ")[1];
   switch (method) {
+    case "POST":
+      switch (action) {
+        case "createLead": {
+          const body = req.body;
+          if (!body || !body.name || !body.email) {
+            return res
+              .status(400)
+              .json({ error: "Name and Email are required" });
+          }
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          const { data, error } = await supabase.from("leads").insert([
+            {
+              name: body.name,
+              email: body.email,
+              phone: body.phone || null,
+              contact_method: "Call",
+              status: {
+                name: "Arrived",
+                color: "#FFA500",
+              },
+              assign_to: null,
+              lead_source_id: body.source_id || null,
+              work_id: req.query.workspaceId,
+              user_id: user.id,
+              text_area: body.text_area || "",
+              created_at: new Date().toISOString(),
+            },
+          ]);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+          return res.status(201).json({ data });
+        }
+        default:
+          return res.status(400).json({ error: `Unknown action: ${action}` });
+      }
     case "PUT":
       switch (action) {
         case "updateLeadById": {

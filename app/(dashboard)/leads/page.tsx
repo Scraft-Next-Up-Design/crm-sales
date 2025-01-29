@@ -57,7 +57,7 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation, useBulkDeleteLeadsMutation } from "@/lib/store/services/leadsApi";
+import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation, useBulkDeleteLeadsMutation, useCreateLeadMutation } from "@/lib/store/services/leadsApi";
 import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
@@ -94,6 +94,7 @@ const initialFilters: any = {
 
 const LeadManagement: React.FC = () => {
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
+  const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] = useCreateLeadMutation();
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
@@ -110,10 +111,8 @@ const LeadManagement: React.FC = () => {
     }
   );
   const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(workspaceId);
-  console.log(workspaceMembers)
   const POLLING_INTERVAL = 10000
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
-  console.log(statusData)
   useEffect(() => {
     const fetchLeads = () => {
       if (!isLoadingLeads && workspaceData?.data) {
@@ -293,20 +292,25 @@ const LeadManagement: React.FC = () => {
   };
 
   // Handle form submission
-  const onSubmit = (data: z.infer<typeof leadSchema>) => {
+  const onSubmit = async (data: z.infer<typeof leadSchema>) => {
     if (dialogMode === "create") {
       // Add new lead
-      setLeads([
-        ...leads,
-        {
-          id: leads.length + 1,
-          ...data,
-          company: data.company || "",
-          position: data.position || "",
-          revenue: data.revenue || 0,
-        },
-        // console.log(leads),
-      ]);
+      try {
+        await createLead({ workspaceId: workspaceId, body: data });
+        setLeads([
+          ...leads,
+          {
+            ...data,
+            company: data.company || "",
+            position: data.position || "",
+            revenue: data.revenue || 0,
+          },
+        ]);
+      } catch (error) {
+        console.log(error);
+      }
+
+      resetDialog();
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
       try {
