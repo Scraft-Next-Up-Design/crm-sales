@@ -1,5 +1,6 @@
+// app/signup/page.tsx
 "use client";
-import React from "react";
+import React, { Suspense } from "react";
 import { useEffect } from "react";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -20,6 +21,7 @@ import * as z from "zod";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
+
 const signupSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -34,13 +36,13 @@ const signupSchema = z
     path: ["confirmPassword"],
   });
 
-export default function SignupPage() {
+function SignUpForm() {
   const router = useRouter();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const email = searchParams?.get("email") || "";
   const workspaceId = searchParams?.get("workspaceId") || "";
-  console.log(email, workspaceId);
+
   const {
     register,
     handleSubmit,
@@ -52,7 +54,7 @@ export default function SignupPage() {
     }
   });
 
-  React.useEffect(() => {
+  useEffect(() => {
     const checkUser = async () => {
       const session = await supabase.auth.getSession();
       if (session.data.session) {
@@ -81,7 +83,6 @@ export default function SignupPage() {
         throw error;
       }
 
-      // Perform API request only if both email and workspaceId exist
       if (email && workspaceId) {
         await axios.post(
           `${process.env.NEXT_PUBLIC_BASE_URL}/auth?workspaceId=${workspaceId}&email=${email}&status=pending&action=acceptInvite`
@@ -102,7 +103,6 @@ export default function SignupPage() {
       });
     }
   };
-
 
   return (
     <div className="min-h-screen flex items-center justify-center">
@@ -164,9 +164,7 @@ export default function SignupPage() {
                 disabled={isSubmitting}
               />
               {errors.password && (
-                <p className="text-sm text-red-500">
-                  {errors.password.message}
-                </p>
+                <p className="text-sm text-red-500">{errors.password.message}</p>
               )}
             </div>
             <div className="space-y-2">
@@ -179,9 +177,7 @@ export default function SignupPage() {
                 disabled={isSubmitting}
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-red-500">
-                  {errors.confirmPassword.message}
-                </p>
+                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
               )}
             </div>
             <input type="hidden" {...register("role")} />
@@ -200,5 +196,13 @@ export default function SignupPage() {
         </form>
       </Card>
     </div>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <SignUpForm />
+    </Suspense>
   );
 }
