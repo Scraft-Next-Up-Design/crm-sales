@@ -297,7 +297,7 @@ export default function WorkspaceSettingsPage() {
 
   useEffect(() => {
     if (workspaceData?.data) {
-      setSettings(workspaceData.data);
+      setSettings(workspaceData?.data);
     }
   }, [workspaceData]);
 
@@ -329,6 +329,7 @@ export default function WorkspaceSettingsPage() {
       setIsSaving(false);
     }
   };
+  console.log(settings);
   const TabButton = ({
     id,
     icon: Icon,

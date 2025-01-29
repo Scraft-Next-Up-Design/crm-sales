@@ -266,10 +266,7 @@ export default async function handler(
 
             if (!membership || membership.role !== "admin") {
               // Only admins can change the status if not the owner
-              return res.status(403).json({
-                error:
-                  "You do not have permission to change the webhook status",
-              });
+              return res.status(403).json({ error: "You Don,t have Permission to Change status" });;
             }
 
             // Allow admins to change the webhook status

@@ -43,49 +43,50 @@ export default async function handler(
           }
 
           try {
-            const { data: membershipData, error: membershipError } =
+            // First create the workspace and get its ID
+            const { data: workspaceData, error: workspaceError } =
               await supabase
-                .from("workspace_members")
-                .select("*")
-                .eq("user_id", user.id);
+                .from("workspaces")
+                .insert([
+                  {
+                    name,
+                    status,
+                    company_type: companyType,
+                    company_size: companySize,
+                    industry,
+                    timezone,
+                    notifications,
+                    owner_id: user?.id,
+                  },
+                ])
+                .select(); // Add .select() to return the inserted data
 
-            if (membershipError) {
-              return res.status(500).json({ error: membershipError.message });
+            if (workspaceError) {
+              return res.status(500).json({ error: workspaceError.message });
             }
 
-            if (membershipData && membershipData.length > 0) {
-              return res.status(403).json({
-                error:
-                  "User is already a member of a workspace and cannot create a new one",
+            // Now create the workspace member entry using the new workspace's ID
+            const { error: memberError } = await supabase
+              .from("workspace_members")
+              .insert({
+                role: "SuperAdmin",
+                added_by: user?.id,
+                email: user?.email,
+                status: "accepted",
+                user_id: user?.id,
+                workspace_id: workspaceData[0].id,
               });
+
+            if (memberError) {
+              // If member creation fails, you might want to rollback the workspace creation
+              // or handle the error appropriately
+              return res.status(500).json({ error: memberError.message });
             }
 
-            const { data, error } = await supabase.from("workspaces").insert([
-              {
-                name,
-                status,
-                company_type: companyType,
-                company_size: companySize,
-                industry,
-                timezone,
-                notifications,
-                owner_id: user?.id,
-              },
-            ]);
-
-            // await supabase.from("workspace_members").insert({
-            //   role: "SuperAdmin",
-            //   added_by: user?.id,
-            //   email: user?.email,
-            //   status: "accepted",
-            //   user_id: user?.id,
-            // });
-
-            if (error) {
-              return res.status(500).json({ error: error.message });
-            }
-
-            return res.status(201).json({ message: "Workspace created", data });
+            return res.status(201).json({
+              message: "Workspace and member created",
+              data: workspaceData[0],
+            });
           } catch (error) {
             console.error(error);
             return res.status(500).json({ error: "An error occurred" });
@@ -239,78 +240,106 @@ export default async function handler(
             return res.status(500).json({ error: "An error occurred" });
           }
         }
-
+        // Update your existing getActiveWorkspace case:
         case "getActiveWorkspace": {
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
+
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          // First, try to find workspace where user is owner
-          let { data: ownerWorkspace, error: ownerError } = await supabase
-            .from("workspaces")
-            .select("*")
-            .eq("status", true)
-            .eq("owner_id", user.id)
-            .limit(1)
-            .single();
-
-          if (!ownerError && ownerWorkspace) {
-            return res.status(200).json({ data: ownerWorkspace });
-          }
-
-          // If not owner, check workspace_members table
-          const { data: memberWorkspace, error: memberError } = await supabase
-            .from("workspace_members")
-            .select(
-              `
-            *,
-            workspace:workspace_id (*)
-          `
-            )
-            .eq("status", "accepted")
-            .eq("user_id", user.id)
-            .limit(1)
-            .single();
-          console.log(memberWorkspace);
-          if (memberError) {
-            return res.status(400).json({ error: memberError.message });
-          }
-
-          if (!memberWorkspace) {
-            return res.status(404).json({ error: "No active workspace found" });
-          }
-
-          return res.status(200).json({ data: memberWorkspace.workspace });
-        }
-        case "getLeadsRevenueByWorkspace": {
-          const { workspaceId } = query;
-
-          if (!workspaceId) {
-            return res.status(400).json({ error: "Workspace ID is required" });
-          }
-
           try {
-            const { data, error } = await supabase.rpc(
-              "calculate_total_revenue",
-              {
-                workspace_id: workspaceId,
-              }
-            );
+            // First check if there's already an active workspace
+            let { data: activeWorkspace, error: activeError } = await supabase
+              .from("workspace_members")
+              .select(
+                `
+        workspace_id,
+        role,
+        is_active,
+        workspaces (*)
+      `
+              )
+              .eq("user_id", user.id)
+              .eq("is_active", true)
+              .eq("status", "accepted")
+              .single();
 
-            if (error) {
-              console.error("Error calculating revenue:", error);
-              return res.status(400).json({ error: error.message });
+            // If no active workspace found, set the first available one as active
+            if (!activeWorkspace || activeError) {
+              // Get the first workspace where user is a member
+              const { data: firstWorkspace, error: firstError } = await supabase
+                .from("workspace_members")
+                .select(
+                  `
+          id,
+          workspace_id,
+          role,
+          workspaces (*)
+        `
+                )
+                .eq("user_id", user.id)
+                .eq("status", "accepted")
+                .order("created_at", { ascending: true })
+                .limit(1)
+                .single();
+
+              if (firstError) {
+                console.error("Error getting first workspace:", firstError);
+                return res
+                  .status(404)
+                  .json({ error: "No workspaces found for user" });
+              }
+
+              if (firstWorkspace) {
+                // Deactivate all workspaces first
+                await supabase
+                  .from("workspace_members")
+                  .update({ is_active: false })
+                  .eq("user_id", user.id);
+
+                // Set the first workspace as active
+                const { error: setActiveError } = await supabase
+                  .from("workspace_members")
+                  .update({ is_active: true })
+                  .eq("id", firstWorkspace.id);
+
+                if (setActiveError) {
+                  throw setActiveError;
+                }
+                // Return the newly activated workspace
+                return res.status(200).json({
+                  data: {
+                    ...firstWorkspace.workspaces,
+                    role: firstWorkspace.role,
+                    is_active: true,
+                  },
+                });
+              }
+
+              return res.status(404).json({ error: "No workspaces found" });
             }
 
-            return res.status(200).json({ totalRevenue: data });
+            // Return the existing active workspace
+            return res.status(200).json({
+              data: {
+                ...activeWorkspace.workspaces,
+                role: activeWorkspace.role,
+                is_active: true,
+              },
+            });
           } catch (error) {
-            console.error("Error:", error);
-            return res.status(500).json({ error: "Internal server error" });
+            console.error("Error getting active workspace:", error);
+            return res
+              .status(500)
+              .json({ error: "Failed to get active workspace" });
           }
         }
+
+        // Add this function to set a specific workspace as active
+
         case "getQualifiedLeadsCount": {
           const { workspaceId } = query;
 
@@ -512,7 +541,7 @@ export default async function handler(
           return res.status(400).json({ error: "Invalid action" });
       }
     }
-    case "PATCH": {
+    case "PUT": {
       const authHeader = headers.authorization;
       if (!authHeader || !authHeader.startsWith("Bearer ")) {
         return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
@@ -521,49 +550,55 @@ export default async function handler(
 
       switch (action) {
         case "updateWorkspaceStatus": {
+          console.log(body);
           const { id: workspace_id, status } = body;
-          if (!workspace_id || typeof status === "undefined") {
-            return res.status(400).json({
-              error: "workspace_id, status, and user_id are required",
-            });
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          if (!workspace_id) {
+            return res.status(400).json({ error: "Workspace ID is required" });
           }
 
           try {
-            const {
-              data: { user },
-            } = await supabase.auth.getUser(token);
-            if (!user) {
-              return res
-                .status(401)
-                .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-            }
-            // Set all statuses to false for workspaces owned by the user
-            const resetStatus = await supabase
-              .from("workspaces")
-              .update({ status: false })
-              .eq("owner_id", user.id); // Assuming `owner_id` is the column for workspace ownership
+            // First deactivate all workspaces for this user
+            const { error: resetError } = await supabase
+              .from("workspace_members")
+              .update({ is_active: false })
+              .eq("user_id", user.id);
 
-            if (resetStatus.error) {
-              throw new Error(resetStatus.error.message);
-            }
+            if (resetError) throw resetError;
 
-            // Update the specific workspace's status to true
-            const updateStatus = await supabase
-              .from("workspaces")
-              .update({ status: true })
-              .eq("id", workspace_id)
-              .eq("owner_id", user.id); // Ensure the workspace belongs to the user
+            // Then activate only the specified workspace
+            const { data: activated, error: activateError } = await supabase
+              .from("workspace_members")
+              .update({ is_active: status })
+              .eq("user_id", user.id)
+              .eq("workspace_id", workspace_id)
+              .select(
+                `
+                workspace_id,
+                role,
+                workspaces (*)
+              `
+              )
+              .single();
+            console.log(activated);
+            if (activateError) throw activateError;
 
-            if (updateStatus.error) {
-              throw new Error(updateStatus.error.message);
-            }
-
+            return res.status(200).json({
+              message: "Workspace activated successfully",
+              activated,
+            });
+          } catch (error) {
+            console.error("Error setting active workspace:", error);
             return res
-              .status(200)
-              .json({ message: "Workspace status updated successfully" });
-          } catch (error: any) {
-            console.error("Error updating workspace status:", error.message);
-            return res.status(500).json({ error: "Internal server error" });
+              .status(500)
+              .json({ error: "Failed to set active workspace" });
           }
         }
       }

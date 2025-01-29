@@ -240,7 +240,7 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-
+console.log(workspaceData)
   useEffect(() => {
     if (workspacesData?.data) {
       setWorkspaces(workspacesData.data);
@@ -261,7 +261,6 @@ export function Sidebar({
 
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
-      refetch();
 
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);

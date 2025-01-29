@@ -110,7 +110,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     >({
       query: ({ id, status }) => ({
         url: "?action=updateWorkspaceStatus",
-        method: "PATCH",
+        method: "PUT",
         body: { id, status },
       }),
     }),

@@ -135,6 +135,7 @@ const LeadSourceManager: React.FC = () => {
   // Function to toggle webhook status
   const toggleWebhookStatus = async (sourceId: string) => {
 
+   try {
     await changeWebhookStatus({ id: sourceId, status: !sources.find((source) => source.id === sourceId)?.status! });
     setSources(
       sources.map((source) =>
@@ -142,6 +143,9 @@ const LeadSourceManager: React.FC = () => {
       )
     );
     toast.success("Webhook status updated successfully");
+   } catch (error) {
+    console.log(error);
+   }
   };
 
   const onSubmit = async (data: z.infer<typeof sourceSchema>) => {
