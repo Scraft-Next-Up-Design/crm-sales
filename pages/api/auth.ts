@@ -158,20 +158,6 @@ export default async function handler(
             );
 
             if (matchingUser) {
-              // Check if email is verified
-              // if (!matchingUser.email_confirmed_at) {
-              //   res.setHeader(
-              //     "Location",
-              //     `/auth/verify-email?message=${encodeURIComponent(
-              //       "Please verify your email before accepting the invitation"
-              //     )}`
-              //   );
-              //   res.status(302).end();
-              //   break;
-              // }
-
-              // Email is verified - update workspace membership
-
               const { error: updateError } = await supabase
                 .from("workspace_members")
                 .update({
@@ -199,13 +185,10 @@ export default async function handler(
               res.setHeader("Location", "/dashboard");
               res.status(302).end();
             } else {
-              const returnUrl = encodeURIComponent(
-                `${process.env.PUBLIC_URL}?action=acceptInvite/api/auth/&workspaceId=${workspaceId}&email=${email}&workspaceId=${workspaceId}&status="pending"`
+              res.setHeader(
+                "Location",
+                `/signup?email=${email}&workspaceId=${workspaceId}`
               );
-
-              res.setHeader("Location", `/signup?email=${email}`);
-              res.setHeader("Location", `${returnUrl}`);
-
               res.status(302).end();
             }
           } catch (error: any) {

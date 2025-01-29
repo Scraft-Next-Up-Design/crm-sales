@@ -1,6 +1,7 @@
 "use client";
 import React from "react";
 import { useEffect } from "react";
+import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -16,10 +17,9 @@ import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useRouter } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
-
 const signupSchema = z
   .object({
     name: z.string().min(2, "Name must be at least 2 characters"),
@@ -37,7 +37,10 @@ const signupSchema = z
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
-
+  const searchParams = useSearchParams();
+  const email = searchParams?.get("email") || "";
+  const workspaceId = searchParams?.get("workspaceId") || "";
+  console.log(email, workspaceId);
   const {
     register,
     handleSubmit,
@@ -48,11 +51,11 @@ export default function SignupPage() {
       role: "admin"
     }
   });
+
   React.useEffect(() => {
     const checkUser = async () => {
       const session = await supabase.auth.getSession();
       if (session.data.session) {
-        // If there's an active session, redirect to the dashboard
         router.push("/dashboard");
       }
     };
@@ -78,12 +81,19 @@ export default function SignupPage() {
         throw error;
       }
 
+      // Perform API request only if both email and workspaceId exist
+      if (email && workspaceId) {
+        await axios.post(
+          `${process.env.NEXT_PUBLIC_BASE_URL}/auth?workspaceId=${workspaceId}&email=${email}&status=pending&action=acceptInvite`
+        );
+      }
+
       toast({
         title: "Success",
         description: "Account created successfully!",
       });
 
-      // router.push("/dashboard");
+      router.push("/dashboard");
     } catch (error: any) {
       toast({
         title: "Error",
@@ -92,6 +102,7 @@ export default function SignupPage() {
       });
     }
   };
+
 
   return (
     <div className="min-h-screen flex items-center justify-center">
