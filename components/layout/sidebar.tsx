@@ -357,7 +357,7 @@ export function Sidebar({
                   <SelectItem
                     key={workspace.id}
                     value={workspace.id}
-                    className="cursor-pointer"
+                    className="relative flex items-center py-2 cursor-pointer"
                     onClick={(e) => {
                       if (workspaces.length === 1) {
                         e.preventDefault();
@@ -365,24 +365,22 @@ export function Sidebar({
                       }
                     }}
                   >
-                    <div className="grid grid-cols-[1fr,auto,auto] items-center w-full gap-2">
-                      <div className="flex items-center min-w-0">
-                        <Folder className="shrink-0 mr-2 h-4 w-4" />
-                        <span className="truncate">{workspace.name}</span>
-                      </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-6 w-20 absolute right-0 ml-2"
-                        onMouseDown={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleEditWorkspace(workspace);
-                        }}
-                      >
-                        <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800 ml-30" />
-                      </Button>
+                    <div className="flex items-center flex-1 mr-8">
+                      <Folder className="shrink-0 mr-2 h-4 w-4" />
+                      <span className="break-words">{workspace.name}</span>
                     </div>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                      onMouseDown={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleEditWorkspace(workspace);
+                      }}
+                    >
+                      <Settings className="h-4 w-4 text-slate-500 hover:text-slate-800" />
+                    </Button>
                   </SelectItem>
                 ))}
 
