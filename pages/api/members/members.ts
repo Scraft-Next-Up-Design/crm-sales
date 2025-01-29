@@ -45,8 +45,7 @@ export default async function handler(
 
           if (memberError || currentMember.role === "member") {
             return res.status(403).json({
-              error:
-                "You must be a admin of this workspace to add new members",
+              error: "You must be a admin of this workspace to add new members",
             });
           }
           const { data: existingMember, error: existingError } = await supabase
