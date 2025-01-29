@@ -106,13 +106,14 @@ const LeadManagement: React.FC = () => {
       : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
     {
       skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
-      pollingInterval: 2000, // Poll every 2 seconds (2000 ms)
+      pollingInterval: 10000, // Poll every 2 seconds (2000 ms)
     }
   );
   const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(workspaceId);
   console.log(workspaceMembers)
-  const POLLING_INTERVAL = 2000
+  const POLLING_INTERVAL = 10000
   const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
+  console.log(statusData)
   useEffect(() => {
     const fetchLeads = () => {
       if (!isLoadingLeads && workspaceData?.data) {
@@ -188,62 +189,39 @@ const LeadManagement: React.FC = () => {
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       // Owner filter
-      if (
-        filters.owner &&
-        !lead.owner.toLowerCase().includes(filters.owner.toLowerCase())
-      ) {
-        return false;
-      }
+      if (filters.owner && !lead.assign_to.name?.includes(filters.owner)) return false;
 
-      // Status filter
-      if (filters.status && lead.status.name !== filters.status) {
-        return false;
-      }
+      // Status filter (Fixing the bug where old data persists)
+      if (filters.status && lead.status?.name !== filters.status) return false;
 
       // Contact Method filter
-      if (
-        filters.contact_method &&
-        lead.contact_method !== filters.contact_method
-      ) {
-        return false;
-      }
+      if (filters.contact_method && lead.contact_method !== filters.contact_method) return false;
 
-      // Contact Type filter
-      if (filters.contact_method) {
-        if (filters.contact_method === "phone" && !lead.phone) return false;
-        if (filters.contact_method === "email" && !lead.email) return false;
-        if (filters.contact_method === "id" && !lead.id) return false;
+      // Contact Type filter (Ensure it checks correct field)
+      if (filters.contactType) {
+        if (filters.contactType === "phone" && !lead.phone) return false;
+        if (filters.contactType === "email" && !lead.email) return false;
+        if (filters.contactType === "id" && !lead.id) return false;
       }
 
       // Date range filter
-      if (
-        filters.startDate &&
-        new Date(lead.createdAt) < new Date(filters.startDate)
-      ) {
-        return false;
-      }
-      if (
-        filters.endDate &&
-        new Date(lead.createdAt) > new Date(filters.endDate)
-      ) {
-        return false;
-      }
+      if (filters.startDate && new Date(lead.createdAt) < new Date(filters.startDate)) return false;
+      if (filters.endDate && new Date(lead.createdAt) > new Date(filters.endDate)) return false;
 
       // Duplicate check
       if (filters.showDuplicates) {
-        const duplicates = leads.filter(
-          (l) => l.email === lead.email || l.phone === lead.phone
-        );
+        const duplicates = leads.filter((l) => l.email === lead.email || l.phone === lead.phone);
         if (duplicates.length <= 1) return false;
       }
 
       return true;
     });
   }, [leads, filters]);
+
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
-    setLeads(filteredLeads);
   };
+
   const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
   const [dialogMode, setDialogMode] = useState<
     "create" | "edit" | "delete" | null
@@ -537,6 +515,8 @@ const LeadManagement: React.FC = () => {
             values={filters}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
+            status={statusData?.data}
+            owner={workspaceMembers?.data}
           />
         )}
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
@@ -576,9 +556,9 @@ const LeadManagement: React.FC = () => {
             </Button>
 
             {/* Add Lead Button */}
-            {/* <Button onClick={openCreateDialog}>
+            <Button onClick={openCreateDialog}>
               <Plus className="mr-2 h-4 w-4" /> Add Lead
-            </Button> */}
+            </Button>
           </div>
         </CardHeader>
         <CardContent>
@@ -627,7 +607,7 @@ const LeadManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {paginatedLeads.map((lead) => (
+                {filteredLeads.map((lead) => (
                   <TableRow key={lead.id}>
                     <TableCell className="px-2 py-1">
                       <Checkbox
