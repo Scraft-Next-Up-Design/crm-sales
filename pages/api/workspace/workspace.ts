@@ -321,6 +321,7 @@ export default async function handler(
 
               return res.status(404).json({ error: "No workspaces found" });
             }
+            console.log(activeWorkspace);
 
             // Return the existing active workspace
             return res.status(200).json({

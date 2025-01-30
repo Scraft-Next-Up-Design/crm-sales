@@ -55,6 +55,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   useCreateWorkspaceMutation,
+  useGetActiveWorkspaceQuery,
   useGetWorkspacesByOwnerIdQuery,
   useGetWorkspacesQuery,
   useUpdateWorkspaceStatusMutation
@@ -73,6 +74,7 @@ import {
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
+
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -109,6 +111,8 @@ export function Sidebar({
     { workspaceId: selectedWorkspace.id },
     { pollingInterval: 2000 }
   );
+  const { data: activeWorkspace, isLoading: activeWorkspaceLoading, isError: activeWorkspaceError } = useGetActiveWorkspaceQuery();
+  console.log(activeWorkspace)
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -227,6 +231,11 @@ export function Sidebar({
       }
     }
   };
+  useEffect(() => {
+    if (activeWorkspace?.data) {
+      setSelectedWorkspace(activeWorkspace.data);
+    }
+  }, [activeWorkspace]);
 
   const handleEditWorkspace = (workspace: Workspace) => {
     router.push(`/workspace/${workspace.id}`);
@@ -240,17 +249,10 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-console.log(workspaceData)
+  console.log(workspaceData)
   useEffect(() => {
     if (workspacesData?.data) {
       setWorkspaces(workspacesData.data);
-      const activeWorkspace = workspacesData.data.find((workspace: Workspace) => workspace.status === true);
-      if (activeWorkspace) {
-        setSelectedWorkspace(activeWorkspace);
-      } else if (workspacesData.data.length > 0) {
-        const fallbackWorkspace = workspacesData.data[0];
-        setSelectedWorkspace(fallbackWorkspace);
-      }
     }
   }, [workspacesData?.data]);
 
@@ -339,7 +341,6 @@ console.log(workspaceData)
             </Tooltip>
           ) : (
             <Select
-              defaultValue="Select A Workspace"
               value={selectedWorkspace?.id || ""}
               onValueChange={handleWorkspaceChange}
             >
@@ -357,12 +358,6 @@ console.log(workspaceData)
                     key={workspace.id}
                     value={workspace.id}
                     className="relative flex items-center py-2 cursor-pointer"
-                    onClick={(e) => {
-                      if (workspaces.length === 1) {
-                        e.preventDefault();
-                        handleWorkspaceChange(workspace.id);
-                      }
-                    }}
                   >
                     <div className="flex items-center flex-1 mr-8">
                       <Folder className="shrink-0 mr-2 h-4 w-4" />
@@ -382,7 +377,6 @@ console.log(workspaceData)
                     </Button>
                   </SelectItem>
                 ))}
-
                 {/* Add Workspace Dialog */}
                 <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
