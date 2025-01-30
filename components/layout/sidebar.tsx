@@ -207,7 +207,6 @@ export function Sidebar({
           timezone: newWorkspace.timezone,
           notifications: newWorkspace.notifications,
         }).unwrap();
-        refetch();
         setWorkspaces([...workspaces, newWorkspaceItem]);
         setSelectedWorkspace(newWorkspaceItem);
 
@@ -224,6 +223,7 @@ export function Sidebar({
             inApp: true,
           },
         });
+        toast.success("Workspace created successfully");
         setDialogOpen(false);
 
       } catch (error: any) {
