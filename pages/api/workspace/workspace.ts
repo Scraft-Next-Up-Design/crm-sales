@@ -338,8 +338,6 @@ export default async function handler(
           }
         }
 
-        // Add this function to set a specific workspace as active
-
         case "getQualifiedLeadsCount": {
           const { workspaceId } = query;
 
@@ -364,7 +362,7 @@ export default async function handler(
             const qualifiedStatusNames = qualifiedStatuses.map(
               (status) => status.name
             );
-            console.error(qualifiedStatusNames);
+            console.log(qualifiedStatusNames);
 
             // Count leads that match the qualified status names for the given workspace
             // Using ->> operator to access the name field within the status JSON object

@@ -588,7 +588,7 @@ function EditProfileDialog({
       const { data: { publicUrl } } = supabase.storage
         .from('profiles')
         .getPublicUrl(filePath);
-      console.log(publicUrl);
+console.log(publicUrl);
       // Update preview and form data
       setPreviewImage(publicUrl);
       setFormData(prev => ({ ...prev, avatar: publicUrl }));
@@ -613,7 +613,7 @@ function EditProfileDialog({
       setLoading(false);
     }
   };
-  console.log(previewImage)
+console.log(previewImage)
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
@@ -894,6 +894,7 @@ export default function ProfileDetailsPage() {
       </div>
     );
   }
+
   return (
     <div
       className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}

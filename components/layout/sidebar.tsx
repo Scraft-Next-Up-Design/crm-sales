@@ -551,33 +551,68 @@ export function Sidebar({
         {/* User Profile Section */}
         <div className="absolute bottom-0 p-4 border-t flex items-center left-0 w-full bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
           {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full h-10 p-0">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden">
                     <Image
-                      src={user?.image || "/placeholder-avatar.jpg"}
+                      src={user?.avatar || "/placeholder-avatar.jpg"}
                       alt={`${user?.name || "User"}'s profile`}
                       width={40}
                       height={40}
                       className="object-cover"
                     />
                   </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-60 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                {/* User Info */}
+                <div className="px-4 py-3 text-sm">
+                  <p className="font-semibold text-base">
+                    {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "User"}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {user?.email || "Email not available"}
+                  </p>
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{user?.name || "User"}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
-              </TooltipContent>
-            </Tooltip>
+
+                {/* Divider */}
+                <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+                {/* Account Settings */}
+                <Link href="/profile">
+                  <DropdownMenuItem className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                    <Settings className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+
+                {/* Theme Toggle */}
+                <DropdownMenuItem className="flex items-center  px-1 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                  <ThemeToggle />
+                  <span >Toggle Theme</span>
+                </DropdownMenuItem>
+
+                {/* Logout */}
+                <DropdownMenuItem
+                  className="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800 transition-colors cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+
+            </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-3 overflow-hidden w-full justify-between">
               <div className="flex items-center space-x-3 overflow-hidden">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                   <Image
-                    src={
-                      user?.avatar
-                    }
+                    src={user?.avatar}
                     alt={`${user?.name || "User"}'s profile`}
                     width={40}
                     height={40}
