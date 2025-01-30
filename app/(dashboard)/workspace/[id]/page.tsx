@@ -183,12 +183,22 @@ export default function WorkspaceSettingsPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
 
-  // Member management handlers
+
   const handleMemberAdd = async (newMember: WorkspaceMember) => {
     try {
-      await addMember({ workspaceId, data: newMember });
+      const result = await addMember({ workspaceId, data: newMember });
+
+      if ('error' in result) {
+
+        const errorDetails = (result.error as any).data;
+        toast.error(errorDetails.error);
+        return;
+      }
+
+      // If no error, update the state
       setMembers([...members, newMember]);
     } catch (error) {
+      console.error('Unexpected error:', error);
     }
   };
 
