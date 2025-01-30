@@ -36,6 +36,31 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+          const { data: currentMember, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("email", user.email)
+            .single();
+
+          if (memberError || currentMember.role === "member") {
+            return res.status(403).json({
+              error: "You must be a admin of this workspace to add new members",
+            });
+          }
+          const { data: existingMember, error: existingError } = await supabase
+            .from("workspace_members")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("email", email)
+            .single();
+
+          if (existingMember) {
+            return res.status(400).json({
+              error: "User is already a member of this workspace",
+            });
+          }
+
           const { data, error } = await supabase
             .from("workspace_members")
             .insert({
@@ -45,10 +70,10 @@ export default async function handler(
               email: email,
               status: status,
             });
-            await sendMail(
-              email,
-              "You have been added to a workspace",
-              `
+          await sendMail(
+            email,
+            "You have been added to a workspace",
+            `
               <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
               <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
                 <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
@@ -56,9 +81,7 @@ export default async function handler(
                 </button>
               </form>
               `
-            );
-            
-            
+          );
 
           if (error) {
             return res.status(400).json({ error: error.message });
