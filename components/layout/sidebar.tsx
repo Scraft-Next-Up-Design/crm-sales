@@ -189,13 +189,13 @@ export function Sidebar({
   const handleAddWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newWorkspace.name.trim()) {
+    if (newWorkspace.name) {
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
         role: 'Admin',
       };
-
+      console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
         await createWorkspace({
           name: newWorkspace.name,
@@ -428,18 +428,26 @@ export function Sidebar({
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="companySize">Company Size</Label>
-                        <Input
-                          id="companySize"
+                        <Label>Company Size</Label>
+                        <Select
                           value={newWorkspace.companySize}
-                          onChange={(e) =>
+                          onValueChange={(value) =>
                             setNewWorkspace({
                               ...newWorkspace,
-                              companySize: e.target.value,
+                              companySize: value,
                             })
                           }
-                          placeholder="Enter company size (e.g., 10-50, 50-100)"
-                          required />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select company size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-50">1-50</SelectItem>
+                            <SelectItem value="51-200">51-200</SelectItem>
+                            <SelectItem value="201-500">201-500</SelectItem>
+                            <SelectItem value="500+">500+</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label htmlFor="companyType">Company Type</Label>
@@ -478,11 +486,10 @@ export function Sidebar({
                             <SelectValue placeholder="Select industry" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="technology">Technology</SelectItem>
-                            <SelectItem value="finance">Finance</SelectItem>
-                            <SelectItem value="healthcare">Healthcare</SelectItem>
-                            <SelectItem value="education">Education</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="Technology">Technology</SelectItem>
+                            <SelectItem value="Finance">Finance</SelectItem>
+                            <SelectItem value="Healthcare">Healthcare</SelectItem>
+                            <SelectItem value="Education">Education</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

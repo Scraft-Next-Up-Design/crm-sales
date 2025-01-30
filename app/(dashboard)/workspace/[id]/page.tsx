@@ -156,8 +156,8 @@ export default function WorkspaceSettingsPage() {
   const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "",
-    industry: "",
-    company_size: "",
+    industry: "",  // flat property
+    company_size: "", // flat property
     timezone: "",
     notifications: {
       email: false,
@@ -289,10 +289,7 @@ export default function WorkspaceSettingsPage() {
     if (!statusToDelete) return;
 
     try {
-      // Delete the status in the backend (assuming you have a deleteStatus mutation)
-      // await deleteStatus({ statusId: statusToDelete.id, workspaceId });
 
-      // Update local state
       setStatuses(prevStatuses =>
         prevStatuses.filter(status => status.id !== statusToDelete.id)
       );
@@ -444,11 +441,10 @@ export default function WorkspaceSettingsPage() {
                     <Label>Industry</Label>
                     <Select
                       disabled={!isEditMode}
-                      value={settings?.industry}
-                      onValueChange={(value) =>
+                      value={settings?.industry || ''} // Changed from settings?.name
+                      onValueChange={(value) => {
                         setSettings({ ...settings, industry: value })
-
-                      }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Industry" />

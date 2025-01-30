@@ -53,7 +53,7 @@ const isValidLead = (data: any): boolean => {
   return Boolean(hasName || hasPhone);
 };
 
-async function validateEmail(email: string): Promise<boolean> {
+export async function validateEmail(email: string): Promise<boolean> {
   try {
     const response = await axios.get(
       `https://emailverifier.reoon.com/api/v1/verify?email=${email}&key=XL7ZTf8wKJLCBtE1pCLMvPr53zfHPRIw&mode=quick`
@@ -72,7 +72,7 @@ async function validateEmail(email: string): Promise<boolean> {
 }
 
 // Phone number validation function
-async function validatePhoneNumber(phoneNumber: string): Promise<boolean> {
+export async function validatePhoneNumber(phoneNumber: string): Promise<boolean> {
   try {
     const response = await axios.get(
       `https://api-bdc.net/data/phone-number-validate?number=${phoneNumber}&countryCode=IN&localityLanguage=en&key=bdc_a38fe464805a4a87a7da7dc81ff059cd`

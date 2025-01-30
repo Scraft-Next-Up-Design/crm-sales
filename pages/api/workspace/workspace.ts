@@ -18,7 +18,6 @@ export default async function handler(
         return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
       }
       const token = authHeader.split(" ")[1];
-
       switch (action) {
         case "createWorkspace": {
           const {

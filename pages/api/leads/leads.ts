@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
+import { validateEmail, validatePhoneNumber } from "../leads";
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,7 +33,9 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-
+          const isValidEmail = await validateEmail(body.email);
+          const isValidPhone = await validatePhoneNumber(body.phone);
+          console.log(isValidEmail, isValidPhone);
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
@@ -48,6 +51,8 @@ export default async function handler(
               work_id: req.query.workspaceId,
               user_id: user.id,
               text_area: body.text_area || "",
+              is_email_valid: isValidEmail,
+              is_phone_valid: isValidPhone,
               created_at: new Date().toISOString(),
             },
           ]);
