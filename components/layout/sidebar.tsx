@@ -275,7 +275,6 @@ export function Sidebar({
       console.error("Failed to change workspace:", error);
     }
   };
-  console.log(user)
   return (
     <>
       {/* Mobile Menu Button */}
