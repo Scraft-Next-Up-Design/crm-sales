@@ -225,6 +225,7 @@ export function Sidebar({
         });
         toast.success("Workspace created successfully");
         setDialogOpen(false);
+        window.location.reload();
 
       } catch (error: any) {
         toast.error(error.data.error);
