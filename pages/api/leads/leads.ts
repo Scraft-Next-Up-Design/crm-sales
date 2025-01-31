@@ -368,7 +368,7 @@ export default async function handler(
           return res.status(400).json({ error: "Workspace ID is required" });
         }
 
-        // Authenticate the user using Supabase
+        // Authenticate the user
         const {
           data: { user },
         } = await supabase.auth.getUser(token);
@@ -377,40 +377,42 @@ export default async function handler(
           return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
         }
 
-        // First, check if user is admin in workspace
-        const { data: memberData, error: memberError } = await supabase
-          .from("workspace_members")
-          .select("role")
-          .eq("workspace_id", workspaceId)
-          .eq("user_id", user.id)
+        // First check if user is workspace owner
+        const { data: workspaceData, error: workspaceError } = await supabase
+          .from("workspaces")
+          .select("owner_id")
+          .eq("id", workspaceId)
           .single();
 
-        if (memberError) {
-          console.error("Workspace Member Check Error:", memberError.message);
-          return res.status(400).json({ error: memberError.message });
+        if (workspaceError) {
+          console.error("Workspace Check Error:", workspaceError.message);
+          return res.status(400).json({ error: workspaceError.message });
         }
 
-        // Get the leads to check ownership
-        const { data: leadsData, error: leadsError } = await supabase
-          .from("leads")
-          .select("user_id")
-          .in("id", id);
+        const isWorkspaceOwner = workspaceData?.owner_id === user.id;
 
-        if (leadsError) {
-          console.error("Leads Check Error:", leadsError.message);
-          return res.status(400).json({ error: leadsError.message });
-        }
+        // If not workspace owner, check if user is admin
+        if (!isWorkspaceOwner) {
+          const { data: memberData, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("user_id", user.id)
+            .single();
 
-        // Check if user is either owner of all leads or an admin
-        const isAdmin =
-          memberData?.role === "admin" || memberData?.role === "SuperAdmin";
-        const isOwner = leadsData.every((lead) => lead.user_id === user.id);
+          if (memberError) {
+            console.error("Workspace Member Check Error:", memberError.message);
+            return res.status(400).json({ error: memberError.message });
+          }
 
-        if (!isAdmin && !isOwner) {
-          return res.status(403).json({
-            error:
-              "You must be either the owner of all leads or an admin in the workspace to delete them",
-          });
+          const isAdmin =
+            memberData?.role === "admin" || memberData?.role === "SuperAdmin";
+
+          if (!isAdmin) {
+            return res.status(403).json({
+              error: "Only workspace owners and admins can delete leads",
+            });
+          }
         }
 
         // Proceed with deletion if authorized
@@ -418,16 +420,17 @@ export default async function handler(
           .from("leads")
           .delete()
           .in("id", id)
-          .eq("work_id", workspaceId); // Add workspace check for extra security
+          .eq("work_id", workspaceId);
 
         if (error) {
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });
         }
 
-        return res
-          .status(200)
-          .json({ message: "Leads deleted successfully", data });
+        return res.status(200).json({
+          message: "Leads deleted successfully",
+          data,
+        });
       }
 
       return res.status(400).json({ error: `Unknown action: ${action}` });
