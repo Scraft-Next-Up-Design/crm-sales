@@ -97,6 +97,7 @@ const LeadManagement: React.FC = () => {
   const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] = useCreateLeadMutation();
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
@@ -187,6 +188,24 @@ const LeadManagement: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      if (searchQuery) {
+        const searchText = searchQuery.toLowerCase();
+        const searchableFields = [
+          lead.Name,
+          lead.email,
+          lead.phone,
+          lead.company,
+          lead.position,
+          lead.status?.name,
+          lead.assign_to?.name
+        ];
+
+        const matchesSearch = searchableFields.some(
+          field => field && field.toString().toLowerCase().includes(searchText)
+        );
+
+        if (!matchesSearch) return false;
+      }
       // Owner filter
       if (filters.owner && !lead.assign_to.name?.includes(filters.owner)) return false;
 
@@ -215,7 +234,7 @@ const LeadManagement: React.FC = () => {
 
       return true;
     });
-  }, [leads, filters]);
+  }, [leads, filters, searchQuery]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -526,6 +545,7 @@ const LeadManagement: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-center text-gray-800">
             No Leads Found in this Workspace
           </CardTitle>
+
           <CardDescription className="mt-2 text-lg text-gray-600 text-center">
             It seems there are no leads available in this workspace at the moment.
           </CardDescription>
@@ -555,10 +575,20 @@ const LeadManagement: React.FC = () => {
             owner={workspaceMembers?.data}
           />
         )}
+
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <CardTitle className="text-lg md:text-xl lg:text-2xl ">
             Lead Management
           </CardTitle>
+          <div className="relative w-full md:w-64">
+            <Input
+              type="text"
+              placeholder="Search leads..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+          </div>
           <div className="flex space-x-2">
             {/* Import Button */}
             <Button

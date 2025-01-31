@@ -238,7 +238,6 @@ export default function WorkspaceSettingsPage() {
         statusData: status,
         workspaceId
       }).unwrap();
-
       // If successful, update the local state
       setStatuses((prevStatuses) => [
         ...prevStatuses,
@@ -260,8 +259,8 @@ export default function WorkspaceSettingsPage() {
 
       setIsAddingStatus(false);
       toast.success('Status added successfully');
+      window.location.reload();
     } catch (error: any) {
-      // Handle specific API error
       const errorMessage = error.data?.error || "Failed to add status";
       toast.error(errorMessage);
     }
