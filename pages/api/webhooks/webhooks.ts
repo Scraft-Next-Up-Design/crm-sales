@@ -49,6 +49,23 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+          const { data: membership, error: membershipError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspace_id)
+            .eq("user_id", user.id)
+            .single();
+
+          if (membershipError) {
+            return res.status(500).json({ error: membershipError.message });
+          }
+
+          // Restrict webhook creation to admins only
+          if (!membership || membership.role !== "admin") {
+            return res
+              .status(403)
+              .json({ error: "Only admins can create webhooks" });
+          }
           // Insert webhook with user ID
           const { data, error } = await supabase.from("webhooks").insert({
             status,
