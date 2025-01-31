@@ -250,7 +250,6 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-  console.log(workspaceData)
   useEffect(() => {
     if (workspacesData?.data) {
       setWorkspaces(workspacesData.data);
@@ -313,12 +312,12 @@ export function Sidebar({
 
         {/* Logo Section */}
         <div className="flex items-center justify-center py-4 bg-inherit">
-          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <a href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <Zap className="h-6 w-6 text-primary" />
             {!isCollapsed && (
               <span className="text-xl font-bold">SCRAFT PRE CRM</span>
             )}
-          </Link>
+          </a>
         </div>
 
         {/* Workspace Selector */}
@@ -518,7 +517,7 @@ export function Sidebar({
                     )}
                     asChild
                   >
-                    <Link href={route.href}>
+                    <a href={route.href}>
                       <route.icon className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                       {!isCollapsed && (
                         <>
@@ -533,7 +532,7 @@ export function Sidebar({
                           )}
                         </>
                       )}
-                    </Link>
+                    </a>
                   </Button>
                 </TooltipTrigger>
                 {isCollapsed && (
