@@ -172,6 +172,7 @@ export function Sidebar({
       if (error) throw error;
       toast.success("logout completed");
       router.push("/login");
+      window.location.reload();
     } catch (error: any) {
       toast.error(error.message);
     }
