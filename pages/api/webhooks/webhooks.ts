@@ -446,7 +446,11 @@ export default async function handler(
               return res.status(500).json({ error: membershipError.message });
             }
 
-            if (!membership || membership.role !== "admin") {
+            if (
+              !membership ||
+              membership.role !== "admin" ||
+              membership.role !== "SuperAdmin"
+            ) {
               return res
                 .status(403)
                 .json({ error: "You Don't have Permission to Update webhook" });

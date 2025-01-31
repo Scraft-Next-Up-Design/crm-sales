@@ -402,7 +402,7 @@ export default async function handler(
         }
 
         // Check if user is either owner of all leads or an admin
-        const isAdmin = memberData?.role === "admin";
+        const isAdmin = memberData?.role === "admin" || memberData?.role === "SuperAdmin";
         const isOwner = leadsData.every((lead) => lead.user_id === user.id);
 
         if (!isAdmin && !isOwner) {
