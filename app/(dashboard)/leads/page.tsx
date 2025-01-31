@@ -314,16 +314,10 @@ const LeadManagement: React.FC = () => {
       // Update existing lead
       try {
         updateLeadData({ id: editingLead.id, leads: data });
-        setLeads(
-          leads.map((lead) =>
+        setLeads((prevLeads) =>
+          prevLeads.map((lead) =>
             lead.id === editingLead.id
-              ? {
-                id: editingLead.id,
-                ...data,
-                company: data.company || "",
-                position: data.position || "",
-                revenue: data.revenue || 0,
-              }
+              ? { ...lead, ...data, company: data.company || "", position: data.position || "", revenue: data.revenue || 0 }
               : lead
           )
         );
@@ -340,11 +334,11 @@ const LeadManagement: React.FC = () => {
   // Delete selected leads
   const handleDelete = async () => {
     try {
-      const response = await deleteLeadsData({ 
-        id: selectedLeads, 
-        workspaceId: workspaceId 
+      const response = await deleteLeadsData({
+        id: selectedLeads,
+        workspaceId: workspaceId
       }).unwrap(); // Add .unwrap() for RTK Query
-      
+
       setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setDialogMode(null);
@@ -352,14 +346,14 @@ const LeadManagement: React.FC = () => {
     } catch (error: any) {
       // Log the error to see its structure
       console.error('Delete error:', error);
-  
+
       // RTK Query specific error handling
-      const errorMessage = 
+      const errorMessage =
         error.data?.message ||
         error.data?.error ||
         error.error ||
         "Failed to delete leads";
-  
+
       toast.error(errorMessage);
     }
   };
