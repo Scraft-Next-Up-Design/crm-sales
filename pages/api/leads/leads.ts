@@ -352,12 +352,16 @@ export default async function handler(
       });
     case "DELETE": {
       if (action === "deleteLeads") {
-        const { id } = req.body; // Extract the IDs from the request body
+        const { id, workspaceId } = req.body;
 
         if (!id || !Array.isArray(id) || id.length === 0) {
           return res
             .status(400)
             .json({ error: "A list of Lead IDs is required" });
+        }
+
+        if (!workspaceId) {
+          return res.status(400).json({ error: "Workspace ID is required" });
         }
 
         // Authenticate the user using Supabase
@@ -369,12 +373,48 @@ export default async function handler(
           return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
         }
 
-        // Perform bulk deletion in the `leads` table
+        // First, check if user is admin in workspace
+        const { data: memberData, error: memberError } = await supabase
+          .from("workspace_members")
+          .select("role")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", user.id)
+          .single();
+
+        if (memberError) {
+          console.error("Workspace Member Check Error:", memberError.message);
+          return res.status(400).json({ error: memberError.message });
+        }
+
+        // Get the leads to check ownership
+        const { data: leadsData, error: leadsError } = await supabase
+          .from("leads")
+          .select("user_id")
+          .in("id", id);
+
+        if (leadsError) {
+          console.error("Leads Check Error:", leadsError.message);
+          return res.status(400).json({ error: leadsError.message });
+        }
+
+        // Check if user is either owner of all leads or an admin
+        const isAdmin = memberData?.role === "admin";
+        const isOwner = leadsData.every((lead) => lead.user_id === user.id);
+
+        if (!isAdmin && !isOwner) {
+          return res.status(403).json({
+            error:
+              "You must be either the owner of all leads or an admin in the workspace to delete them",
+          });
+        }
+
+        // Proceed with deletion if authorized
         const { data, error } = await supabase
           .from("leads")
           .delete()
-          .eq("user_id", user.id) // Ensure the user owns the records
-          .in("id", id); // Use `.in()` to delete multiple rows by their IDs
+          .in("id", id)
+          .eq("work_id", workspaceId); // Add workspace check for extra security
+
         if (error) {
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });

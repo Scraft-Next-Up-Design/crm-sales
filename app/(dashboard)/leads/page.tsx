@@ -277,7 +277,6 @@ const LeadManagement: React.FC = () => {
 
   // Open edit dialog
   const openEditDialog = (lead: any) => {
-    console.log(lead)
     form.reset({
       name: lead.Name,
       email: lead.email,
@@ -341,12 +340,27 @@ const LeadManagement: React.FC = () => {
   // Delete selected leads
   const handleDelete = async () => {
     try {
-      await deleteLeadsData({ id: selectedLeads });
+      const response = await deleteLeadsData({ 
+        id: selectedLeads, 
+        workspaceId: workspaceId 
+      }).unwrap(); // Add .unwrap() for RTK Query
+      
       setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setDialogMode(null);
       toast.success("Selected leads deleted successfully");
-    } catch (error) {
+    } catch (error: any) {
+      // Log the error to see its structure
+      console.error('Delete error:', error);
+  
+      // RTK Query specific error handling
+      const errorMessage = 
+        error.data?.message ||
+        error.data?.error ||
+        error.error ||
+        "Failed to delete leads";
+  
+      toast.error(errorMessage);
     }
   };
 
