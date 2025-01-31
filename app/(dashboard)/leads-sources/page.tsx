@@ -187,26 +187,38 @@ const LeadSourceManager: React.FC = () => {
         ]);
       } catch (error) { }
     } else if (dialogMode === "edit" && selectedSource) {
-      const updatedSources = sources.map((source) =>
-        source.id === selectedSource.id
-          ? {
-            ...source,
-            ...data,
-            description: data.description || "",
-          }
-          : source
-      );
-      setSources(updatedSources);
-      await updateWebhook({ data, id: selectedSource.id });
-      toast.success("Webhook updated successfully");
-    }
-    resetDialog();
-  };
+      try {
+        await updateWebhook({ data, id: selectedSource.id }).unwrap();
 
+        const updatedSources = sources.map((source) =>
+          source.id === selectedSource.id
+            ? {
+              ...source,
+              ...data,
+              description: data.description || "",
+            }
+            : source
+        );
+        setSources(updatedSources);
+        toast.success("Lead source updated successfully");
+        resetDialog();
+      } catch (error: any) {
+        const errorMessage = error.data?.error || "Failed to update lead source";
+        toast.error(errorMessage);
+      }
+    }
+  };
   const handleDelete = async (id: string) => {
-    await deleteWebhook({ id });
-    resetDialog();
-    setSources(sources.filter((source) => source.id !== id));
+    try {
+      await deleteWebhook({ id }).unwrap();
+      resetDialog();
+      setSources(sources.filter((source) => source.id !== id));
+      toast.success("Lead source deleted successfully");
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to delete lead source";
+      toast.error(errorMessage);
+    }
   };
   if (workspaceLoading) return <div className="flex items-center justify-center min-h-screen">
     <Loader2 className="h-8 w-8 animate-spin" />
