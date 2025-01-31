@@ -33,6 +33,7 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+          console.log(body, body);
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
           console.log(isValidEmail, isValidPhone);
@@ -41,15 +42,18 @@ export default async function handler(
               name: body.name,
               email: body.email,
               phone: body.phone || null,
-              contact_method: "Call",
               status: {
                 name: "Arrived",
                 color: "#FFA500",
               },
+              company: body.company || null,
+              position: body.position || null,
+              contact_method: body.contact_method || "Call",
               assign_to: null,
               lead_source_id: body.source_id || null,
               work_id: req.query.workspaceId,
               user_id: user.id,
+
               text_area: body.text_area || "",
               is_email_valid: isValidEmail,
               is_phone_valid: isValidPhone,
