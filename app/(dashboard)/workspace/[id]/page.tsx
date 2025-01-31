@@ -203,13 +203,15 @@ export default function WorkspaceSettingsPage() {
   };
 
   const handleMemberDelete = (memberId: string) => {
-    setMembers(members.filter(member => member.id !== memberId));
+    console.log("deleted")
+    // setMembers(members.filter(member => member.id !== memberId));
   };
 
   const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
-    setMembers(members.map(member =>
-      member.id === updatedMember.id ? updatedMember : member
-    ));
+    console.log("deleted")
+    // setMembers(members.map(member =>
+    //   member.id === updatedMember.id ? updatedMember : member
+    // ));
   };
 
   const confirmDeleteMember = async () => {
@@ -296,19 +298,19 @@ export default function WorkspaceSettingsPage() {
   };
   const confirmDeleteStatus = async () => {
     if (!statusToDelete) return;
+    console.log("deleted")
+    // try {
 
-    try {
+    //   setStatuses(prevStatuses =>
+    //     prevStatuses.filter(status => status.id !== statusToDelete.id)
+    //   );
 
-      setStatuses(prevStatuses =>
-        prevStatuses.filter(status => status.id !== statusToDelete.id)
-      );
-
-      setStatusToDelete(null);
-      toast.success('Status deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete status:', error);
-      toast.error('Failed to delete status');
-    }
+    //   setStatusToDelete(null);
+    //   toast.success('Status deleted successfully');
+    // } catch (error) {
+    //   console.error('Failed to delete status:', error);
+    //   toast.error('Failed to delete status');
+    // }
   };
 
   useEffect(() => {
