@@ -170,13 +170,20 @@ export function Sidebar({
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      toast.success("logout completed");
-      router.push("/login");
-      window.location.reload();
+
+      toast.success("Logout completed");
+
+      setTimeout(() => {
+        window.location.reload(); // Reload after navigation
+      }, 100); // Small delay ensures smooth transition
+
+      router.push("/login"); // Navigate to login page
+
     } catch (error: any) {
       toast.error(error.message);
     }
   };
+
 
   useEffect(() => {
     const fetchUser = async () => {
