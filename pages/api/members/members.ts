@@ -42,12 +42,11 @@ export default async function handler(
             .eq("workspace_id", workspaceId)
             .eq("email", email);
 
-          if (existingMember) {
+          if (existingMember && existingMember.length > 0) {
             return res.status(400).json({
               error: "User is already a member of this workspace",
             });
           }
-
           const { data: currentMember, error: memberError } = await supabase
             .from("workspace_members")
             .select("role")
