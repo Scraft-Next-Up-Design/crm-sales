@@ -49,22 +49,40 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-          const { data: membership, error: membershipError } = await supabase
-            .from("workspace_members")
-            .select("role")
-            .eq("workspace_id", workspace_id)
-            .eq("user_id", user.id)
+
+          // Check if the user is the owner of the workspace
+          const { data: workspaceOwner, error: ownerError } = await supabase
+            .from("workspaces")
+            .select("owner_id")
+            .eq("id", workspace_id)
             .single();
 
-          if (membershipError) {
-            return res.status(500).json({ error: membershipError.message });
+          if (ownerError) {
+            return res.status(500).json({ error: ownerError.message });
           }
 
-          // Restrict webhook creation to admins only
-          if (!membership || membership.role !== "admin") {
-            return res
-              .status(403)
-              .json({ error: "Only admins can create webhooks" });
+          if (workspaceOwner?.owner_id === user.id) {
+            // User is the owner, allow webhook creation
+          } else {
+            // Check if the user is an admin in the workspace
+            const { data: workspaceMember, error: workspaceError } =
+              await supabase
+                .from("workspace_members")
+                .select("role")
+                .eq("workspace_id", workspace_id)
+                .eq("user_id", user.id)
+                .single();
+
+            if (
+              workspaceError ||
+              !workspaceMember ||
+              workspaceMember.role !== "admin"
+            ) {
+              return res.status(403).json({
+                error:
+                  "You don't have permission to create a webhook in this workspace.",
+              });
+            }
           }
           // Insert webhook with user ID
           const { data, error } = await supabase.from("webhooks").insert({
