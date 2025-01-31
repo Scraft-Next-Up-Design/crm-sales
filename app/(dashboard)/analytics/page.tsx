@@ -97,11 +97,11 @@ export default function AdvancedAnalyticsDashboard() {
         { status: 'Processed', count: (ROC?.total_leads ?? 0) - arrivedLeadsCount },
         { status: 'Total Leads', count: ROC?.total_leads ?? 0 }
       ],
-      bySource: Array.isArray(analyticsDatas) 
+      bySource: Array.isArray(analyticsDatas)
         ? analyticsDatas.map((data) => ({
-            source: data?.webhook_name ?? 'Unknown',
-            count: data?.lead_count ?? 0
-          }))
+          source: data?.webhook_name ?? 'Unknown',
+          count: data?.lead_count ?? 0
+        }))
         : []
     },
     revenue: {
@@ -110,12 +110,12 @@ export default function AdvancedAnalyticsDashboard() {
     },
     chartData: Array.isArray(ROC?.monthly_stats)
       ? ROC.monthly_stats.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
-          month: stat?.month?.split(" ")[0] ?? 'Unknown',
-          leads: stat?.totalLeads ?? 0,
-          revenue: 0,
-          processedLeads: stat?.totalLeads ?? 0,
-          conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
-        }))
+        month: stat?.month?.split(" ")[0] ?? 'Unknown',
+        leads: stat?.totalLeads ?? 0,
+        revenue: analyticsDetails?.totalRevenue,
+        processedLeads: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
+        conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
+      }))
       : []
   }), [ROC, analyticsDetails, arrivedLeadsCount, analyticsDatas]);
 
