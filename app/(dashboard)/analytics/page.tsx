@@ -26,7 +26,8 @@ import {
   Users,
   TrendingUp,
   DollarSign,
-  Loader2
+  Loader2,
+  IndianRupee
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSelector } from "react-redux";
@@ -152,12 +153,12 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Leads</p>
               <p className="text-2xl font-bold">{analyticsData.leads.total}</p>
-              <Badge
+              {/* <Badge
                 variant={analyticsData.leads.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.leads.monthlyGrowth}% Growth
-              </Badge>
+              </Badge> */}
             </div>
             <Users className="h-8 w-8 text-muted-foreground" />
           </CardContent>
@@ -171,14 +172,14 @@ export default function AdvancedAnalyticsDashboard() {
               <p className="text-2xl font-bold">
                 ₹{analyticsData.revenue.total.toLocaleString('en-US')}
               </p>
-              <Badge
+              {/* <Badge
                 variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.revenue.monthlyGrowth}% Growth
-              </Badge>
+              </Badge> */}
             </div>
-            <DollarSign className="h-8 w-8 text-muted-foreground" />
+            <IndianRupee className="h-8 w-8 text-muted-foreground" />
           </CardContent>
         </Card>
 
@@ -188,9 +189,9 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Growth Trend</p>
               <p className="text-2xl font-bold">Positive</p>
-              <Badge variant="outline" className="mt-2">
+              {/* <Badge variant="outline" className="mt-2">
                 Consistent Performance
-              </Badge>
+              </Badge> */}
             </div>
             <TrendingUp className="h-8 w-8 text-muted-foreground" />
           </CardContent>
