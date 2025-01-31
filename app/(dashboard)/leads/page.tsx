@@ -359,6 +359,11 @@ const LeadManagement: React.FC = () => {
     );
   };
 
+  // Deselect all leads
+  const deselectAll = () => {
+    setSelectedLeads([]);
+  };
+
   // Select all leads on current page
   const toggleSelectAllOnPage = () => {
     const currentPageLeadIds = paginatedLeads.map((lead) => lead.id);
@@ -451,38 +456,57 @@ const LeadManagement: React.FC = () => {
   const handleStatusChange = async (id: number, value: string) => {
     const { name, color } = JSON.parse(value);
 
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, status: { name, color } } : lead
-      )
-    );
-    updateLead({ id, leads: { name, color } });
-    toast.success(`Lead status updated to ${name}`);
-  };
-  const deselectAll = () => {
-    setSelectedLeads([]);
-  };
-  const handleAssignChange = async (id: number, assign: string) => {
-    const { name, role } = JSON.parse(assign);
     try {
-      await assignRole({ id, data: { name, role } });
+      await updateLead({ id, leads: { name, color } });
+
+      // Update the leads state with the new status
       setLeads((prevLeads) =>
         prevLeads.map((lead) =>
-          lead.id === id ? {
-            ...lead,
-            assign: { name, role }
-          } : lead
+          lead.id === id
+            ? {
+              ...lead,
+              status: {
+                name,
+                color
+              }
+            }
+            : lead
         )
       );
-    } catch (error) {
-      console.log(error);
-    }
 
-    // You may want to add an API call here to persist the assignment change
-    // Similar to how updateLead is called in handleStatusChange
-    // Example:
-    // updateLead({ id, leads: { assign: { name, role } } });
-    toast.success(`Lead assigned to ${name}`);
+      toast.success(`Lead status updated to ${name}`);
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      toast.error('Failed to update lead status');
+    }
+  };
+
+  const handleAssignChange = async (id: number, assign: string) => {
+    const { name, role } = JSON.parse(assign);
+
+    try {
+      await assignRole({ id, data: { name, role } });
+
+      // Update the leads state with the new assignment
+      setLeads((prevLeads) =>
+        prevLeads.map((lead) =>
+          lead.id === id
+            ? {
+              ...lead,
+              assign_to: {
+                name,
+                role
+              }
+            }
+            : lead
+        )
+      );
+
+      toast.success(`Lead assigned to ${name}`);
+    } catch (error) {
+      console.error('Error assigning lead:', error);
+      toast.error('Failed to assign lead');
+    }
   };
   const handleGoBack = () => {
     router.push("/dashboard");
