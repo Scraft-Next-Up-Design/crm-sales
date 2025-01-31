@@ -188,7 +188,7 @@ const LeadSourceManager: React.FC = () => {
           workspace_id: workspacesData.data.id,
           status: true,
         }]);
-
+        window.location.reload();
         toast.success("Lead source created successfully");
         resetDialog();
       } catch (error: any) {

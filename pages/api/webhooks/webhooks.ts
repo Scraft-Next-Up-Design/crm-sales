@@ -181,7 +181,6 @@ export default async function handler(
       }
     }
     case "DELETE": {
-      console.log("ok", action);
       if (!action) {
         return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
       }
