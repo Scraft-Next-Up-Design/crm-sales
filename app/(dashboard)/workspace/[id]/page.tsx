@@ -234,18 +234,23 @@ export default function WorkspaceSettingsPage() {
     };
 
     try {
-      const response = await addStatus({ statusData: status, workspaceId });
-      console.log(status)
+      const result = await addStatus({
+        statusData: status,
+        workspaceId
+      }).unwrap();
+
+      // If successful, update the local state
       setStatuses((prevStatuses) => [
         ...prevStatuses,
         {
-          id: response.data?.id || "",
+          id: result.id || "",
           name: status.name,
           color: status.color,
           count_statistics: status.count_statistics,
           workspace_show: status.showInWorkspace,
         },
       ]);
+
       setNewStatus({
         name: "",
         color: "#0ea5e9",
@@ -254,9 +259,11 @@ export default function WorkspaceSettingsPage() {
       });
 
       setIsAddingStatus(false);
-    } catch (error) {
-      console.error('Failed to add status:', error);
-      toast.error('Failed to add status');
+      toast.success('Status added successfully');
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to add status";
+      toast.error(errorMessage);
     }
   };
 
@@ -268,9 +275,12 @@ export default function WorkspaceSettingsPage() {
     if (!statusToEdit) return;
 
     try {
-      // Update the status in the backend (assuming you have an updateStatus mutation)
-      await updateStatus({ id: statusToEdit.id, updatedStatus: statusToEdit });
-      // Update local state
+      const result = await updateStatus({
+        id: statusToEdit.id,
+        updatedStatus: statusToEdit
+      }).unwrap();
+
+      // Update local state only after successful API call
       setStatuses(prevStatuses =>
         prevStatuses.map(status =>
           status.id === statusToEdit.id ? statusToEdit : status
@@ -279,12 +289,12 @@ export default function WorkspaceSettingsPage() {
 
       setStatusToEdit(null);
       toast.success('Status updated successfully');
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Failed to update status');
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to update status";
+      toast.error(errorMessage);
     }
   };
-
   const confirmDeleteStatus = async () => {
     if (!statusToDelete) return;
 
