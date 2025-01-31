@@ -66,9 +66,47 @@ export default async function handler(
           }
           return res.status(201).json({ data });
         }
+        case "updateNotesById": {
+          const { id } = query; // Extract ID from query parameters
+          const body = req.body; // Extract body payload
+          console.log("Request Body:", body, "Lead ID:", id);
+
+          if (!id) {
+            return res.status(400).json({ error: "Lead ID is required" });
+          }
+
+          if (!body) {
+            return res
+              .status(400)
+              .json({ error: "Update data is required in 'text_area' field" });
+          }
+          // Authenticate the user using Supabase
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+          console.log(body);
+          // Update the `leads` table
+          const { data, error } = await supabase
+            .from("leads")
+            .update({ text_area: body }) // Update the `text_area` field
+            .eq("id", id); // Match the ID
+          // .eq("user_id", user.id); // Ensure the user owns the record
+
+          if (error) {
+            console.error("Supabase Update Error:", error.message);
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
+
     case "PUT":
       switch (action) {
         case "updateLeadById": {
@@ -169,48 +207,7 @@ export default async function handler(
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
-    case "POST":
-      switch (action) {
-        case "updateNotesById": {
-          const { id } = query; // Extract ID from query parameters
-          const body = req.body; // Extract body payload
-          console.log("Request Body:", body, "Lead ID:", id);
 
-          if (!id) {
-            return res.status(400).json({ error: "Lead ID is required" });
-          }
-
-          if (!body) {
-            return res
-              .status(400)
-              .json({ error: "Update data is required in 'text_area' field" });
-          }
-          // Authenticate the user using Supabase
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-
-          if (!user) {
-            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          }
-
-          // Update the `leads` table
-          const { data, error } = await supabase
-            .from("leads")
-            .update({ text_area: body }) // Update the `text_area` field
-            .eq("id", id); // Match the ID
-          // .eq("user_id", user.id); // Ensure the user owns the record
-
-          if (error) {
-            console.error("Supabase Update Error:", error.message);
-            return res.status(400).json({ error: error.message });
-          }
-
-          return res.status(200).json({ data });
-        }
-        default:
-          return res.status(400).json({ error: `Unknown action: ${action}` });
-      }
     case "GET":
       switch (action) {
         case "getLeads": {

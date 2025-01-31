@@ -53,7 +53,6 @@ export default async function handler(
             .select("*")
             .eq("workspace_id", workspaceId)
             .eq("email", email)
-            .single();
 
           if (existingMember) {
             return res.status(400).json({

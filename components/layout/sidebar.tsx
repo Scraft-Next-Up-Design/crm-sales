@@ -627,7 +627,7 @@ export function Sidebar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                    {user?.name || user?.firstName + " " + user?.lastName || "User"}
+                    {user?.firstName + " " + user?.lastName || user?.name }
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {user?.email || "Email not available"}

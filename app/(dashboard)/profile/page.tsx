@@ -930,7 +930,7 @@ export default function ProfileDetailsPage() {
             </Avatar>
 
             <h2 className="text-xl md:text-2xl font-bold text-center">
-              {`${profileData.personalInfo.firstName} ${profileData.personalInfo.lastName}`}
+              {`${profileData.personalInfo.firstName}`}
             </h2>
             <p className="text-muted-foreground text-center">
               {profileData.professionalInfo.title}
