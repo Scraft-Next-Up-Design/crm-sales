@@ -36,6 +36,18 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+          const { data: existingMember, error: existingError } = await supabase
+            .from("workspace_members")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("email", email);
+
+          if (existingMember) {
+            return res.status(400).json({
+              error: "User is already a member of this workspace",
+            });
+          }
+
           const { data: currentMember, error: memberError } = await supabase
             .from("workspace_members")
             .select("role")
@@ -46,17 +58,6 @@ export default async function handler(
           if (memberError || currentMember.role === "member") {
             return res.status(403).json({
               error: "You must be a admin of this workspace to add new members",
-            });
-          }
-          const { data: existingMember, error: existingError } = await supabase
-            .from("workspace_members")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .eq("email", email)
-
-          if (existingMember) {
-            return res.status(400).json({
-              error: "User is already a member of this workspace",
             });
           }
 
