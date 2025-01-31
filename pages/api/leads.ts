@@ -59,7 +59,6 @@ export async function validateEmail(email: string): Promise<boolean> {
       `https://emailverifier.reoon.com/api/v1/verify?email=${email}&key=XL7ZTf8wKJLCBtE1pCLMvPr53zfHPRIw&mode=quick`
     );
 
-    // Check if email is valid based on API response
     return (
       response.data.is_valid_syntax &&
       response.data.mx_accepts_mail &&
@@ -72,7 +71,9 @@ export async function validateEmail(email: string): Promise<boolean> {
 }
 
 // Phone number validation function
-export async function validatePhoneNumber(phoneNumber: string): Promise<boolean> {
+export async function validatePhoneNumber(
+  phoneNumber: string
+): Promise<boolean> {
   try {
     const response = await axios.get(
       `https://api-bdc.net/data/phone-number-validate?number=${phoneNumber}&countryCode=IN&localityLanguage=en&key=bdc_a38fe464805a4a87a7da7dc81ff059cd`
@@ -207,9 +208,9 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const corsHandler = cors({
-    origin: '*', // Allow all origins (use specific origins in production)
-    methods: ['POST', 'OPTIONS'], // Allowed methods
-    allowedHeaders: ['Content-Type', 'Authorization'], // Allowed headers
+    origin: "*", // Allow all origins (use specific origins in production)
+    methods: ["POST", "OPTIONS"], // Allowed methods
+    allowedHeaders: ["Content-Type", "Authorization"], // Allowed headers
   });
   await runMiddleware(req, res, corsHandler);
 
