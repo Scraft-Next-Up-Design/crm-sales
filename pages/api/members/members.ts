@@ -167,7 +167,7 @@ export default async function handler(
               .status(400)
               .json({ error: "Workspace ID and Member ID are required" });
           }
-          console.log(memberId);
+
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
@@ -185,6 +185,18 @@ export default async function handler(
 
           if (workspaceError) {
             return res.status(400).json({ error: workspaceError.message });
+          }
+
+          // Get the role of the member being removed
+          const { data: memberToRemove, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("id", memberId)
+            .single();
+
+          if (memberError) {
+            return res.status(400).json({ error: memberError.message });
           }
 
           // If user is not the owner, check their role in workspace_members
@@ -208,6 +220,16 @@ export default async function handler(
               return res.status(403).json({
                 error:
                   "Unauthorized to remove member. Must be workspace owner, superAdmin, or admin",
+              });
+            }
+
+            // If user is admin, prevent removing SuperAdmin members
+            if (
+              userRole.role === "admin" &&
+              memberToRemove.role === "SuperAdmin"
+            ) {
+              return res.status(403).json({
+                error: "Admins cannot remove SuperAdmin members",
               });
             }
           }
