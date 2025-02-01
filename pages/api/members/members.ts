@@ -88,7 +88,71 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+        case "resendInvitation": {
+          const { workspaceId } = query;
+          const { email } = req.body;
 
+          if (!workspaceId || !email) {
+            return res
+              .status(400)
+              .json({ error: "Workspace ID and email are required" });
+          }
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          // Check if sender is admin
+          const { data: currentMember, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("email", user.email)
+            .single();
+
+          if (memberError || currentMember.role === "member") {
+            return res.status(403).json({
+              error:
+                "You must be an admin of this workspace to resend invitations",
+            });
+          }
+
+          // Check if member exists and get their status
+          const { data: existingMember, error: existingError } = await supabase
+            .from("workspace_members")
+            .select("status")
+            .eq("workspace_id", workspaceId)
+            .eq("email", email)
+            .single();
+
+          if (!existingMember) {
+            return res.status(404).json({
+              error: "Member not found in this workspace",
+            });
+          }
+
+          // Resend the invitation email
+          await sendMail(
+            email,
+            "You have been added to a workspace",
+            `
+              <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
+              <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
+                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+                  Accept Invite
+                </button>
+              </form>
+              `
+          );
+
+          return res.status(200).json({
+            message: "Invitation email resent successfully",
+          });
+        }
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }

@@ -59,7 +59,7 @@ import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorksp
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
-import { useAddMemberMutation } from "@/lib/store/services/members";
+import { useAddMemberMutation, useResendInviteMutation } from "@/lib/store/services/members";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 interface WorkspaceMember {
@@ -145,6 +145,7 @@ export default function WorkspaceSettingsPage() {
   const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
   const [deleteStatus, { isLoading: isDeletingStatus, error: errorDeletingStatus }] = useDeleteStatusMutation();
+  const [resendInvite, { isLoading: isResending, error: errorResending }] = useResendInviteMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -207,7 +208,15 @@ export default function WorkspaceSettingsPage() {
     console.log("deleted")
     // setMembers(members.filter(member => member.id !== memberId));
   };
-
+  const resendInviteToMember = async (member: WorkspaceMember) => {
+    try {
+      await resendInvite({ workspaceId, email: member.email, memberId: member.id });
+      toast.success('Invite resent successfully');
+    }
+    catch (error) {
+      toast.error('Failed to resend invite');
+    }
+  }
   const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
     console.log("deleted")
     // setMembers(members.map(member =>
@@ -300,25 +309,25 @@ export default function WorkspaceSettingsPage() {
 
   const confirmDeleteStatus = async () => {
     if (!statusToDelete) return;
-    
+
     try {
-      const response = await deleteStatus({ 
-        id: statusToDelete.id, 
-        workspace_id: workspaceId 
+      const response = await deleteStatus({
+        id: statusToDelete.id,
+        workspace_id: workspaceId
       }).unwrap(); // Use unwrap() to properly handle RTK Query errors
-      
+
       // If successful, update local state
       setStatuses(prevStatuses =>
         prevStatuses.filter(status => status.id !== statusToDelete.id)
       );
-      
+
       setStatusToDelete(null);
       toast.success('Status deleted successfully');
-      
+
     } catch (error: any) {
       // Handle different types of errors from Supabase/RTK Query
       let errorMessage = 'Failed to delete status';
-      
+
       if (error.status === 409) {
         errorMessage = 'This status is currently in use and cannot be deleted';
       } else if (error.data?.message) {
@@ -328,7 +337,7 @@ export default function WorkspaceSettingsPage() {
       } else if (typeof error === 'string') {
         errorMessage = error;
       }
-  
+
       // Log the full error for debugging
       console.error('Delete status error:', {
         status: error.status,
@@ -336,7 +345,7 @@ export default function WorkspaceSettingsPage() {
         error: error.error,
         fullError: error
       });
-  
+
       toast.error(errorMessage);
     }
   };
@@ -624,6 +633,10 @@ export default function WorkspaceSettingsPage() {
               onMemberAdd={handleMemberAdd}
               onMemberDelete={handleMemberDelete}
               onMemberUpdate={handleMemberUpdate}
+              onInviteResend={async (member) => {
+                // Implement your resend logic here
+                await resendInviteToMember(member);
+              }}
             />
           )}
           {/* Notifications Settings */}

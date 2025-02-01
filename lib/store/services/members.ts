@@ -35,8 +35,9 @@ interface UploadProfileImageRequest {
 }
 
 interface ResendInviteRequest {
-  memberId: string;
+  memberId: any;
   workspaceId: string;
+  email: string;
 }
 
 // Response Interfaces
@@ -119,8 +120,8 @@ export const memberApi = membersApi.injectEndpoints({
 
     // Resend invitation
     resendInvite: builder.mutation<{ message: string }, ResendInviteRequest>({
-      query: ({ workspaceId, memberId }) => ({
-        url: `workspace/${workspaceId}/members/${memberId}/resend-invite`,
+      query: ({ workspaceId, memberId, email }) => ({
+        url: `?action=resendInvitation&workspaceId=${workspaceId}&id=${memberId}&email=${email}`,
         method: "POST",
       }),
     }),
