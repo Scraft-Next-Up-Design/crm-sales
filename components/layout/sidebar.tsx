@@ -277,6 +277,10 @@ export function Sidebar({
       } else {
         await router.push(`/dashboard`);
       }
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+      
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
