@@ -87,7 +87,6 @@ export default async function handler(
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
           }
-console.log(req.body)
           // Insert status into the database
           const { data, error } = await supabase.from("status").insert({
             name,
@@ -144,27 +143,27 @@ console.log(req.body)
           }
 
           // If user is not the owner, check workspace membership and role
-          if (statusData.user_id !== user.id) {
-            const { data: memberData, error: memberError } = await supabase
-              .from("workspace_members")
-              .select("role")
-              .eq("workspace_id", statusData.work_id)
-              .eq("user_id", user.id)
-              .single();
+          // if (statusData.user_id !== user.id) {
+          //   const { data: memberData, error: memberError } = await supabase
+          //     .from("workspace_members")
+          //     .select("role")
+          //     .eq("workspace_id", statusData.work_id)
+          //     .eq("user_id", user.id)
+          //     .single();
 
-            if (memberError || !memberData) {
-              return res
-                .status(403)
-                .json({ error: "Not a member of the workspace" });
-            }
+          //   if (memberError || !memberData) {
+          //     return res
+          //       .status(403)
+          //       .json({ error: "Not a member of the workspace" });
+          //   }
 
-            // Check if user is admin
-            if (memberData.role !== "admin") {
-              return res.status(403).json({
-                error: "Only workspace admins can update other users' statuses",
-              });
-            }
-          }
+          //   // Check if user is admin
+          //   if (memberData.role !== "admin") {
+          //     return res.status(403).json({
+          //       error: "Only workspace admins can update other users' statuses",
+          //     });
+          //   }
+          // }
           console.log(name);
           // If we reach here, user is either the owner or an admin
           const { data, error } = await supabase

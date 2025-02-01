@@ -188,8 +188,9 @@ export default async function handler(
           const { data, error } = await supabase
             .from("workspace_members")
             .select()
-            .eq("workspace_id", workspaceId);
-
+            .eq("workspace_id", workspaceId)
+            .eq("status", "accepted")
+            .not("name", "is", null); // Exclude the workspace owner
           if (error) {
             return res.status(400).json({ error: error.message });
           }
@@ -239,7 +240,6 @@ export default async function handler(
               .from("workspace_members")
               .select("*")
               .eq("workspace_id", workspaceId)
-              .eq("status", "accepted")
               .eq("user_id", user.id)
               .single(); // Expect only one match
 
@@ -252,7 +252,6 @@ export default async function handler(
                 .status(403)
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
-console.log(membership)
             // Return workspace data if the user is a member
             return res
               .status(200)
