@@ -89,9 +89,9 @@ export default async function handler(
           return res.status(200).json({ data });
         }
         case "resendInvitation": {
-          const { workspaceId } = query;
-          const { email } = req.body;
-
+          const { workspaceId, email, status }: any = query;
+          console.log(query);
+          console.log(email);
           if (!workspaceId || !email) {
             return res
               .status(400)

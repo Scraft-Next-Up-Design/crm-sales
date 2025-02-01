@@ -209,8 +209,9 @@ export default function WorkspaceSettingsPage() {
     // setMembers(members.filter(member => member.id !== memberId));
   };
   const resendInviteToMember = async (member: WorkspaceMember) => {
+    console.log(member.email)
     try {
-      await resendInvite({ workspaceId, email: member.email, memberId: member.id });
+      await resendInvite({ workspaceId, email: member.email, memberId: member.id ,status: member.status});
       toast.success('Invite resent successfully');
     }
     catch (error) {
@@ -633,10 +634,7 @@ export default function WorkspaceSettingsPage() {
               onMemberAdd={handleMemberAdd}
               onMemberDelete={handleMemberDelete}
               onMemberUpdate={handleMemberUpdate}
-              onInviteResend={async (member) => {
-                // Implement your resend logic here
-                await resendInviteToMember(member);
-              }}
+              onInviteResend={resendInviteToMember}
             />
           )}
           {/* Notifications Settings */}
