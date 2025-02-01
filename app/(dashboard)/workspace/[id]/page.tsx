@@ -75,7 +75,8 @@ interface Status {
   id?: string;
   name: string;
   color: string;
-  count_statistics: boolean;
+  count_statistics?: boolean;
+  countInStatistics?:any;
   workspace_show: boolean;
 }
 
@@ -179,6 +180,7 @@ export default function WorkspaceSettingsPage() {
     color: "#0ea5e9",
     countInStatistics: false,
     showInWorkspace: false,
+    count_statistics: false,
   });
   const [statusToDelete, setStatusToDelete] = useState<any | null>(null);
   const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
@@ -273,13 +275,14 @@ export default function WorkspaceSettingsPage() {
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
+    console.log(newStatus)
     const status: any = {
       id: "",
       ...newStatus,
-      countInStatistics: newStatus.countInStatistics,
+      countInStatistics: newStatus.count_statistics,
       showInWorkspace: newStatus.showInWorkspace,
     };
-
+console.log(status);
     try {
       const result = await addStatus({
         statusData: status,
@@ -292,7 +295,7 @@ export default function WorkspaceSettingsPage() {
           id: result.id || "",
           name: status.name,
           color: status.color,
-          count_statistics: status.count_statistics,
+          countInStatistics: status.count_statistics,
           workspace_show: status.showInWorkspace,
         },
       ]);
@@ -302,6 +305,7 @@ export default function WorkspaceSettingsPage() {
         color: "#0ea5e9",
         countInStatistics: false,
         showInWorkspace: false,
+        count_statistics: false,
       });
 
       setIsAddingStatus(false);

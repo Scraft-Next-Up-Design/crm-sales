@@ -239,6 +239,7 @@ export default async function handler(
               .from("workspace_members")
               .select("*")
               .eq("workspace_id", workspaceId)
+              .eq("status", "accepted")
               .eq("user_id", user.id)
               .single(); // Expect only one match
 
@@ -251,7 +252,7 @@ export default async function handler(
                 .status(403)
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
-
+console.log(membership)
             // Return workspace data if the user is a member
             return res
               .status(200)

@@ -349,6 +349,7 @@ export default async function handler(
           const { data, error } = await supabase
             .from("workspace_members")
             .select("role")
+            .eq("status", "accepted")
             .eq("workspace_id", workspaceId)
             .eq("user_id", userId)
             .single();
@@ -356,7 +357,7 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-
+console.log(data);
           return res.status(200).json({ data });
         }
 

@@ -58,9 +58,6 @@ const SalesDashboard = () => {
       skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
     }
   );
-console.log(workspaceRevenue)
-  console.log(webhooks)
-  console.log(ROC?.top_source_id)
   const { arrivedLeadsCount } = workspaceCount || 0;
   const isLoading = isWorkspaceLoading || isRevenueLoading;
   const updatedRevenue = workspaceRevenue?.totalRevenue.toFixed(2);

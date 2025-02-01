@@ -87,7 +87,7 @@ export default async function handler(
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
           }
-
+console.log(req.body)
           // Insert status into the database
           const { data, error } = await supabase.from("status").insert({
             name,
