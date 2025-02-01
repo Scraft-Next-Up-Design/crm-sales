@@ -160,14 +160,14 @@ export default async function handler(
     case "DELETE":
       switch (action) {
         case "removeMember": {
-          const { workspaceId, memberId } = query;
+          const { workspaceId, id: memberId } = query;
 
           if (!workspaceId || !memberId) {
             return res
               .status(400)
               .json({ error: "Workspace ID and Member ID are required" });
           }
-
+          console.log(memberId);
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
@@ -176,28 +176,55 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          // Check if user is admin or removing themselves
-          const { data: adminCheck } = await supabase
-            .from("workspace_members")
-            .select("role")
-            .eq("workspace_id", workspaceId)
-            .eq("user_id", user.id)
+          // First check if the user is the workspace owner
+          const { data: workspace, error: workspaceError } = await supabase
+            .from("workspaces")
+            .select("owner_id")
+            .eq("id", workspaceId)
             .single();
 
-          if (
-            !adminCheck ||
-            (adminCheck.role !== "admin" && user.id !== memberId)
-          ) {
-            return res
-              .status(403)
-              .json({ error: "Unauthorized to remove member" });
+          if (workspaceError) {
+            return res.status(400).json({ error: workspaceError.message });
           }
 
+          // If user is not the owner, check their role in workspace_members
+          if (workspace.owner_id !== user.id) {
+            const { data: userRole, error: roleError } = await supabase
+              .from("workspace_members")
+              .select("role")
+              .eq("workspace_id", workspaceId)
+              .eq("user_id", user.id)
+              .single();
+
+            if (roleError) {
+              return res.status(400).json({ error: roleError.message });
+            }
+
+            // Check if user has sufficient privileges
+            if (
+              !userRole ||
+              (userRole.role !== "SuperAdmin" && userRole.role !== "admin")
+            ) {
+              return res.status(403).json({
+                error:
+                  "Unauthorized to remove member. Must be workspace owner, superAdmin, or admin",
+              });
+            }
+          }
+
+          // Prevent deletion of workspace owner
+          if (workspace.owner_id === memberId) {
+            return res.status(403).json({
+              error: "Cannot remove workspace owner",
+            });
+          }
+
+          // If all checks pass, proceed with member removal
           const { data, error } = await supabase
             .from("workspace_members")
             .delete()
             .eq("workspace_id", workspaceId)
-            .eq("user_id", memberId);
+            .eq("id", memberId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -205,7 +232,6 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }

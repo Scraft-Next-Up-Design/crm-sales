@@ -59,7 +59,7 @@ import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorksp
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
-import { useAddMemberMutation, useResendInviteMutation } from "@/lib/store/services/members";
+import { useAddMemberMutation, useDeleteMemberMutation, useResendInviteMutation } from "@/lib/store/services/members";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 interface WorkspaceMember {
@@ -146,6 +146,7 @@ export default function WorkspaceSettingsPage() {
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
   const [deleteStatus, { isLoading: isDeletingStatus, error: errorDeletingStatus }] = useDeleteStatusMutation();
   const [resendInvite, { isLoading: isResending, error: errorResending }] = useResendInviteMutation();
+  const [deleteMember, { isLoading: isDeleting, error: errorDeleting }] = useDeleteMemberMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -197,37 +198,70 @@ export default function WorkspaceSettingsPage() {
         return;
       }
 
-      // If no error, update the state
+      window.location.reload();
       setMembers([...members, newMember]);
     } catch (error) {
       console.error('Unexpected error:', error);
     }
   };
 
-  const handleMemberDelete = (memberId: string) => {
-    console.log("deleted")
-    // setMembers(members.filter(member => member.id !== memberId));
+  const handleMemberDelete = async (memberId: string) => {
+    try {
+      const result = await deleteMember({ workspaceId, id: memberId });
+
+      if ('error' in result) {
+        const errorDetails = (result.error as any).data;
+        toast.error(errorDetails.error || 'Failed to delete member');
+        return;
+      }
+
+      // Update local state only after successful deletion
+      setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+      toast.success('Member deleted successfully');
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'An unexpected error occurred while deleting member';
+      toast.error(errorMessage);
+      console.error('Delete member error:', error);
+    }
   };
   const resendInviteToMember = async (member: WorkspaceMember) => {
-    console.log(member.email)
-    try {
-      await resendInvite({ workspaceId, email: member.email, memberId: member.id ,status: member.status});
-      toast.success('Invite resent successfully');
+    if (!member.email || !member.id) {
+      toast.error('Invalid member information');
+      return;
     }
-    catch (error) {
-      toast.error('Failed to resend invite');
-    }
-  }
-  const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
-    console.log("deleted")
-    // setMembers(members.map(member =>
-    //   member.id === updatedMember.id ? updatedMember : member
-    // ));
-  };
 
+    try {
+      const result = await resendInvite({
+        workspaceId,
+        email: member.email,
+        memberId: member.id,
+        status: member.status
+      });
+
+      if ('error' in result) {
+        const errorDetails = (result.error as any).data;
+        toast.error(errorDetails.error || 'Failed to resend invite');
+        return;
+      }
+
+      toast.success('Invite resent successfully');
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'An unexpected error occurred while resending invite';
+      toast.error(errorMessage);
+      console.error('Resend invite error:', error);
+    }
+  };
+  const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
+    // console.log("deleted")
+    setMembers(members.map(member =>
+      member.id === updatedMember.id ? updatedMember : member
+    ));
+  };
   const confirmDeleteMember = async () => {
     if (memberToDelete) {
-      // await deleteMember({ workspaceId, memberId: memberToDelete.id });
+      if (memberToDelete?.id) {
+        await deleteMember({ workspaceId, id: memberToDelete.id });
+      }
       setMemberToDelete(null);
     }
   };
@@ -408,11 +442,17 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
-  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus) {
+  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus || isUpdating ||
+    isAdding ||
+    isUpdatingMember ||
+    isAddingStat ||
+    isDeletingStatus ||
+    isResending ||
+    isDeleting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <div className="absolute inset-5 flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin" />
+    </div>
     );
   }
   if (!workspaceData?.data) {
