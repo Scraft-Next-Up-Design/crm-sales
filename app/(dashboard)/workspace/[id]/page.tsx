@@ -54,7 +54,7 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useAddStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
+import { useAddStatusMutation, useDeleteStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
 import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
@@ -144,6 +144,7 @@ export default function WorkspaceSettingsPage() {
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
   const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
+  const [deleteStatus, { isLoading: isDeletingStatus, error: errorDeletingStatus }] = useDeleteStatusMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -296,21 +297,48 @@ export default function WorkspaceSettingsPage() {
       toast.error(errorMessage);
     }
   };
+
   const confirmDeleteStatus = async () => {
     if (!statusToDelete) return;
-    console.log("deleted")
-    // try {
-
-    //   setStatuses(prevStatuses =>
-    //     prevStatuses.filter(status => status.id !== statusToDelete.id)
-    //   );
-
-    //   setStatusToDelete(null);
-    //   toast.success('Status deleted successfully');
-    // } catch (error) {
-    //   console.error('Failed to delete status:', error);
-    //   toast.error('Failed to delete status');
-    // }
+    
+    try {
+      const response = await deleteStatus({ 
+        id: statusToDelete.id, 
+        workspace_id: workspaceId 
+      }).unwrap(); // Use unwrap() to properly handle RTK Query errors
+      
+      // If successful, update local state
+      setStatuses(prevStatuses =>
+        prevStatuses.filter(status => status.id !== statusToDelete.id)
+      );
+      
+      setStatusToDelete(null);
+      toast.success('Status deleted successfully');
+      
+    } catch (error: any) {
+      // Handle different types of errors from Supabase/RTK Query
+      let errorMessage = 'Failed to delete status';
+      
+      if (error.status === 409) {
+        errorMessage = 'This status is currently in use and cannot be deleted';
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+  
+      // Log the full error for debugging
+      console.error('Delete status error:', {
+        status: error.status,
+        data: error.data,
+        error: error.error,
+        fullError: error
+      });
+  
+      toast.error(errorMessage);
+    }
   };
 
   useEffect(() => {

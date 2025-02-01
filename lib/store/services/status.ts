@@ -33,16 +33,16 @@ export const statusApis = statusApi.injectEndpoints({
         body: statusData,
       }),
     }),
-    updateStatus: builder.mutation<void , { id: any; updatedStatus: any}>({
+    updateStatus: builder.mutation<void, { id: any; updatedStatus: any }>({
       query: ({ id, ...updatedStatus }) => ({
         url: `?action=updateStatus&id=${id}`,
         method: "PUT",
         body: updatedStatus,
       }),
     }),
-    deleteStatus: builder.mutation<void, string>({
-      query: (id) => ({
-        url: `?action=deleteStatus/${id}`,
+    deleteStatus: builder.mutation<void, { id: any; workspace_id: string }>({
+      query: ({ id, workspace_id }) => ({
+        url: `?action=deleteStatus&id=${id}`,
         method: "DELETE",
       }),
     }),
