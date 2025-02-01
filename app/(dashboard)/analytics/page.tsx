@@ -58,7 +58,7 @@ interface AnalyticsData {
   }>;
 }
 
-const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const CHART_COLORS = ['#0088FE', '#f1c232', '#38761d', '#FF8042'];
 
 export default function AdvancedAnalyticsDashboard() {
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
@@ -98,7 +98,7 @@ export default function AdvancedAnalyticsDashboard() {
         { status: 'Total Leads', count: ROC?.total_leads ?? 0 }
       ],
       bySource: Array.isArray(analyticsDatas)
-        ? analyticsDatas.map((data) => ({
+        ? analyticsDatas.map((data) => ({ 
           source: data?.webhook_name ?? 'Unknown',
           count: data?.lead_count ?? 0
         }))
