@@ -855,6 +855,17 @@ const LeadManagement: React.FC = () => {
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                          <SelectItem
+                            key="unassigned"
+                            value={JSON.stringify({ name: "Unassigned", role: "none" })}
+                            className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                Unassigned
+                              </span>
+                            </div>
+                          </SelectItem>
                           {workspaceMembers?.data.map((status: { name: string; role: string }) => (
                             <SelectItem
                               key={status.name}
