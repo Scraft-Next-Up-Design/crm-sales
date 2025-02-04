@@ -189,8 +189,7 @@ export default async function handler(
             .from("workspace_members")
             .select()
             .eq("workspace_id", workspaceId)
-            .eq("status", "accepted")
-            .not("name", "is", null); // Exclude the workspace owner
+            // .eq("status", "accepted")
           if (error) {
             return res.status(400).json({ error: error.message });
           }
