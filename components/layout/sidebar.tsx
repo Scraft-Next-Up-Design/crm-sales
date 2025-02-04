@@ -165,7 +165,6 @@ export function Sidebar({
     //   href: "/setting",
     // },
   ];
-
   const handleLogout = async () => {
     try {
       const { error } = await supabase.auth.signOut();
@@ -173,11 +172,8 @@ export function Sidebar({
 
       toast.success("Logout completed");
 
-      setTimeout(() => {
-        window.location.reload(); // Reload after navigation
-      }, 100); // Small delay ensures smooth transition
+      window.location.href = "/login"; // Redirect with full page reload
 
-      router.push("/login"); // Navigate to login page
 
     } catch (error: any) {
       toast.error(error.message);
