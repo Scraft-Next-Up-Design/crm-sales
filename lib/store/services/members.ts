@@ -35,8 +35,10 @@ interface UploadProfileImageRequest {
 }
 
 interface ResendInviteRequest {
-  memberId: string;
+  memberId: any;
   workspaceId: string;
+  email: string;
+  status: any;
 }
 
 // Response Interfaces
@@ -95,7 +97,7 @@ export const memberApi = membersApi.injectEndpoints({
     // Delete a member
     deleteMember: builder.mutation<DeleteMemberResponse, DeleteMemberRequest>({
       query: ({ workspaceId, id }) => ({
-        url: `workspace/${workspaceId}/members/${id}`,
+        url: `?action=removeMember&workspaceId=${workspaceId}&id=${id}`,
         method: "DELETE",
       }),
     }),
@@ -119,8 +121,8 @@ export const memberApi = membersApi.injectEndpoints({
 
     // Resend invitation
     resendInvite: builder.mutation<{ message: string }, ResendInviteRequest>({
-      query: ({ workspaceId, memberId }) => ({
-        url: `workspace/${workspaceId}/members/${memberId}/resend-invite`,
+      query: ({ workspaceId, memberId, email, status }) => ({
+        url: `?action=resendInvitation&workspaceId=${workspaceId}&id=${memberId}&email=${email} &status=${status}`,
         method: "POST",
       }),
     }),

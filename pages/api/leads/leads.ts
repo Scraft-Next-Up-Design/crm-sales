@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
+import { validateEmail, validatePhoneNumber } from "../leads";
 
 export default async function handler(
   req: NextApiRequest,
@@ -32,22 +33,30 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-
+          console.log(body, body);
+          const isValidEmail = await validateEmail(body.email);
+          const isValidPhone = await validatePhoneNumber(body.phone);
+          console.log(isValidEmail, isValidPhone);
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
               email: body.email,
               phone: body.phone || null,
-              contact_method: "Call",
               status: {
                 name: "Arrived",
                 color: "#FFA500",
               },
+              company: body.company || null,
+              position: body.position || null,
+              contact_method: body.contact_method || "Call",
               assign_to: null,
               lead_source_id: body.source_id || null,
               work_id: req.query.workspaceId,
               user_id: user.id,
+
               text_area: body.text_area || "",
+              is_email_valid: isValidEmail,
+              is_phone_valid: isValidPhone,
               created_at: new Date().toISOString(),
             },
           ]);
@@ -57,9 +66,47 @@ export default async function handler(
           }
           return res.status(201).json({ data });
         }
+        case "updateNotesById": {
+          const { id } = query; // Extract ID from query parameters
+          const body = req.body; // Extract body payload
+          console.log("Request Body:", body, "Lead ID:", id);
+
+          if (!id) {
+            return res.status(400).json({ error: "Lead ID is required" });
+          }
+
+          if (!body) {
+            return res
+              .status(400)
+              .json({ error: "Update data is required in 'text_area' field" });
+          }
+          // Authenticate the user using Supabase
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+          console.log(body);
+          // Update the `leads` table
+          const { data, error } = await supabase
+            .from("leads")
+            .update({ text_area: body }) // Update the `text_area` field
+            .eq("id", id); // Match the ID
+          // .eq("user_id", user.id); // Ensure the user owns the record
+
+          if (error) {
+            console.error("Supabase Update Error:", error.message);
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(200).json({ data });
+        }
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
+
     case "PUT":
       switch (action) {
         case "updateLeadById": {
@@ -160,48 +207,7 @@ export default async function handler(
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
-    case "POST":
-      switch (action) {
-        case "updateNotesById": {
-          const { id } = query; // Extract ID from query parameters
-          const body = req.body; // Extract body payload
-          console.log("Request Body:", body, "Lead ID:", id);
 
-          if (!id) {
-            return res.status(400).json({ error: "Lead ID is required" });
-          }
-
-          if (!body) {
-            return res
-              .status(400)
-              .json({ error: "Update data is required in 'text_area' field" });
-          }
-          // Authenticate the user using Supabase
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-
-          if (!user) {
-            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          }
-
-          // Update the `leads` table
-          const { data, error } = await supabase
-            .from("leads")
-            .update({ text_area: body }) // Update the `text_area` field
-            .eq("id", id); // Match the ID
-          // .eq("user_id", user.id); // Ensure the user owns the record
-
-          if (error) {
-            console.error("Supabase Update Error:", error.message);
-            return res.status(400).json({ error: error.message });
-          }
-
-          return res.status(200).json({ data });
-        }
-        default:
-          return res.status(400).json({ error: `Unknown action: ${action}` });
-      }
     case "GET":
       switch (action) {
         case "getLeads": {
@@ -347,7 +353,7 @@ export default async function handler(
       });
     case "DELETE": {
       if (action === "deleteLeads") {
-        const { id } = req.body; // Extract the IDs from the request body
+        const { id, workspaceId } = req.body;
 
         if (!id || !Array.isArray(id) || id.length === 0) {
           return res
@@ -355,7 +361,11 @@ export default async function handler(
             .json({ error: "A list of Lead IDs is required" });
         }
 
-        // Authenticate the user using Supabase
+        if (!workspaceId) {
+          return res.status(400).json({ error: "Workspace ID is required" });
+        }
+
+        // Authenticate the user
         const {
           data: { user },
         } = await supabase.auth.getUser(token);
@@ -364,20 +374,60 @@ export default async function handler(
           return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
         }
 
-        // Perform bulk deletion in the `leads` table
+        // First check if user is workspace owner
+        const { data: workspaceData, error: workspaceError } = await supabase
+          .from("workspaces")
+          .select("owner_id")
+          .eq("id", workspaceId)
+          .single();
+
+        if (workspaceError) {
+          console.error("Workspace Check Error:", workspaceError.message);
+          return res.status(400).json({ error: workspaceError.message });
+        }
+
+        const isWorkspaceOwner = workspaceData?.owner_id === user.id;
+
+        // If not workspace owner, check if user is admin
+        if (!isWorkspaceOwner) {
+          const { data: memberData, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("user_id", user.id)
+            .single();
+
+          if (memberError) {
+            console.error("Workspace Member Check Error:", memberError.message);
+            return res.status(400).json({ error: memberError.message });
+          }
+
+          const isAdmin =
+            memberData?.role === "admin" || memberData?.role === "SuperAdmin";
+
+          if (!isAdmin) {
+            return res.status(403).json({
+              error: "Only workspace owners and admins can delete leads",
+            });
+          }
+        }
+
+        // Proceed with deletion if authorized
         const { data, error } = await supabase
           .from("leads")
           .delete()
-          .eq("user_id", user.id) // Ensure the user owns the records
-          .in("id", id); // Use `.in()` to delete multiple rows by their IDs
+          .in("id", id)
+          .eq("work_id", workspaceId);
+
         if (error) {
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });
         }
 
-        return res
-          .status(200)
-          .json({ message: "Leads deleted successfully", data });
+        return res.status(200).json({
+          message: "Leads deleted successfully",
+          data,
+        });
       }
 
       return res.status(400).json({ error: `Unknown action: ${action}` });

@@ -77,11 +77,11 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "DELETE",
       }),
     }),
-    bulkDeleteLeads: builder.mutation<void, { id: any }>({
-      query: ({ id }) => ({
+    bulkDeleteLeads: builder.mutation<void, { id: any; workspaceId: any }>({
+      query: ({ id, workspaceId }) => ({
         url: `?action=deleteLeads`,
         method: "DELETE",
-        body: { id },
+        body: { id, workspaceId },
       }),
     }),
   }),

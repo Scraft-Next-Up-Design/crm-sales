@@ -36,6 +36,17 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
+          const { data: existingMember, error: existingError } = await supabase
+            .from("workspace_members")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .eq("email", email);
+
+          if (existingMember && existingMember.length > 0) {
+            return res.status(400).json({
+              error: "User is already a member of this workspace",
+            });
+          }
           const { data: currentMember, error: memberError } = await supabase
             .from("workspace_members")
             .select("role")
@@ -46,18 +57,6 @@ export default async function handler(
           if (memberError || currentMember.role === "member") {
             return res.status(403).json({
               error: "You must be a admin of this workspace to add new members",
-            });
-          }
-          const { data: existingMember, error: existingError } = await supabase
-            .from("workspace_members")
-            .select("*")
-            .eq("workspace_id", workspaceId)
-            .eq("email", email)
-            .single();
-
-          if (existingMember) {
-            return res.status(400).json({
-              error: "User is already a member of this workspace",
             });
           }
 
@@ -89,7 +88,71 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+        case "resendInvitation": {
+          const { workspaceId, email, status }: any = query;
+          console.log(query);
+          console.log(email);
+          if (!workspaceId || !email) {
+            return res
+              .status(400)
+              .json({ error: "Workspace ID and email are required" });
+          }
 
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          // Check if sender is admin
+          const { data: currentMember, error: memberError } = await supabase
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", workspaceId)
+            .eq("email", user.email)
+            .single();
+
+          if (memberError || currentMember.role === "member") {
+            return res.status(403).json({
+              error:
+                "You must be an admin of this workspace to resend invitations",
+            });
+          }
+
+          // Check if member exists and get their status
+          const { data: existingMember, error: existingError } = await supabase
+            .from("workspace_members")
+            .select("status")
+            .eq("workspace_id", workspaceId)
+            .eq("email", email)
+            .single();
+
+          if (!existingMember) {
+            return res.status(404).json({
+              error: "Member not found in this workspace",
+            });
+          }
+
+          // Resend the invitation email
+          await sendMail(
+            email,
+            "You have been added to a workspace",
+            `
+              <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
+              <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
+                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
+                  Accept Invite
+                </button>
+              </form>
+              `
+          );
+
+          return res.status(200).json({
+            message: "Invitation email resent successfully",
+          });
+        }
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
@@ -97,7 +160,7 @@ export default async function handler(
     case "DELETE":
       switch (action) {
         case "removeMember": {
-          const { workspaceId, memberId } = query;
+          const { workspaceId, id: memberId } = query;
 
           if (!workspaceId || !memberId) {
             return res
@@ -113,28 +176,77 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          // Check if user is admin or removing themselves
-          const { data: adminCheck } = await supabase
+          // First check if the user is the workspace owner
+          const { data: workspace, error: workspaceError } = await supabase
+            .from("workspaces")
+            .select("owner_id")
+            .eq("id", workspaceId)
+            .single();
+
+          if (workspaceError) {
+            return res.status(400).json({ error: workspaceError.message });
+          }
+
+          // Get the role of the member being removed
+          const { data: memberToRemove, error: memberError } = await supabase
             .from("workspace_members")
             .select("role")
             .eq("workspace_id", workspaceId)
-            .eq("user_id", user.id)
+            .eq("id", memberId)
             .single();
 
-          if (
-            !adminCheck ||
-            (adminCheck.role !== "admin" && user.id !== memberId)
-          ) {
-            return res
-              .status(403)
-              .json({ error: "Unauthorized to remove member" });
+          if (memberError) {
+            return res.status(400).json({ error: memberError.message });
           }
 
+          // If user is not the owner, check their role in workspace_members
+          if (workspace.owner_id !== user.id) {
+            const { data: userRole, error: roleError } = await supabase
+              .from("workspace_members")
+              .select("role")
+              .eq("workspace_id", workspaceId)
+              .eq("user_id", user.id)
+              .single();
+
+            if (roleError) {
+              return res.status(400).json({ error: roleError.message });
+            }
+
+            // Check if user has sufficient privileges
+            if (
+              !userRole ||
+              (userRole.role !== "SuperAdmin" && userRole.role !== "admin")
+            ) {
+              return res.status(403).json({
+                error:
+                  "Unauthorized to remove member. Must be workspace owner, superAdmin, or admin",
+              });
+            }
+
+            // If user is admin, prevent removing SuperAdmin members
+            if (
+              userRole.role === "admin" &&
+              memberToRemove.role === "SuperAdmin"
+            ) {
+              return res.status(403).json({
+                error: "Admins cannot remove SuperAdmin members",
+              });
+            }
+          }
+
+          // Prevent deletion of workspace owner
+          if (workspace.owner_id === memberId) {
+            return res.status(403).json({
+              error: "Cannot remove workspace owner",
+            });
+          }
+
+          // If all checks pass, proceed with member removal
           const { data, error } = await supabase
             .from("workspace_members")
             .delete()
             .eq("workspace_id", workspaceId)
-            .eq("user_id", memberId);
+            .eq("id", memberId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -142,7 +254,6 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
-
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
@@ -245,7 +356,7 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-
+          console.log(data);
           return res.status(200).json({ data });
         }
 

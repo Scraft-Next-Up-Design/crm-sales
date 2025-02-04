@@ -26,7 +26,8 @@ import {
   Users,
   TrendingUp,
   DollarSign,
-  Loader2
+  Loader2,
+  IndianRupee
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useSelector } from "react-redux";
@@ -57,7 +58,7 @@ interface AnalyticsData {
   }>;
 }
 
-const CHART_COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const CHART_COLORS = ['#0088FE', '#f1c232', '#38761d', '#FF8042'];
 
 export default function AdvancedAnalyticsDashboard() {
   const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
@@ -96,11 +97,11 @@ export default function AdvancedAnalyticsDashboard() {
         { status: 'Processed', count: (ROC?.total_leads ?? 0) - arrivedLeadsCount },
         { status: 'Total Leads', count: ROC?.total_leads ?? 0 }
       ],
-      bySource: Array.isArray(analyticsDatas) 
+      bySource: Array.isArray(analyticsDatas)
         ? analyticsDatas.map((data) => ({
-            source: data?.webhook_name ?? 'Unknown',
-            count: data?.lead_count ?? 0
-          }))
+          source: data?.webhook_name ?? 'Unknown',
+          count: data?.lead_count ?? 0
+        }))
         : []
     },
     revenue: {
@@ -109,12 +110,12 @@ export default function AdvancedAnalyticsDashboard() {
     },
     chartData: Array.isArray(ROC?.monthly_stats)
       ? ROC.monthly_stats.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
-          month: stat?.month?.split(" ")[0] ?? 'Unknown',
-          leads: stat?.totalLeads ?? 0,
-          revenue: 0,
-          processedLeads: stat?.totalLeads ?? 0,
-          conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
-        }))
+        month: stat?.month?.split(" ")[0] ?? 'Unknown',
+        leads: stat?.totalLeads ?? 0,
+        revenue: analyticsDetails?.totalRevenue,
+        processedLeads: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
+        conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
+      }))
       : []
   }), [ROC, analyticsDetails, arrivedLeadsCount, analyticsDatas]);
 
@@ -152,12 +153,12 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Leads</p>
               <p className="text-2xl font-bold">{analyticsData.leads.total}</p>
-              <Badge
+              {/* <Badge
                 variant={analyticsData.leads.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.leads.monthlyGrowth}% Growth
-              </Badge>
+              </Badge> */}
             </div>
             <Users className="h-8 w-8 text-muted-foreground" />
           </CardContent>
@@ -171,14 +172,14 @@ export default function AdvancedAnalyticsDashboard() {
               <p className="text-2xl font-bold">
                 ₹{analyticsData.revenue.total.toLocaleString('en-US')}
               </p>
-              <Badge
+              {/* <Badge
                 variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'}
                 className="mt-2"
               >
                 {analyticsData.revenue.monthlyGrowth}% Growth
-              </Badge>
+              </Badge> */}
             </div>
-            <DollarSign className="h-8 w-8 text-muted-foreground" />
+            <IndianRupee className="h-8 w-8 text-muted-foreground" />
           </CardContent>
         </Card>
 
@@ -188,9 +189,9 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Growth Trend</p>
               <p className="text-2xl font-bold">Positive</p>
-              <Badge variant="outline" className="mt-2">
+              {/* <Badge variant="outline" className="mt-2">
                 Consistent Performance
-              </Badge>
+              </Badge> */}
             </div>
             <TrendingUp className="h-8 w-8 text-muted-foreground" />
           </CardContent>

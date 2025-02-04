@@ -97,6 +97,7 @@ const LeadManagement: React.FC = () => {
   const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] = useCreateLeadMutation();
   const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
+  const [searchQuery, setSearchQuery] = useState("");
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
@@ -187,6 +188,24 @@ const LeadManagement: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
+      if (searchQuery) {
+        const searchText = searchQuery.toLowerCase();
+        const searchableFields = [
+          lead.Name,
+          lead.email,
+          lead.phone,
+          lead.company,
+          lead.position,
+          lead.status?.name,
+          lead.assign_to?.name
+        ];
+
+        const matchesSearch = searchableFields.some(
+          field => field && field.toString().toLowerCase().includes(searchText)
+        );
+
+        if (!matchesSearch) return false;
+      }
       // Owner filter
       if (filters.owner && !lead.assign_to.name?.includes(filters.owner)) return false;
 
@@ -215,7 +234,7 @@ const LeadManagement: React.FC = () => {
 
       return true;
     });
-  }, [leads, filters]);
+  }, [leads, filters, searchQuery]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -277,7 +296,6 @@ const LeadManagement: React.FC = () => {
 
   // Open edit dialog
   const openEditDialog = (lead: any) => {
-    console.log(lead)
     form.reset({
       name: lead.Name,
       email: lead.email,
@@ -315,16 +333,10 @@ const LeadManagement: React.FC = () => {
       // Update existing lead
       try {
         updateLeadData({ id: editingLead.id, leads: data });
-        setLeads(
-          leads.map((lead) =>
+        setLeads((prevLeads) =>
+          prevLeads.map((lead) =>
             lead.id === editingLead.id
-              ? {
-                id: editingLead.id,
-                ...data,
-                company: data.company || "",
-                position: data.position || "",
-                revenue: data.revenue || 0,
-              }
+              ? { ...lead, ...data, company: data.company || "", position: data.position || "", revenue: data.revenue || 0 }
               : lead
           )
         );
@@ -341,12 +353,27 @@ const LeadManagement: React.FC = () => {
   // Delete selected leads
   const handleDelete = async () => {
     try {
-      await deleteLeadsData({ id: selectedLeads });
+      const response = await deleteLeadsData({
+        id: selectedLeads,
+        workspaceId: workspaceId
+      }).unwrap(); // Add .unwrap() for RTK Query
+
       setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setDialogMode(null);
       toast.success("Selected leads deleted successfully");
-    } catch (error) {
+    } catch (error: any) {
+      // Log the error to see its structure
+      console.error('Delete error:', error);
+
+      // RTK Query specific error handling
+      const errorMessage =
+        error.data?.message ||
+        error.data?.error ||
+        error.error ||
+        "Failed to delete leads";
+
+      toast.error(errorMessage);
     }
   };
 
@@ -357,6 +384,11 @@ const LeadManagement: React.FC = () => {
         ? prev.filter((id) => id !== leadId)
         : [...prev, leadId]
     );
+  };
+
+  // Deselect all leads
+  const deselectAll = () => {
+    setSelectedLeads([]);
   };
 
   // Select all leads on current page
@@ -451,38 +483,57 @@ const LeadManagement: React.FC = () => {
   const handleStatusChange = async (id: number, value: string) => {
     const { name, color } = JSON.parse(value);
 
-    setLeads((prevLeads) =>
-      prevLeads.map((lead) =>
-        lead.id === id ? { ...lead, status: { name, color } } : lead
-      )
-    );
-    updateLead({ id, leads: { name, color } });
-    toast.success(`Lead status updated to ${name}`);
-  };
-  const deselectAll = () => {
-    setSelectedLeads([]);
-  };
-  const handleAssignChange = async (id: number, assign: string) => {
-    const { name, role } = JSON.parse(assign);
     try {
-      await assignRole({ id, data: { name, role } });
+      await updateLead({ id, leads: { name, color } });
+
+      // Update the leads state with the new status
       setLeads((prevLeads) =>
         prevLeads.map((lead) =>
-          lead.id === id ? {
-            ...lead,
-            assign: { name, role }
-          } : lead
+          lead.id === id
+            ? {
+              ...lead,
+              status: {
+                name,
+                color
+              }
+            }
+            : lead
         )
       );
-    } catch (error) {
-      console.log(error);
-    }
 
-    // You may want to add an API call here to persist the assignment change
-    // Similar to how updateLead is called in handleStatusChange
-    // Example:
-    // updateLead({ id, leads: { assign: { name, role } } });
-    toast.success(`Lead assigned to ${name}`);
+      toast.success(`Lead status updated to ${name}`);
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      toast.error('Failed to update lead status');
+    }
+  };
+
+  const handleAssignChange = async (id: number, assign: string) => {
+    const { name, role } = JSON.parse(assign);
+
+    try {
+      await assignRole({ id, data: { name, role } });
+
+      // Update the leads state with the new assignment
+      setLeads((prevLeads) =>
+        prevLeads.map((lead) =>
+          lead.id === id
+            ? {
+              ...lead,
+              assign_to: {
+                name,
+                role
+              }
+            }
+            : lead
+        )
+      );
+
+      toast.success(`Lead assigned to ${name}`);
+    } catch (error) {
+      console.error('Error assigning lead:', error);
+      toast.error('Failed to assign lead');
+    }
   };
   const handleGoBack = () => {
     router.push("/dashboard");
@@ -494,6 +545,7 @@ const LeadManagement: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-center text-gray-800">
             No Leads Found in this Workspace
           </CardTitle>
+
           <CardDescription className="mt-2 text-lg text-gray-600 text-center">
             It seems there are no leads available in this workspace at the moment.
           </CardDescription>
@@ -523,10 +575,20 @@ const LeadManagement: React.FC = () => {
             owner={workspaceMembers?.data}
           />
         )}
+
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
           <CardTitle className="text-lg md:text-xl lg:text-2xl ">
             Lead Management
           </CardTitle>
+          <div className="relative w-full md:w-64">
+            <Input
+              type="text"
+              placeholder="Search leads..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full"
+            />
+          </div>
           <div className="flex space-x-2">
             {/* Import Button */}
             <Button
@@ -793,6 +855,17 @@ const LeadManagement: React.FC = () => {
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                          <SelectItem
+                            key="unassigned"
+                            value={JSON.stringify({ name: "Unassigned", role: "none" })}
+                            className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                          >
+                            <div className="flex items-center gap-3">
+                              <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                Unassigned
+                              </span>
+                            </div>
+                          </SelectItem>
                           {workspaceMembers?.data.map((status: { name: string; role: string }) => (
                             <SelectItem
                               key={status.name}

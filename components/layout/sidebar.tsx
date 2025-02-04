@@ -55,6 +55,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import {
   useCreateWorkspaceMutation,
+  useGetActiveWorkspaceQuery,
   useGetWorkspacesByOwnerIdQuery,
   useGetWorkspacesQuery,
   useUpdateWorkspaceStatusMutation
@@ -73,6 +74,7 @@ import {
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
+
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
@@ -109,6 +111,8 @@ export function Sidebar({
     { workspaceId: selectedWorkspace.id },
     { pollingInterval: 2000 }
   );
+  const { data: activeWorkspace, isLoading: activeWorkspaceLoading, isError: activeWorkspaceError } = useGetActiveWorkspaceQuery();
+  console.log(activeWorkspace)
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -166,12 +170,20 @@ export function Sidebar({
     try {
       const { error } = await supabase.auth.signOut();
       if (error) throw error;
-      toast.success("logout completed");
-      router.push("/login");
+
+      toast.success("Logout completed");
+
+      setTimeout(() => {
+        window.location.reload(); // Reload after navigation
+      }, 100); // Small delay ensures smooth transition
+
+      router.push("/login"); // Navigate to login page
+
     } catch (error: any) {
       toast.error(error.message);
     }
   };
+
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -185,13 +197,13 @@ export function Sidebar({
   const handleAddWorkspace = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newWorkspace.name.trim()) {
+    if (newWorkspace.name) {
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
         role: 'Admin',
       };
-
+      console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
         await createWorkspace({
           name: newWorkspace.name,
@@ -203,7 +215,6 @@ export function Sidebar({
           timezone: newWorkspace.timezone,
           notifications: newWorkspace.notifications,
         }).unwrap();
-        refetch();
         setWorkspaces([...workspaces, newWorkspaceItem]);
         setSelectedWorkspace(newWorkspaceItem);
 
@@ -220,13 +231,20 @@ export function Sidebar({
             inApp: true,
           },
         });
+        toast.success("Workspace created successfully");
         setDialogOpen(false);
+        window.location.reload();
 
       } catch (error: any) {
         toast.error(error.data.error);
       }
     }
   };
+  useEffect(() => {
+    if (activeWorkspace?.data) {
+      setSelectedWorkspace(activeWorkspace.data);
+    }
+  }, [activeWorkspace]);
 
   const handleEditWorkspace = (workspace: Workspace) => {
     router.push(`/workspace/${workspace.id}`);
@@ -240,17 +258,9 @@ export function Sidebar({
     };
     fetchUser();
   }, []);
-
   useEffect(() => {
     if (workspacesData?.data) {
       setWorkspaces(workspacesData.data);
-      const activeWorkspace = workspacesData.data.find((workspace: Workspace) => workspace.status === true);
-      if (activeWorkspace) {
-        setSelectedWorkspace(activeWorkspace);
-      } else if (workspacesData.data.length > 0) {
-        const fallbackWorkspace = workspacesData.data[0];
-        setSelectedWorkspace(fallbackWorkspace);
-      }
     }
   }, [workspacesData?.data]);
 
@@ -261,19 +271,30 @@ export function Sidebar({
 
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
-      refetch();
 
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
-      } else {
+      } else if (window.location.href.includes('dashboard')) {
         await router.push(`/dashboard`);
       }
-      window.location.reload();
+      else if (window.location.href.includes('leads-sources')) {
+        await router.push(`/leads-sources`);
+      } else if (window.location.href.includes('leads')) {
+        await router.push(`/leads`);
+      }
+      else if (window.location.href.includes('analytics')) {
+        await router.push(`/analytics`);
+      }
+
+
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
   };
-
   return (
     <>
       {/* Mobile Menu Button */}
@@ -312,12 +333,12 @@ export function Sidebar({
 
         {/* Logo Section */}
         <div className="flex items-center justify-center py-4 bg-inherit">
-          <Link href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <a href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
             <Zap className="h-6 w-6 text-primary" />
             {!isCollapsed && (
               <span className="text-xl font-bold">SCRAFT PRE CRM</span>
             )}
-          </Link>
+          </a>
         </div>
 
         {/* Workspace Selector */}
@@ -340,7 +361,6 @@ export function Sidebar({
             </Tooltip>
           ) : (
             <Select
-              defaultValue="Select A Workspace"
               value={selectedWorkspace?.id || ""}
               onValueChange={handleWorkspaceChange}
             >
@@ -358,12 +378,6 @@ export function Sidebar({
                     key={workspace.id}
                     value={workspace.id}
                     className="relative flex items-center py-2 cursor-pointer"
-                    onClick={(e) => {
-                      if (workspaces.length === 1) {
-                        e.preventDefault();
-                        handleWorkspaceChange(workspace.id);
-                      }
-                    }}
                   >
                     <div className="flex items-center flex-1 mr-8">
                       <Folder className="shrink-0 mr-2 h-4 w-4" />
@@ -383,7 +397,6 @@ export function Sidebar({
                     </Button>
                   </SelectItem>
                 ))}
-
                 {/* Add Workspace Dialog */}
                 <Dialog open={isDialogOpen} onOpenChange={setDialogOpen}>
                   <DialogTrigger asChild>
@@ -435,18 +448,26 @@ export function Sidebar({
                         </Select>
                       </div>
                       <div>
-                        <Label htmlFor="companySize">Company Size</Label>
-                        <Input
-                          id="companySize"
+                        <Label>Company Size</Label>
+                        <Select
                           value={newWorkspace.companySize}
-                          onChange={(e) =>
+                          onValueChange={(value) =>
                             setNewWorkspace({
                               ...newWorkspace,
-                              companySize: e.target.value,
+                              companySize: value,
                             })
                           }
-                          placeholder="Enter company size (e.g., 10-50, 50-100)"
-                          required />
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select company size" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="1-50">1-50</SelectItem>
+                            <SelectItem value="51-200">51-200</SelectItem>
+                            <SelectItem value="201-500">201-500</SelectItem>
+                            <SelectItem value="500+">500+</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
                       <div>
                         <Label htmlFor="companyType">Company Type</Label>
@@ -485,11 +506,10 @@ export function Sidebar({
                             <SelectValue placeholder="Select industry" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="technology">Technology</SelectItem>
-                            <SelectItem value="finance">Finance</SelectItem>
-                            <SelectItem value="healthcare">Healthcare</SelectItem>
-                            <SelectItem value="education">Education</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
+                            <SelectItem value="Technology">Technology</SelectItem>
+                            <SelectItem value="Finance">Finance</SelectItem>
+                            <SelectItem value="Healthcare">Healthcare</SelectItem>
+                            <SelectItem value="Education">Education</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -550,34 +570,68 @@ export function Sidebar({
         {/* User Profile Section */}
         <div className="absolute bottom-0 p-4 border-t flex items-center left-0 w-full bg-slate-50 dark:bg-slate-800 dark:border-slate-700">
           {isCollapsed ? (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div className="w-full flex justify-center">
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="w-full h-10 p-0">
                   <div className="relative w-10 h-10 rounded-full overflow-hidden">
                     <Image
-                      src={user?.image || "/placeholder-avatar.jpg"}
+                      src={user?.avatar || "/placeholder-avatar.jpg"}
                       alt={`${user?.name || "User"}'s profile`}
                       width={40}
                       height={40}
                       className="object-cover"
                     />
                   </div>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                align="end"
+                className="w-60 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+              >
+                {/* User Info */}
+                <div className="px-4 py-3 text-sm">
+                  <p className="font-semibold text-base">
+                    {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "User"}
+                  </p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {user?.email || "Email not available"}
+                  </p>
                 </div>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{user?.name || "User"}</p>
-                <p className="text-xs text-slate-500">{user?.email}</p>
-              </TooltipContent>
-            </Tooltip>
+
+                {/* Divider */}
+                <div className="border-t border-slate-200 dark:border-slate-700"></div>
+
+                {/* Account Settings */}
+                <Link href="/profile">
+                  <DropdownMenuItem className="flex items-center gap-3 px-4 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                    <Settings className="h-4 w-4 text-slate-600 dark:text-slate-300" />
+                    <span>Account Settings</span>
+                  </DropdownMenuItem>
+                </Link>
+
+                {/* Theme Toggle */}
+                <DropdownMenuItem className="flex items-center  px-1 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
+                  <ThemeToggle />
+                  <span >Toggle Theme</span>
+                </DropdownMenuItem>
+
+                {/* Logout */}
+                <DropdownMenuItem
+                  className="flex items-center gap-3 px-4 py-2 text-red-600 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-800 transition-colors cursor-pointer"
+                  onClick={handleLogout}
+                >
+                  <LogOut className="h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+
+            </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-3 overflow-hidden w-full justify-between">
               <div className="flex items-center space-x-3 overflow-hidden">
                 <div className="relative w-10 h-10 rounded-full overflow-hidden flex-shrink-0">
                   <Image
-                    src={
-                      user?.image ||
-                      "https://plus.unsplash.com/premium_photo-1689568126014-06fea9d5d341?q=80&w=2070&auto=format&fit=crop&ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D"
-                    }
+                    src={user?.avatar}
                     alt={`${user?.name || "User"}'s profile`}
                     width={40}
                     height={40}
@@ -586,7 +640,7 @@ export function Sidebar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                    {user?.name || user?.firstName + " " + user?.lastName || "User"}
+                    {user?.firstName + " " + user?.lastName || user?.name}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {user?.email || "Email not available"}

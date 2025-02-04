@@ -160,53 +160,81 @@ const LeadSourceManager: React.FC = () => {
 
   const onSubmit = async (data: z.infer<typeof sourceSchema>) => {
     if (dialogMode === "create") {
-      // Simulate new webhook URL for demo
-      const newId: any = uuidv4().toString();
-      const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
-        }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.data.id}`;
-
-
       try {
-        await webhook({
+        // Validate workspace data before proceeding
+        if (!workspacesData?.data.id) {
+          toast.error("No workspace selected. Please select a workspace");
+          return;
+        }
+
+        const newId: any = uuidv4().toString();
+        const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
+          }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.data.id}`;
+
+        const response = await webhook({
           status: true,
           type: data.type,
           name: data.name,
           webhook_url: newWebhook,
-          workspace_id: workspacesData?.data.id,
-        });
-        setSources([
-          ...sources,
-          {
-            id: newId,
-            ...data,
-            webhook_url: newWebhook,
-            description: data.description || "",
-            workspace_id: workspacesData?.data.id,
-            status: true, // New sources are enabled by default
-          },
-        ]);
-      } catch (error) { }
-    } else if (dialogMode === "edit" && selectedSource) {
-      const updatedSources = sources.map((source) =>
-        source.id === selectedSource.id
-          ? {
-            ...source,
-            ...data,
-            description: data.description || "",
-          }
-          : source
-      );
-      setSources(updatedSources);
-      await updateWebhook({ data, id: selectedSource.id });
-      toast.success("Webhook updated successfully");
-    }
-    resetDialog();
-  };
+          workspace_id: workspacesData.data.id,
+        }).unwrap();
 
+        // Only update local state if API call succeeds
+        setSources(prevSources => [...prevSources, {
+          id: newId,
+          ...data,
+          webhook_url: newWebhook,
+          description: data.description || "",
+          workspace_id: workspacesData.data.id,
+          status: true,
+        }]);
+        window.location.reload();
+        toast.success("Lead source created successfully");
+        resetDialog();
+      } catch (error: any) {
+        // Handle specific error cases
+        if (error.status === 409) {
+          toast.error("A lead source with this name already exists");
+        } else if (error.status === 403) {
+          toast.error("You don't have permission to create a lead source");
+        } else {
+          const errorMessage = error.data?.error || "Failed to create lead source";
+          toast.error(errorMessage);
+        }
+      }
+    } else if (dialogMode === "edit" && selectedSource) {
+      try {
+        await updateWebhook({ data, id: selectedSource.id }).unwrap();
+
+        const updatedSources = sources.map((source) =>
+          source.id === selectedSource.id
+            ? {
+              ...source,
+              ...data,
+              description: data.description || "",
+            }
+            : source
+        );
+        setSources(updatedSources);
+        toast.success("Lead source updated successfully");
+        resetDialog();
+      } catch (error: any) {
+        const errorMessage = error.data?.error || "Failed to update lead source";
+        toast.error(errorMessage);
+      }
+    }
+  };
   const handleDelete = async (id: string) => {
-    await deleteWebhook({ id });
-    resetDialog();
-    setSources(sources.filter((source) => source.id !== id));
+    try {
+      await deleteWebhook({ id }).unwrap();
+      resetDialog();
+      setSources(sources.filter((source) => source.id !== id));
+      toast.success("Lead source deleted successfully");
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to delete lead source";
+      toast.error(errorMessage);
+    }
   };
   if (workspaceLoading) return <div className="flex items-center justify-center min-h-screen">
     <Loader2 className="h-8 w-8 animate-spin" />

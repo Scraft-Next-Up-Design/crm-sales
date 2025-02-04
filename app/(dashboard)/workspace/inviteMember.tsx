@@ -51,6 +51,7 @@ interface MemberManagementProps {
   onMemberAdd: (member: WorkspaceMember) => void;
   onMemberDelete: (memberId: string) => void;
   onMemberUpdate: (member: WorkspaceMember) => void;
+  onInviteResend?: (member: WorkspaceMember) => void;  // New prop for handling resend
 }
 
 export default function MemberManagement({
@@ -59,6 +60,7 @@ export default function MemberManagement({
   onMemberAdd,
   onMemberDelete,
   onMemberUpdate,
+  onInviteResend,
 }: MemberManagementProps) {
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -66,6 +68,7 @@ export default function MemberManagement({
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
+  const [isResending, setIsResending] = useState<string | null>(null);  // Track which invite is being resent
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInviteMember = () => {
@@ -85,7 +88,16 @@ export default function MemberManagement({
   const handleDeleteMember = (member: WorkspaceMember) => {
     setMemberToDelete(member);
   };
+  const handleResendInvite = async (member: WorkspaceMember) => {
+    if (!member.id || !onInviteResend) return;
 
+    setIsResending(member.id);
+    try {
+      await onInviteResend(member);
+    } finally {
+      setIsResending(null);
+    }
+  };
   const confirmDeleteMember = () => {
     if (memberToDelete) {
       if (memberToDelete.id) {
@@ -218,8 +230,20 @@ export default function MemberManagement({
                 </div>
                 <div className="flex items-center space-x-2 self-end sm:self-center">
                   {member?.status === "pending" && (
-                    <Button variant="outline" size="sm">
-                      Resend
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleResendInvite(member)}
+                      disabled={isResending === member.id || !onInviteResend}
+                    >
+                      {isResending === member.id ? (
+                        <>
+                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          Resending...
+                        </>
+                      ) : (
+                        'Resend'
+                      )}
                     </Button>
                   )}
                   <Button

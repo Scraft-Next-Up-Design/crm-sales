@@ -54,12 +54,12 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useAddStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
+import { useAddStatusMutation, useDeleteStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
 import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
-import { useAddMemberMutation } from "@/lib/store/services/members";
+import { useAddMemberMutation, useDeleteMemberMutation, useResendInviteMutation } from "@/lib/store/services/members";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 interface WorkspaceMember {
@@ -75,7 +75,8 @@ interface Status {
   id?: string;
   name: string;
   color: string;
-  count_statistics: boolean;
+  count_statistics?: boolean;
+  countInStatistics?:any;
   workspace_show: boolean;
 }
 
@@ -144,6 +145,9 @@ export default function WorkspaceSettingsPage() {
   const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
   const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
+  const [deleteStatus, { isLoading: isDeletingStatus, error: errorDeletingStatus }] = useDeleteStatusMutation();
+  const [resendInvite, { isLoading: isResending, error: errorResending }] = useResendInviteMutation();
+  const [deleteMember, { isLoading: isDeleting, error: errorDeleting }] = useDeleteMemberMutation();
   const [activeTab, setActiveTab] = useState("general");
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams
@@ -156,8 +160,8 @@ export default function WorkspaceSettingsPage() {
   const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "",
-    industry: "",
-    company_size: "",
+    industry: "",  // flat property
+    company_size: "", // flat property
     timezone: "",
     notifications: {
       email: false,
@@ -176,6 +180,7 @@ export default function WorkspaceSettingsPage() {
     color: "#0ea5e9",
     countInStatistics: false,
     showInWorkspace: false,
+    count_statistics: false,
   });
   const [statusToDelete, setStatusToDelete] = useState<any | null>(null);
   const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
@@ -195,26 +200,70 @@ export default function WorkspaceSettingsPage() {
         return;
       }
 
-      // If no error, update the state
+      window.location.reload();
       setMembers([...members, newMember]);
     } catch (error) {
       console.error('Unexpected error:', error);
     }
   };
 
-  const handleMemberDelete = (memberId: string) => {
-    setMembers(members.filter(member => member.id !== memberId));
-  };
+  const handleMemberDelete = async (memberId: string) => {
+    try {
+      const result = await deleteMember({ workspaceId, id: memberId });
 
+      if ('error' in result) {
+        const errorDetails = (result.error as any).data;
+        toast.error(errorDetails.error || 'Failed to delete member');
+        return;
+      }
+
+      // Update local state only after successful deletion
+      setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
+      toast.success('Member deleted successfully');
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'An unexpected error occurred while deleting member';
+      toast.error(errorMessage);
+      console.error('Delete member error:', error);
+    }
+  };
+  const resendInviteToMember = async (member: WorkspaceMember) => {
+    if (!member.email || !member.id) {
+      toast.error('Invalid member information');
+      return;
+    }
+
+    try {
+      const result = await resendInvite({
+        workspaceId,
+        email: member.email,
+        memberId: member.id,
+        status: member.status
+      });
+
+      if ('error' in result) {
+        const errorDetails = (result.error as any).data;
+        toast.error(errorDetails.error || 'Failed to resend invite');
+        return;
+      }
+
+      toast.success('Invite resent successfully');
+    } catch (error: any) {
+      const errorMessage = error?.data?.error || 'An unexpected error occurred while resending invite';
+      toast.error(errorMessage);
+      console.error('Resend invite error:', error);
+    }
+  };
   const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
+    // console.log("deleted")
     setMembers(members.map(member =>
       member.id === updatedMember.id ? updatedMember : member
     ));
   };
-
   const confirmDeleteMember = async () => {
     if (memberToDelete) {
-      // await deleteMember({ workspaceId, memberId: memberToDelete.id });
+      if (memberToDelete?.id) {
+        await deleteMember({ workspaceId, id: memberToDelete.id });
+      }
       setMemberToDelete(null);
     }
   };
@@ -226,37 +275,45 @@ export default function WorkspaceSettingsPage() {
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
+    console.log(newStatus)
     const status: any = {
       id: "",
       ...newStatus,
-      countInStatistics: newStatus.countInStatistics,
+      countInStatistics: newStatus.count_statistics,
       showInWorkspace: newStatus.showInWorkspace,
     };
-
+console.log(status);
     try {
-      const response = await addStatus({ statusData: status, workspaceId });
-      console.log(status)
+      const result = await addStatus({
+        statusData: status,
+        workspaceId
+      }).unwrap();
+      // If successful, update the local state
       setStatuses((prevStatuses) => [
         ...prevStatuses,
         {
-          id: response.data?.id || "",
+          id: result.id || "",
           name: status.name,
           color: status.color,
-          count_statistics: status.count_statistics,
+          countInStatistics: status.count_statistics,
           workspace_show: status.showInWorkspace,
         },
       ]);
+
       setNewStatus({
         name: "",
         color: "#0ea5e9",
         countInStatistics: false,
         showInWorkspace: false,
+        count_statistics: false,
       });
 
       setIsAddingStatus(false);
-    } catch (error) {
-      console.error('Failed to add status:', error);
-      toast.error('Failed to add status');
+      toast.success('Status added successfully');
+      window.location.reload();
+    } catch (error: any) {
+      const errorMessage = error.data?.error || "Failed to add status";
+      toast.error(errorMessage);
     }
   };
 
@@ -268,9 +325,12 @@ export default function WorkspaceSettingsPage() {
     if (!statusToEdit) return;
 
     try {
-      // Update the status in the backend (assuming you have an updateStatus mutation)
-      await updateStatus({ id: statusToEdit.id, updatedStatus: statusToEdit });
-      // Update local state
+      const result = await updateStatus({
+        id: statusToEdit.id,
+        updatedStatus: statusToEdit
+      }).unwrap();
+
+      // Update local state only after successful API call
       setStatuses(prevStatuses =>
         prevStatuses.map(status =>
           status.id === statusToEdit.id ? statusToEdit : status
@@ -279,9 +339,10 @@ export default function WorkspaceSettingsPage() {
 
       setStatusToEdit(null);
       toast.success('Status updated successfully');
-    } catch (error) {
-      console.error('Failed to update status:', error);
-      toast.error('Failed to update status');
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to update status";
+      toast.error(errorMessage);
     }
   };
 
@@ -289,25 +350,48 @@ export default function WorkspaceSettingsPage() {
     if (!statusToDelete) return;
 
     try {
-      // Delete the status in the backend (assuming you have a deleteStatus mutation)
-      // await deleteStatus({ statusId: statusToDelete.id, workspaceId });
+      const response = await deleteStatus({
+        id: statusToDelete.id,
+        workspace_id: workspaceId
+      }).unwrap(); // Use unwrap() to properly handle RTK Query errors
 
-      // Update local state
+      // If successful, update local state
       setStatuses(prevStatuses =>
         prevStatuses.filter(status => status.id !== statusToDelete.id)
       );
 
       setStatusToDelete(null);
       toast.success('Status deleted successfully');
-    } catch (error) {
-      console.error('Failed to delete status:', error);
-      toast.error('Failed to delete status');
+
+    } catch (error: any) {
+      // Handle different types of errors from Supabase/RTK Query
+      let errorMessage = 'Failed to delete status';
+
+      if (error.status === 409) {
+        errorMessage = 'This status is currently in use and cannot be deleted';
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      } else if (typeof error === 'string') {
+        errorMessage = error;
+      }
+
+      // Log the full error for debugging
+      console.error('Delete status error:', {
+        status: error.status,
+        data: error.data,
+        error: error.error,
+        fullError: error
+      });
+
+      toast.error(errorMessage);
     }
   };
 
   useEffect(() => {
     if (workspaceData?.data) {
-      setSettings(workspaceData.data);
+      setSettings(workspaceData?.data);
     }
   }, [workspaceData]);
 
@@ -339,6 +423,7 @@ export default function WorkspaceSettingsPage() {
       setIsSaving(false);
     }
   };
+  console.log(settings);
   const TabButton = ({
     id,
     icon: Icon,
@@ -361,11 +446,17 @@ export default function WorkspaceSettingsPage() {
       <span>{label}</span>
     </button>
   );
-  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus) {
+  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus || isUpdating ||
+    isAdding ||
+    isUpdatingMember ||
+    isAddingStat ||
+    isDeletingStatus ||
+    isResending ||
+    isDeleting) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="w-8 h-8 animate-spin" />
-      </div>
+      <div className="absolute inset-5 flex items-center justify-center">
+      <Loader2 className="w-8 h-8 animate-spin" />
+    </div>
     );
   }
   if (!workspaceData?.data) {
@@ -443,11 +534,10 @@ export default function WorkspaceSettingsPage() {
                     <Label>Industry</Label>
                     <Select
                       disabled={!isEditMode}
-                      value={settings?.industry}
-                      onValueChange={(value) =>
+                      value={settings?.industry || ''} // Changed from settings?.name
+                      onValueChange={(value) => {
                         setSettings({ ...settings, industry: value })
-
-                      }
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Select Industry" />
@@ -588,6 +678,7 @@ export default function WorkspaceSettingsPage() {
               onMemberAdd={handleMemberAdd}
               onMemberDelete={handleMemberDelete}
               onMemberUpdate={handleMemberUpdate}
+              onInviteResend={resendInviteToMember}
             />
           )}
           {/* Notifications Settings */}
