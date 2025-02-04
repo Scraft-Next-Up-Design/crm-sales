@@ -76,7 +76,7 @@ interface Status {
   name: string;
   color: string;
   count_statistics?: boolean;
-  countInStatistics?:any;
+  countInStatistics?: any;
   workspace_show: boolean;
 }
 
@@ -282,7 +282,7 @@ export default function WorkspaceSettingsPage() {
       countInStatistics: newStatus.count_statistics,
       showInWorkspace: newStatus.showInWorkspace,
     };
-console.log(status);
+    console.log(status);
     try {
       const result = await addStatus({
         statusData: status,
@@ -446,17 +446,11 @@ console.log(status);
       <span>{label}</span>
     </button>
   );
-  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus || isUpdating ||
-    isAdding ||
-    isUpdatingMember ||
-    isAddingStat ||
-    isDeletingStatus ||
-    isResending ||
-    isDeleting) {
+  if (isLoadingWorkspace || isLoadingMembers || isLoadingStatus) {
     return (
       <div className="absolute inset-5 flex items-center justify-center">
-      <Loader2 className="w-8 h-8 animate-spin" />
-    </div>
+        <Loader2 className="w-8 h-8 animate-spin" />
+      </div>
     );
   }
   if (!workspaceData?.data) {

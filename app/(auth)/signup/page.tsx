@@ -72,7 +72,8 @@ function SignUpForm() {
         options: {
           emailRedirectTo: window.location.origin,
           data: {
-            name: data.name,
+            firstName: data.name,
+            name: data.name,  // Store name as first_name in raw_user_meta_data
             phone: data.phone,
             role: data.role
           }
