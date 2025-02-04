@@ -75,7 +75,6 @@ function SignUpForm() {
             firstName: data.name,
             name: data.name,  // Store name as first_name in raw_user_meta_data
             phone: data.phone,
-            role: data.role
           }
         },
       });
