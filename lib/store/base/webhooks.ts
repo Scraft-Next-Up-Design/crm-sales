@@ -15,4 +15,6 @@ export const webhookApi = createApi({
     },
   }),
   endpoints: () => ({}),
+  keepUnusedDataFor: 60,
+  refetchOnReconnect: true,
 });

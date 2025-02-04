@@ -16,4 +16,6 @@ export const workspaceApi = createApi({
     },
   }),
   endpoints: () => ({}),
+  keepUnusedDataFor: 60,
+  refetchOnReconnect: true,
 });

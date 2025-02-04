@@ -15,4 +15,6 @@ export const membersApi = createApi({
     },
   }),
   endpoints: () => ({}),
+  keepUnusedDataFor: 60,
+  refetchOnReconnect: true,
 });

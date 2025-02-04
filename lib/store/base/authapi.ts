@@ -21,6 +21,7 @@ export const api = createApi({
       return headers;
     },
   }),
-  tagTypes: ["Leads", "User", "Messages", "Calls"],
+  keepUnusedDataFor: 60,
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 });

@@ -15,4 +15,6 @@ export const statusApi = createApi({
     },
   }),
   endpoints: () => ({}),
+  keepUnusedDataFor: 60,
+  refetchOnReconnect: true,
 });
