@@ -274,13 +274,23 @@ export function Sidebar({
 
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
-      } else {
+      } else if (window.location.href.includes('dashboard')) {
         await router.push(`/dashboard`);
       }
+      else if (window.location.href.includes('leads-sources')) {
+        await router.push(`/leads-sources`);
+      } else if (window.location.href.includes('leads')) {
+        await router.push(`/leads`);
+      }
+      else if (window.location.href.includes('analytics')) {
+        await router.push(`/analytics`);
+      }
+
+
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-      
+
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
@@ -630,7 +640,7 @@ export function Sidebar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                    {user?.firstName + " " + user?.lastName || user?.name }
+                    {user?.firstName + " " + user?.lastName || user?.name}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {user?.email || "Email not available"}
