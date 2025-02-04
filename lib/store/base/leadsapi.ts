@@ -14,5 +14,8 @@ export const leadsApi = createApi({
       return headers;
     },
   }),
+  tagTypes: ["Leads"],
+  keepUnusedDataFor: 60, // keep unused data for 1 minute
+  refetchOnReconnect: true,
   endpoints: () => ({}),
 });

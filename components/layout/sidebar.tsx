@@ -528,7 +528,7 @@ export function Sidebar({
                     )}
                     asChild
                   >
-                    <a href={route.href}>
+                    <Link href={route.href}>
                       <route.icon className="h-4 w-4 text-slate-600 dark:text-slate-300" />
                       {!isCollapsed && (
                         <>
@@ -543,7 +543,7 @@ export function Sidebar({
                           )}
                         </>
                       )}
-                    </a>
+                    </Link>
                   </Button>
                 </TooltipTrigger>
                 {isCollapsed && (
