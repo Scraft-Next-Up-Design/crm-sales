@@ -5,11 +5,9 @@ export const leadsApi = api.injectEndpoints({
   endpoints: (builder) => ({
     getLeads: builder.query<Lead[], void>({
       query: () => 'leads',
-      providesTags: ['Leads'],
     }),
     getLead: builder.query<Lead, string>({
       query: (id) => `leads/${id}`,
-      providesTags: (_result, _error, id) => [{ type: 'Leads', id }],
     }),
     createLead: builder.mutation<Lead, Partial<Lead>>({
       query: (body) => ({
@@ -17,7 +15,6 @@ export const leadsApi = api.injectEndpoints({
         method: 'POST',
         body,
       }),
-      invalidatesTags: ['Leads'],
     }),
     updateLead: builder.mutation<Lead, { id: string; body: Partial<Lead> }>({
       query: ({ id, body }) => ({
@@ -25,14 +22,12 @@ export const leadsApi = api.injectEndpoints({
         method: 'PATCH',
         body,
       }),
-      invalidatesTags: (_result, _error, { id }) => [{ type: 'Leads', id }],
     }),
     deleteLead: builder.mutation<void, string>({
       query: (id) => ({
         url: `leads/${id}`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Leads'],
     }),
   }),
 });
