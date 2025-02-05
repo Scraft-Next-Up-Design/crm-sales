@@ -68,7 +68,9 @@ export default async function handler(
               added_by: user?.id,
               email: email,
               status: status,
-            });
+            })
+            .select('*')
+            .single(); 
           await sendMail(
             email,
             "You have been added to a workspace",
@@ -90,8 +92,6 @@ export default async function handler(
         }
         case "resendInvitation": {
           const { workspaceId, email, status }: any = query;
-          console.log(query);
-          console.log(email);
           if (!workspaceId || !email) {
             return res
               .status(400)

@@ -191,6 +191,7 @@ export default function WorkspaceSettingsPage() {
 
   const handleMemberAdd = async (newMember: WorkspaceMember) => {
     try {
+      // setMembers([...members, newMember]);
       const result = await addMember({ workspaceId, data: newMember });
 
       if ('error' in result) {
@@ -199,9 +200,9 @@ export default function WorkspaceSettingsPage() {
         toast.error(errorDetails.error);
         return;
       }
-
-      window.location.reload();
-      setMembers([...members, newMember]);
+      console.log(result)
+      console.log(newMember)
+      setMembers([...members, result?.data?.data]);
     } catch (error) {
       console.error('Unexpected error:', error);
     }
@@ -423,7 +424,6 @@ export default function WorkspaceSettingsPage() {
       setIsSaving(false);
     }
   };
-  console.log(settings);
   const TabButton = ({
     id,
     icon: Icon,
@@ -673,6 +673,9 @@ export default function WorkspaceSettingsPage() {
               onMemberDelete={handleMemberDelete}
               onMemberUpdate={handleMemberUpdate}
               onInviteResend={resendInviteToMember}
+              isAdding={isAdding}
+              isDeleting={isDeleting}
+              isResending={isResending}
             />
           )}
           {/* Notifications Settings */}

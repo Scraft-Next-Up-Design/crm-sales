@@ -285,7 +285,7 @@ export function Sidebar({
 
       setTimeout(() => {
         window.location.reload();
-      }, 1000);
+      }, 100);
 
     } catch (error) {
       console.error("Failed to change workspace:", error);

@@ -84,7 +84,7 @@ const SalesDashboard = () => {
     {
       icon: <TrendingUp className="text-purple-500" />,
       title: "Conversion Rate",
-      value: `${ROC?.conversion_rate}%` || "0",
+      value: `${ROC?.conversion_rate}%` || 0,
       change: "+3.2%",
     },
     {
