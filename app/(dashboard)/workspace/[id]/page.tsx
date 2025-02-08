@@ -1,4 +1,4 @@
-'use client'
+"use client";
 import React, { useState, useRef } from "react";
 import {
   Card,
@@ -49,19 +49,33 @@ import {
   Tag,
   Edit2,
   Plus,
-  Loader2
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { useAddStatusMutation, useDeleteStatusMutation, useGetStatusQuery, useUpdateStatusMutation } from "@/lib/store/services/status";
-import { useGetWorkspaceMembersQuery, useGetWorkspacesByIdQuery, useUpdateWorkspaceMutation } from "@/lib/store/services/workspace";
+import {
+  useAddStatusMutation,
+  useDeleteStatusMutation,
+  useGetStatusQuery,
+  useUpdateStatusMutation,
+} from "@/lib/store/services/status";
+import {
+  useGetWorkspaceMembersQuery,
+  useGetWorkspacesByIdQuery,
+  useUpdateWorkspaceMutation,
+} from "@/lib/store/services/workspace";
 import { toast } from "sonner";
 import { useEffect } from "react";
 import MemberManagement from "../inviteMember";
-import { useAddMemberMutation, useDeleteMemberMutation, useResendInviteMutation } from "@/lib/store/services/members";
+import {
+  useAddMemberMutation,
+  useDeleteMemberMutation,
+  useResendInviteMutation,
+} from "@/lib/store/services/members";
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
+import { useRouter } from "next/navigation";
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -103,20 +117,18 @@ const StatusForm = ({ status, onSubmit }: any) => (
       <Input
         placeholder="Status name"
         value={status.name}
-        onChange={(e) =>
-          onSubmit({ ...status, name: e.target.value })
-        }
+        onChange={(e) => onSubmit({ ...status, name: e.target.value })}
         className="flex-1"
       />
       <div className="flex items-center gap-2">
-        <Label htmlFor="color" className="whitespace-nowrap">Pick Color:</Label>
+        <Label htmlFor="color" className="whitespace-nowrap">
+          Pick Color:
+        </Label>
         <Input
           id="color"
           type="color"
           value={status.color}
-          onChange={(e) =>
-            onSubmit({ ...status, color: e.target.value })
-          }
+          onChange={(e) => onSubmit({ ...status, color: e.target.value })}
           className="w-20 h-10 p-1 bg-transparent"
         />
       </div>
@@ -140,27 +152,53 @@ const StatusForm = ({ status, onSubmit }: any) => (
 );
 
 export default function WorkspaceSettingsPage() {
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-  const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] = useUpdateWorkspaceMutation();
-  const [addMember, { isLoading: isAdding, error: errorAdding }] = useAddMemberMutation();
-  const [updateStatus, { isLoading: isUpdatingMember, error: errorUpdatingMember }] = useUpdateStatusMutation();
-  const [addStatus, { isLoading: isAddingStat, error: statusAddError }] = useAddStatusMutation();
-  const [deleteStatus, { isLoading: isDeletingStatus, error: errorDeletingStatus }] = useDeleteStatusMutation();
-  const [resendInvite, { isLoading: isResending, error: errorResending }] = useResendInviteMutation();
-  const [deleteMember, { isLoading: isDeleting, error: errorDeleting }] = useDeleteMemberMutation();
-  const [activeTab, setActiveTab] = useState("general");
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
+  const [updateWorkspace, { isLoading: isUpdating, error: errorUpdating }] =
+    useUpdateWorkspaceMutation();
+  const [addMember, { isLoading: isAdding, error: errorAdding }] =
+    useAddMemberMutation();
+  const [
+    updateStatus,
+    { isLoading: isUpdatingMember, error: errorUpdatingMember },
+  ] = useUpdateStatusMutation();
+  const [addStatus, { isLoading: isAddingStat, error: statusAddError }] =
+    useAddStatusMutation();
+  const [
+    deleteStatus,
+    { isLoading: isDeletingStatus, error: errorDeletingStatus },
+  ] = useDeleteStatusMutation();
+  const [resendInvite, { isLoading: isResending, error: errorResending }] =
+    useResendInviteMutation();
+  const [deleteMember, { isLoading: isDeleting, error: errorDeleting }] =
+    useDeleteMemberMutation();
+
+  const [activeTab, setActiveTab] = useState(() => {
+    return localStorage.getItem("activeTab") || "general"; // Get stored tab or default to "general"
+  });
   const searchParams = useParams();
-  const { id: workspaceId }: any = searchParams
-  const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
+  const { id: workspaceId }: any = searchParams;
+  const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(
+    null
+  );
   const [isSaving, setIsSaving] = useState(false);
-  const { data: workspaceMembers, isLoading: isLoadingMembers, error } = useGetWorkspaceMembersQuery(workspaceId);
-  const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
-  const { data: workspaceData, isLoading: isLoadingWorkspace } = useGetWorkspacesByIdQuery(workspaceId);
+  const {
+    data: workspaceMembers,
+    isLoading: isLoadingMembers,
+    error,
+  } = useGetWorkspaceMembersQuery(workspaceId);
+  const { data: statusData, isLoading: isLoadingStatus }: any =
+    useGetStatusQuery(workspaceId);
+  const { data: workspaceData, isLoading: isLoadingWorkspace } =
+    useGetWorkspacesByIdQuery(workspaceId);
   const [isEditMode, setIsEditMode] = useState(false);
-  const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(null);
+  const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(
+    null
+  );
   const [settings, setSettings] = useState<WorkspaceSettings>({
     name: "",
-    industry: "",  // flat property
+    industry: "", // flat property
     company_size: "", // flat property
     timezone: "",
     notifications: {
@@ -188,23 +226,28 @@ export default function WorkspaceSettingsPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
 
+  // handle previous tab clicked
+  const handleTabClick = (id: string) => {
+    setActiveTab(id);
+    localStorage.setItem("activeTab", id); // Store in localStorage
+  };
+  // console.log(localStorage);
 
   const handleMemberAdd = async (newMember: WorkspaceMember) => {
     try {
       // setMembers([...members, newMember]);
       const result = await addMember({ workspaceId, data: newMember });
 
-      if ('error' in result) {
-
+      if ("error" in result) {
         const errorDetails = (result.error as any).data;
         toast.error(errorDetails.error);
         return;
       }
-      console.log(result)
-      console.log(newMember)
+      console.log(result);
+      console.log(newMember);
       setMembers([...members, result?.data?.data]);
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error("Unexpected error:", error);
     }
   };
 
@@ -212,24 +255,28 @@ export default function WorkspaceSettingsPage() {
     try {
       const result = await deleteMember({ workspaceId, id: memberId });
 
-      if ('error' in result) {
+      if ("error" in result) {
         const errorDetails = (result.error as any).data;
-        toast.error(errorDetails.error || 'Failed to delete member');
+        toast.error(errorDetails.error || "Failed to delete member");
         return;
       }
 
       // Update local state only after successful deletion
-      setMembers(prevMembers => prevMembers.filter(member => member.id !== memberId));
-      toast.success('Member deleted successfully');
+      setMembers((prevMembers) =>
+        prevMembers.filter((member) => member.id !== memberId)
+      );
+      toast.success("Member deleted successfully");
     } catch (error: any) {
-      const errorMessage = error?.data?.error || 'An unexpected error occurred while deleting member';
+      const errorMessage =
+        error?.data?.error ||
+        "An unexpected error occurred while deleting member";
       toast.error(errorMessage);
-      console.error('Delete member error:', error);
+      console.error("Delete member error:", error);
     }
   };
   const resendInviteToMember = async (member: WorkspaceMember) => {
     if (!member.email || !member.id) {
-      toast.error('Invalid member information');
+      toast.error("Invalid member information");
       return;
     }
 
@@ -238,27 +285,31 @@ export default function WorkspaceSettingsPage() {
         workspaceId,
         email: member.email,
         memberId: member.id,
-        status: member.status
+        status: member.status,
       });
 
-      if ('error' in result) {
+      if ("error" in result) {
         const errorDetails = (result.error as any).data;
-        toast.error(errorDetails.error || 'Failed to resend invite');
+        toast.error(errorDetails.error || "Failed to resend invite");
         return;
       }
 
-      toast.success('Invite resent successfully');
+      toast.success("Invite resent successfully");
     } catch (error: any) {
-      const errorMessage = error?.data?.error || 'An unexpected error occurred while resending invite';
+      const errorMessage =
+        error?.data?.error ||
+        "An unexpected error occurred while resending invite";
       toast.error(errorMessage);
-      console.error('Resend invite error:', error);
+      console.error("Resend invite error:", error);
     }
   };
   const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
     // console.log("deleted")
-    setMembers(members.map(member =>
-      member.id === updatedMember.id ? updatedMember : member
-    ));
+    setMembers(
+      members.map((member) =>
+        member.id === updatedMember.id ? updatedMember : member
+      )
+    );
   };
   const confirmDeleteMember = async () => {
     if (memberToDelete) {
@@ -276,7 +327,7 @@ export default function WorkspaceSettingsPage() {
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
-    console.log(newStatus)
+    console.log(newStatus);
     const status: any = {
       id: "",
       ...newStatus,
@@ -287,7 +338,7 @@ export default function WorkspaceSettingsPage() {
     try {
       const result = await addStatus({
         statusData: status,
-        workspaceId
+        workspaceId,
       }).unwrap();
       // If successful, update the local state
       setStatuses((prevStatuses) => [
@@ -310,7 +361,7 @@ export default function WorkspaceSettingsPage() {
       });
 
       setIsAddingStatus(false);
-      toast.success('Status added successfully');
+      toast.success("Status added successfully");
       window.location.reload();
     } catch (error: any) {
       const errorMessage = error.data?.error || "Failed to add status";
@@ -328,18 +379,18 @@ export default function WorkspaceSettingsPage() {
     try {
       const result = await updateStatus({
         id: statusToEdit.id,
-        updatedStatus: statusToEdit
+        updatedStatus: statusToEdit,
       }).unwrap();
 
       // Update local state only after successful API call
-      setStatuses(prevStatuses =>
-        prevStatuses.map(status =>
+      setStatuses((prevStatuses) =>
+        prevStatuses.map((status) =>
           status.id === statusToEdit.id ? statusToEdit : status
         )
       );
 
       setStatusToEdit(null);
-      toast.success('Status updated successfully');
+      toast.success("Status updated successfully");
     } catch (error: any) {
       // Handle specific API error
       const errorMessage = error.data?.error || "Failed to update status";
@@ -353,37 +404,36 @@ export default function WorkspaceSettingsPage() {
     try {
       const response = await deleteStatus({
         id: statusToDelete.id,
-        workspace_id: workspaceId
+        workspace_id: workspaceId,
       }).unwrap(); // Use unwrap() to properly handle RTK Query errors
 
       // If successful, update local state
-      setStatuses(prevStatuses =>
-        prevStatuses.filter(status => status.id !== statusToDelete.id)
+      setStatuses((prevStatuses) =>
+        prevStatuses.filter((status) => status.id !== statusToDelete.id)
       );
 
       setStatusToDelete(null);
-      toast.success('Status deleted successfully');
-
+      toast.success("Status deleted successfully");
     } catch (error: any) {
       // Handle different types of errors from Supabase/RTK Query
-      let errorMessage = 'Failed to delete status';
+      let errorMessage = "Failed to delete status";
 
       if (error.status === 409) {
-        errorMessage = 'This status is currently in use and cannot be deleted';
+        errorMessage = "This status is currently in use and cannot be deleted";
       } else if (error.data?.message) {
         errorMessage = error.data.message;
       } else if (error.error) {
         errorMessage = error.error;
-      } else if (typeof error === 'string') {
+      } else if (typeof error === "string") {
         errorMessage = error;
       }
 
       // Log the full error for debugging
-      console.error('Delete status error:', {
+      console.error("Delete status error:", {
         status: error.status,
         data: error.data,
         error: error.error,
-        fullError: error
+        fullError: error,
       });
 
       toast.error(errorMessage);
@@ -434,7 +484,7 @@ export default function WorkspaceSettingsPage() {
     label: string;
   }) => (
     <button
-      onClick={() => setActiveTab(id)}
+      onClick={() => handleTabClick(id)}
       className={cn(
         "flex items-center space-x-2 px-4 py-2 rounded-lg w-full md:w-auto",
         activeTab === id
@@ -462,10 +512,13 @@ export default function WorkspaceSettingsPage() {
   }
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
-    >       <div className="container mx-auto p-4 md:p-6 space-y-6">
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
+        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      } w-auto overflow-hidden`}
+    >
+      {" "}
+      <div className="container mx-auto p-4 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
-
           <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
           {/* Responsive Tab Navigation */}
           <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
@@ -509,7 +562,6 @@ export default function WorkspaceSettingsPage() {
                 <CardDescription>
                   Manage your workspace core details
                 </CardDescription>
-
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4">
@@ -528,9 +580,9 @@ export default function WorkspaceSettingsPage() {
                     <Label>Industry</Label>
                     <Select
                       disabled={!isEditMode}
-                      value={settings?.industry || ''} // Changed from settings?.name
+                      value={settings?.industry || ""} // Changed from settings?.name
                       onValueChange={(value) => {
-                        setSettings({ ...settings, industry: value })
+                        setSettings({ ...settings, industry: value });
                       }}
                     >
                       <SelectTrigger>
@@ -658,7 +710,6 @@ export default function WorkspaceSettingsPage() {
                       </SelectContent>
                     </Select>
                   </div>
-
                 </div>
               </CardContent>
             </Card>
@@ -844,7 +895,10 @@ export default function WorkspaceSettingsPage() {
                             <div className="flex items-center gap-2">
                               <div
                                 className="relative"
-                                style={{ display: 'inline-flex', alignItems: 'center' }}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                }}
                               >
                                 <div
                                   className="w-3 h-3 rounded-full absolute"
@@ -861,17 +915,20 @@ export default function WorkspaceSettingsPage() {
                                   }}
                                 />
                               </div>
-                              <span className="text-foreground text-gray-600">{status.name}</span>
+                              <span className="text-foreground text-gray-600">
+                                {status.name}
+                              </span>
                             </div>
                           </div>
                           <div className="flex items-center gap-4 flex-wrap justify-end">
                             <div className="flex items-center gap-2">
                               <Checkbox
-
                                 checked={status?.count_statistics}
                                 disabled
                               />
-                              <Label className="text-sm">Count As Qualified</Label>
+                              <Label className="text-sm">
+                                Count As Qualified
+                              </Label>
                             </div>
                             {/* <div className="flex items-center gap-2">
                               <Checkbox
@@ -936,7 +993,6 @@ export default function WorkspaceSettingsPage() {
           </div>
         )}
       </div>
-
       {/* Delete Member Confirmation Dialog */}
       <AlertDialog
         open={!!memberToDelete}
@@ -962,7 +1018,6 @@ export default function WorkspaceSettingsPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-
       {/* Add Status Dialog */}
       <Dialog open={isAddingStatus} onOpenChange={setIsAddingStatus}>
         <DialogContent>
@@ -975,13 +1030,10 @@ export default function WorkspaceSettingsPage() {
           <StatusForm
             status={newStatus}
             onSubmit={setNewStatus}
-          // onCancel={() => setIsAddingStatus(false)}
+            // onCancel={() => setIsAddingStatus(false)}
           />
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsAddingStatus(false)}
-            >
+            <Button variant="outline" onClick={() => setIsAddingStatus(false)}>
               Cancel
             </Button>
             <Button
@@ -1001,7 +1053,6 @@ export default function WorkspaceSettingsPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-
       {/* Edit Status Dialog */}
       <Dialog
         open={!!statusToEdit}
@@ -1010,22 +1061,17 @@ export default function WorkspaceSettingsPage() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Status</DialogTitle>
-            <DialogDescription>
-              Modify the status settings
-            </DialogDescription>
+            <DialogDescription>Modify the status settings</DialogDescription>
           </DialogHeader>
           {statusToEdit && (
             <>
               <StatusForm
                 status={statusToEdit}
                 onSubmit={setStatusToEdit}
-              // onCancel={() => setStatusToEdit(null)}
+                // onCancel={() => setStatusToEdit(null)}
               />
               <DialogFooter className="gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setStatusToEdit(null)}
-                >
+                <Button variant="outline" onClick={() => setStatusToEdit(null)}>
                   Cancel
                 </Button>
                 <Button onClick={handleUpdateStatus}>Save Changes</Button>
@@ -1034,7 +1080,6 @@ export default function WorkspaceSettingsPage() {
           )}
         </DialogContent>
       </Dialog>
-
       {/* Delete Status Confirmation Dialog */}
       <AlertDialog
         open={!!statusToDelete}
@@ -1044,7 +1089,8 @@ export default function WorkspaceSettingsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Status</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete the status &quot;{statusToDelete?.name}&quot;? This action cannot be undone.
+              Are you sure you want to delete the status &quot;
+              {statusToDelete?.name}&quot;? This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter className="gap-2">

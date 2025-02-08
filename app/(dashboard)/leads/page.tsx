@@ -57,8 +57,19 @@ import * as XLSX from "xlsx";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
-import { useGetLeadsByWorkspaceQuery, useUpdateLeadMutation, useUpdateLeadDataMutation, useAssignRoleMutation, useBulkDeleteLeadsMutation, useCreateLeadMutation } from "@/lib/store/services/leadsApi";
-import { useGetActiveWorkspaceQuery, useGetWorkspaceMembersQuery } from "@/lib/store/services/workspace";
+import {
+  useGetLeadsByWorkspaceQuery,
+  useUpdateLeadMutation,
+  useUpdateLeadDataMutation,
+  useAssignRoleMutation,
+  useBulkDeleteLeadsMutation,
+  useCreateLeadMutation,
+  // useGetLeadsSourceQuery,
+} from "@/lib/store/services/leadsApi";
+import {
+  useGetActiveWorkspaceQuery,
+  useGetWorkspaceMembersQuery,
+} from "@/lib/store/services/workspace";
 import { useGetStatusQuery } from "@/lib/store/services/status";
 import { CardDescription } from "@/components/ui/card";
 import { calculateDaysAgo } from "@/utils/diffinFunc";
@@ -67,6 +78,8 @@ import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { X } from "lucide-react";
 import { formatDate } from "@/utils/date";
+import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
+
 // Zod validation schema for lead
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -83,6 +96,7 @@ const leadSchema = z.object({
 });
 
 const initialFilters: any = {
+  leadSource: "",
   owner: "",
   status: "",
   contact_method: "",
@@ -93,32 +107,56 @@ const initialFilters: any = {
 };
 
 const LeadManagement: React.FC = () => {
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-  const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] = useCreateLeadMutation();
-  const [updateLeadData, { isLoading: isUpdateLoading, error: leadUpdateError }] = useUpdateLeadDataMutation();
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
+  const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] =
+    useCreateLeadMutation();
+  const [
+    updateLeadData,
+    { isLoading: isUpdateLoading, error: leadUpdateError },
+  ] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [searchQuery, setSearchQuery] = useState("");
-  const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] = useAssignRoleMutation();
+  const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] =
+    useAssignRoleMutation();
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
-  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
+    useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
-  const { data: workspaceData, isLoading: isLoadingLeads }: any = useGetLeadsByWorkspaceQuery(
-    workspaceId
-      ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
-      : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
-    {
-      skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
-      pollingInterval: 10000, // Poll every 2 seconds (2000 ms)
-    }
-  );
-  const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(workspaceId);
-  const POLLING_INTERVAL = 10000
-  const { data: statusData, isLoading: isLoadingStatus }: any = useGetStatusQuery(workspaceId);
+
+  // Fetch lead sources
+  const {
+    data: leadSources,
+    error,
+    isLoading,
+  } = useGetWebhooksQuery({ id: workspaceId });
+
+  console.log("array", leadSources);
+  // console.log(Array.isArray(leadSources));
+
+  const { data: workspaceData, isLoading: isLoadingLeads }: any =
+    useGetLeadsByWorkspaceQuery(
+      workspaceId
+        ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
+        : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
+      {
+        skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
+        pollingInterval: 10000, // Poll every 2 seconds (2000 ms)
+      }
+    );
+  const { data: workspaceMembers, isLoading: isLoadingMembers } =
+    useGetWorkspaceMembersQuery(workspaceId);
+
+  const POLLING_INTERVAL = 10000;
+  const { data: statusData, isLoading: isLoadingStatus }: any =
+    useGetStatusQuery(workspaceId);
+
   useEffect(() => {
     const fetchLeads = () => {
       if (!isLoadingLeads && workspaceData?.data) {
-        const fetchedLeads = workspaceData?.data
-          .map((lead: any, index: number) => ({
+        let fetchedLeads = workspaceData?.data.map(
+          (lead: any, index: number) => ({
             id: lead.id || index + 1,
             Name: lead.name || "",
             email: lead.email || "",
@@ -130,15 +168,24 @@ const LeadManagement: React.FC = () => {
             status: lead.status || "New",
             revenue: lead.revenue || 0,
             assign_to: lead.assign_to || "Not Assigned",
-            createdAt: lead.created_at ? new Date(lead.created_at).toISOString() : new Date().toISOString(),
-            isDuplicate: false, // Ensure valid date format 
+            createdAt: lead.created_at
+              ? new Date(lead.created_at).toISOString()
+              : new Date().toISOString(),
+            isDuplicate: false, // Ensure valid date format
             is_email_valid: lead.is_email_valid,
-            is_phone_valid: lead.is_phone_valid
-          }))
+            is_phone_valid: lead.is_phone_valid,
+            sourceId: lead.lead_source_id || null, // Assuming sourceId is part of the lead
+          })
+        );
+
+        // console.log("leads..", fetchLeads);
+
         const duplicates = new Set();
         fetchedLeads.forEach((lead: any) => {
           const duplicate = fetchedLeads.find(
-            (l: any) => l.id !== lead.id && (l.email === lead.email || l.phone === lead.phone)
+            (l: any) =>
+              l.id !== lead.id &&
+              (l.email === lead.email || l.phone === lead.phone)
           );
           if (duplicate) {
             duplicates.add(lead.id);
@@ -170,16 +217,14 @@ const LeadManagement: React.FC = () => {
     // Cleanup
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
-  console.log(activeWorkspace);
+
+  // console.log(activeWorkspace);
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
 
-
   const [filters, setFilters] = useState<any>(initialFilters);
   const [leads, setLeads] = useState<any[]>([]);
-
-
 
   const handleFilterReset = () => {
     setFilters(initialFilters);
@@ -197,23 +242,54 @@ const LeadManagement: React.FC = () => {
           lead.company,
           lead.position,
           lead.status?.name,
-          lead.assign_to?.name
+          lead.assign_to?.name,
         ];
 
         const matchesSearch = searchableFields.some(
-          field => field && field.toString().toLowerCase().includes(searchText)
+          (field) =>
+            field && field.toString().toLowerCase().includes(searchText)
         );
 
         if (!matchesSearch) return false;
       }
       // Owner filter
-      if (filters.owner && !lead.assign_to.name?.includes(filters.owner)) return false;
+      if (filters.owner && !lead.assign_to.name?.includes(filters.owner))
+        return false;
 
+      // Step 1: Find the leadSourceId
+      let leadSourceId = leadSources.data.find(
+        (source: any) => source.name === filters.leadsSource
+      )?.id;
+
+      // Step 2: Find the webhook_url in workspaceData based on leadSourceId
+      let webhook_url = leadSources.data.find(
+        (entry: any) => entry.id === leadSourceId
+      )?.webhook_url;
+
+      // Step 3: Extract sourceId from webhook_url
+      let sourceId: string | null = null;
+      if (webhook_url) {
+        const urlParams = new URLSearchParams(webhook_url.split("?")[1]);
+        leadSourceId = urlParams.get("sourceId");
+      }
+
+      // Apply leadSource filter if needed
+      if (
+        filters.leadsSource &&
+        filters.leadsSource !== "all" &&
+        leadSourceId
+      ) {
+        if (lead.sourceId !== leadSourceId) return false;
+      }
       // Status filter (Fixing the bug where old data persists)
       if (filters.status && lead.status?.name !== filters.status) return false;
 
       // Contact Method filter
-      if (filters.contact_method && lead.contact_method !== filters.contact_method) return false;
+      if (
+        filters.contact_method &&
+        lead.contact_method !== filters.contact_method
+      )
+        return false;
 
       // Contact Type filter (Ensure it checks correct field)
       if (filters.contactType) {
@@ -223,18 +299,33 @@ const LeadManagement: React.FC = () => {
       }
 
       // Date range filter
-      if (filters.startDate && new Date(lead.createdAt) < new Date(filters.startDate)) return false;
-      if (filters.endDate && new Date(lead.createdAt) > new Date(filters.endDate)) return false;
+      if (
+        filters.startDate &&
+        new Date(lead.createdAt) < new Date(filters.startDate)
+      )
+        return false;
+      if (
+        filters.endDate &&
+        new Date(lead.createdAt) > new Date(filters.endDate)
+      )
+        return false;
 
       // Duplicate check
       if (filters.showDuplicates) {
-        const duplicates = leads.filter((l) => l.email === lead.email || l.phone === lead.phone);
+        const duplicates = leads.filter(
+          (l) => l.email === lead.email || l.phone === lead.phone
+        );
         if (duplicates.length <= 1) return false;
       }
 
       return true;
     });
-  }, [leads, filters, searchQuery]);
+  }, [leads, filters, searchQuery, leadSources]);
+
+  // useEffect(() => {
+  //   console.log("Current Leads:", leads);
+  //   console.log("Current Filter:", filters.leadsSource);
+  // }, [leads, filters.leadsSource]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -257,7 +348,7 @@ const LeadManagement: React.FC = () => {
   //   return leads.slice(startIndex, startIndex + leadsPerPage);
   // }, [leads, currentPage]);
 
-  const paginatedLeads = leads
+  const paginatedLeads = leads;
   // Form setup
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
@@ -269,7 +360,6 @@ const LeadManagement: React.FC = () => {
       position: "",
       contact_method: undefined,
       revenue: 0,
-
     },
   });
 
@@ -283,7 +373,7 @@ const LeadManagement: React.FC = () => {
       position: "",
       contact_method: undefined,
       revenue: 0,
-    })
+    });
     setEditingLead(null);
     setDialogMode(null);
   };
@@ -336,7 +426,13 @@ const LeadManagement: React.FC = () => {
         setLeads((prevLeads) =>
           prevLeads.map((lead) =>
             lead.id === editingLead.id
-              ? { ...lead, ...data, company: data.company || "", position: data.position || "", revenue: data.revenue || 0 }
+              ? {
+                  ...lead,
+                  ...data,
+                  company: data.company || "",
+                  position: data.position || "",
+                  revenue: data.revenue || 0,
+                }
               : lead
           )
         );
@@ -355,7 +451,7 @@ const LeadManagement: React.FC = () => {
     try {
       const response = await deleteLeadsData({
         id: selectedLeads,
-        workspaceId: workspaceId
+        workspaceId: workspaceId,
       }).unwrap(); // Add .unwrap() for RTK Query
 
       setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
@@ -364,7 +460,7 @@ const LeadManagement: React.FC = () => {
       toast.success("Selected leads deleted successfully");
     } catch (error: any) {
       // Log the error to see its structure
-      console.error('Delete error:', error);
+      console.error("Delete error:", error);
 
       // RTK Query specific error handling
       const errorMessage =
@@ -491,20 +587,20 @@ const LeadManagement: React.FC = () => {
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-              ...lead,
-              status: {
-                name,
-                color
+                ...lead,
+                status: {
+                  name,
+                  color,
+                },
               }
-            }
             : lead
         )
       );
 
       toast.success(`Lead status updated to ${name}`);
     } catch (error) {
-      console.error('Error updating lead status:', error);
-      toast.error('Failed to update lead status');
+      console.error("Error updating lead status:", error);
+      toast.error("Failed to update lead status");
     }
   };
 
@@ -519,25 +615,25 @@ const LeadManagement: React.FC = () => {
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-              ...lead,
-              assign_to: {
-                name,
-                role
+                ...lead,
+                assign_to: {
+                  name,
+                  role,
+                },
               }
-            }
             : lead
         )
       );
 
       toast.success(`Lead assigned to ${name}`);
     } catch (error) {
-      console.error('Error assigning lead:', error);
-      toast.error('Failed to assign lead');
+      console.error("Error assigning lead:", error);
+      toast.error("Failed to assign lead");
     }
   };
   const handleGoBack = () => {
     router.push("/dashboard");
-  }
+  };
   if (workspaceData?.data.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -547,7 +643,8 @@ const LeadManagement: React.FC = () => {
           </CardTitle>
 
           <CardDescription className="mt-2 text-lg text-gray-600 text-center">
-            It seems there are no leads available in this workspace at the moment.
+            It seems there are no leads available in this workspace at the
+            moment.
           </CardDescription>
           <Button
             className="mt-6 px-6 py-2 bg-primary text-white rounded-md shadow-md hover:bg-primary-dark focus:ring-2 focus:ring-offset-2 focus:ring-primary"
@@ -559,13 +656,20 @@ const LeadManagement: React.FC = () => {
       </div>
     );
   }
-  if (isLoadingStatus || isLoadingLeads || isLoadingMembers) return <div className="flex items-center justify-center min-h-screen overflow-hidden">
-    <Loader2 className="h-8 w-8 animate-spin" />
-  </div>;
+  if (isLoadingStatus || isLoadingLeads || isLoadingMembers)
+    return (
+      <div className="flex items-center justify-center min-h-screen overflow-hidden">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
-    >     <Card className="w-full overflow-x-auto">
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
+        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      } w-auto overflow-hidden`}
+    >
+      {" "}
+      <Card className="w-full overflow-x-auto">
         {showFilters && (
           <FilterComponent
             values={filters}
@@ -573,6 +677,7 @@ const LeadManagement: React.FC = () => {
             onReset={handleFilterReset}
             status={statusData?.data}
             owner={workspaceMembers?.data}
+            leadSources={leadSources?.data}
           />
         )}
 
@@ -638,10 +743,7 @@ const LeadManagement: React.FC = () => {
                 <Trash2 className="mr-2 h-4 w-4" />
                 Delete {selectedLeads.length} Selected
               </Button>
-              <Button
-                variant="secondary"
-                onClick={deselectAll}
-              >
+              <Button variant="secondary" onClick={deselectAll}>
                 <X className="mr-2 h-4 w-4" />
                 Deselect All
               </Button>
@@ -698,12 +800,10 @@ const LeadManagement: React.FC = () => {
                           <X className="w-5 h-5 text-red-600 stroke-[3]" />
                         )}
                         <div>
-                          <span className={`
+                          <span
+                            className={`
         font-medium tracking-tight 
-        ${lead.is_email_valid
-                              ? 'text-emerald-800'
-                              : 'text-red-800'
-                            }`}
+        ${lead.is_email_valid ? "text-emerald-800" : "text-red-800"}`}
                           >
                             {lead.email}
                           </span>
@@ -723,12 +823,10 @@ const LeadManagement: React.FC = () => {
                           <X className="w-5 h-5 text-red-600 stroke-[3]" />
                         )}
                         <div>
-                          <span className={`
+                          <span
+                            className={`
         font-medium tracking-tight 
-        ${lead.is_phone_valid
-                              ? 'text-emerald-800'
-                              : 'text-red-800'
-                            }`}
+        ${lead.is_phone_valid ? "text-emerald-800" : "text-red-800"}`}
                           >
                             {lead.phone}
                           </span>
@@ -740,7 +838,9 @@ const LeadManagement: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1">{formatDate(lead.createdAt)}</TableCell>
+                    <TableCell className="px-2 py-1">
+                      {formatDate(lead.createdAt)}
+                    </TableCell>
                     <TableCell className="px-2 py-1">
                       <div className="flex space-x-1">
                         <Button
@@ -786,51 +886,62 @@ const LeadManagement: React.FC = () => {
                           name: lead.status?.name || "Pending",
                           color: lead.status?.color || "#ea1212",
                         })}
-                        onValueChange={(value) => handleStatusChange(lead.id, value)}
+                        onValueChange={(value) =>
+                          handleStatusChange(lead.id, value)
+                        }
                       >
-                        <SelectTrigger
-                          className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
-                        >
+                        <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                           <div className="flex items-center gap-3">
                             <div className="relative">
-                              <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" style={{ backgroundColor: lead?.status?.color }} />
-                              <div className="relative h-3 w-3 rounded-lg bg-gray-400" style={{ backgroundColor: lead?.status?.color }} />
+                              <div
+                                className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30"
+                                style={{ backgroundColor: lead?.status?.color }}
+                              />
+                              <div
+                                className="relative h-3 w-3 rounded-lg bg-gray-400"
+                                style={{ backgroundColor: lead?.status?.color }}
+                              />
                             </div>
-                            <span className="text-sm font-medium">{lead?.status?.name}</span>
+                            <span className="text-sm font-medium">
+                              {lead?.status?.name}
+                            </span>
                           </div>
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                          {statusData?.data.map((status: { name: string; color: string }) => (
-                            <SelectItem
-                              key={status.name}
-                              value={JSON.stringify({ name: status?.name, color: status?.color })}
-                              className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
-                            >
-                              <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div className="relative">
-                                  {/* Glow effect */}
-                                  <div
-                                    className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
-                                    style={{ backgroundColor: status?.color }}
-                                  />
-                                  {/* Main dot */}
-                                  <div
-                                    className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
-                                    style={{ backgroundColor: status?.color }}
-                                  />
+                          {statusData?.data.map(
+                            (status: { name: string; color: string }) => (
+                              <SelectItem
+                                key={status.name}
+                                value={JSON.stringify({
+                                  name: status?.name,
+                                  color: status?.color,
+                                })}
+                                className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                              >
+                                <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                  <div className="relative">
+                                    {/* Glow effect */}
+                                    <div
+                                      className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
+                                      style={{ backgroundColor: status?.color }}
+                                    />
+                                    {/* Main dot */}
+                                    <div
+                                      className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
+                                      style={{ backgroundColor: status?.color }}
+                                    />
+                                  </div>
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {status.name}
+                                  </span>
                                 </div>
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                  {status.name}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                              </SelectItem>
+                            )
+                          )}
                         </SelectContent>
-
                       </Select>
                     </TableCell>
-
 
                     <TableCell className="border-none">
                       <Select
@@ -838,11 +949,11 @@ const LeadManagement: React.FC = () => {
                           name: lead?.assign_to?.name || "Not Assigned",
                           role: lead?.assign_to?.role || "(Not Assigned)",
                         })}
-                        onValueChange={(value) => handleAssignChange(lead?.id, value)} // Uncomment and use for status change handler
+                        onValueChange={(value) =>
+                          handleAssignChange(lead?.id, value)
+                        } // Uncomment and use for status change handler
                       >
-                        <SelectTrigger
-                          className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"
-                        >
+                        <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                           <div className="flex items-center gap-3">
                             <div className="relative">
                               <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
@@ -850,14 +961,19 @@ const LeadManagement: React.FC = () => {
                                 <UserIcon className="h-6 w-6 text-gray-400" />
                               </div>
                             </div>
-                            <span className="text-sm font-medium">{lead?.assign_to?.name}</span>
+                            <span className="text-sm font-medium">
+                              {lead?.assign_to?.name}
+                            </span>
                           </div>
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                           <SelectItem
                             key="unassigned"
-                            value={JSON.stringify({ name: "Unassigned", role: "none" })}
+                            value={JSON.stringify({
+                              name: "Unassigned",
+                              role: "none",
+                            })}
                             className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
                           >
                             <div className="flex items-center gap-3">
@@ -866,21 +982,28 @@ const LeadManagement: React.FC = () => {
                               </span>
                             </div>
                           </SelectItem>
-                          {workspaceMembers?.data.map((status: { name: string; role: string }) => (
-                            <SelectItem
-                              key={status.name}
-                              value={JSON.stringify({ name: status?.name, role: status?.role })}
-                              className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
-                            >
-                              <div className="flex items-center gap-3">
-                                <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
-                                  {status.name}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          ))}
+                          {workspaceMembers?.data
+                            .filter(
+                              (status: { name: string | null }) =>
+                                status.name && status.name !== "null"
+                            )
+                            .map((status: { name: string; role: string }) => (
+                              <SelectItem
+                                key={status.name}
+                                value={JSON.stringify({
+                                  name: status?.name,
+                                  role: status?.role,
+                                })}
+                                className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    {status.name}
+                                  </span>
+                                </div>
+                              </SelectItem>
+                            ))}
                         </SelectContent>
-
                       </Select>
                     </TableCell>
                   </TableRow>
@@ -888,7 +1011,6 @@ const LeadManagement: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-
 
           {/* Pagination */}
           {/* <div className="flex justify-between items-center mt-4">
@@ -1050,7 +1172,13 @@ const LeadManagement: React.FC = () => {
                         type="number"
                         {...field}
                         value={field.value ? String(field.value) : ""}
-                        onChange={(e) => field.onChange(e.target.value ? parseFloat(e.target.value) : undefined)}
+                        onChange={(e) =>
+                          field.onChange(
+                            e.target.value
+                              ? parseFloat(e.target.value)
+                              : undefined
+                          )
+                        }
                       />
                     </FormControl>
                     <FormMessage />
@@ -1067,19 +1195,19 @@ const LeadManagement: React.FC = () => {
                 <Button type="submit">
                   {isUpdateLoading ? (
                     <>
-                      <Loader2 />
-                      {" "}
-                      Loading...
+                      <Loader2 /> Loading...
                     </>
-                  ) : dialogMode === "create" ? "Add Lead" : "Update Lead"}
+                  ) : dialogMode === "create" ? (
+                    "Add Lead"
+                  ) : (
+                    "Update Lead"
+                  )}
                 </Button>
-
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
-
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={dialogMode === "delete"}
@@ -1089,7 +1217,9 @@ const LeadManagement: React.FC = () => {
           <DialogHeader>
             <DialogTitle>Delete Selected Leads</DialogTitle>
           </DialogHeader>
-          <p>Are you sure you want to delete {selectedLeads?.length} lead(s)?</p>
+          <p>
+            Are you sure you want to delete {selectedLeads?.length} lead(s)?
+          </p>
           <DialogFooter>
             <DialogClose asChild>
               <Button variant="outline">Cancel</Button>

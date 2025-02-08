@@ -91,6 +91,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         method: "GET",
       }),
     }),
+
     getQualifiedCount: builder.query<any, void>({
       query: (workspaceId) => ({
         url: `?action=getQualifiedLeadsCount&workspaceId=${workspaceId}`,
@@ -114,7 +115,6 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         body: { id, status },
       }),
     }),
-  
   }),
 });
 

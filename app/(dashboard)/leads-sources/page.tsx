@@ -1,7 +1,13 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -35,7 +41,12 @@ import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useDeleteWebhookMutation, useWebhookMutation, useChangeWebhookStatusMutation, useUpdateWebhookMutation } from "@/lib/store/services/webhooks";
+import {
+  useDeleteWebhookMutation,
+  useWebhookMutation,
+  useChangeWebhookStatusMutation,
+  useUpdateWebhookMutation,
+} from "@/lib/store/services/webhooks";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { v4 as uuidv4 } from "uuid";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
@@ -62,13 +73,27 @@ export type Source = {
   workspace_id?: string | null; // Can be a string or null
 };
 const LeadSourceManager: React.FC = () => {
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-  const { data: workspacesData, isLoading: workspaceLoading, error: workspaceError } = useGetActiveWorkspaceQuery();
-  const [changeWebhookStatus] = useChangeWebhookStatusMutation()
-  const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] = useWebhookMutation();
-  const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] = useDeleteWebhookMutation();
-  const [updateWebhook, { isLoading: isUpdated, error: updateError }] = useUpdateWebhookMutation();
-  const { data: webhooks, isLoading, isError, error } = useGetWebhooksQuery({ id: workspacesData?.data.id });
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
+  const {
+    data: workspacesData,
+    isLoading: workspaceLoading,
+    error: workspaceError,
+  } = useGetActiveWorkspaceQuery();
+  const [changeWebhookStatus] = useChangeWebhookStatusMutation();
+  const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] =
+    useWebhookMutation();
+  const [deleteWebhook, { isLoading: isDeleted, error: deleteError }] =
+    useDeleteWebhookMutation();
+  const [updateWebhook, { isLoading: isUpdated, error: updateError }] =
+    useUpdateWebhookMutation();
+  const {
+    data: webhooks,
+    isLoading,
+    isError,
+    error,
+  } = useGetWebhooksQuery({ id: workspacesData?.data.id });
   const webhooksData = webhooks?.data;
   const [sources, setSources] = useState<Source[]>(webhooksData || []);
   const [selectedSource, setSelectedSource] = useState<any>(null);
@@ -94,8 +119,9 @@ const LeadSourceManager: React.FC = () => {
     form.reset({
       name: "",
       type: "",
-      description: ""
-    }); setSelectedSource(null);
+      description: "",
+    });
+    setSelectedSource(null);
     setDialogMode(null);
   };
 
@@ -110,7 +136,6 @@ const LeadSourceManager: React.FC = () => {
     setDialogMode("create");
   };
 
-
   const openEditDialog = (source: (typeof sources)[number]) => {
     form.reset({
       name: source.name,
@@ -119,7 +144,6 @@ const LeadSourceManager: React.FC = () => {
     });
     setSelectedSource(source);
     setDialogMode("edit");
-
   };
 
   const openDeleteDialog = (source: (typeof sources)[number]) => {
@@ -135,22 +159,27 @@ const LeadSourceManager: React.FC = () => {
   // Function to toggle webhook status
   const toggleWebhookStatus = async (sourceId: string) => {
     try {
-      const currentStatus = sources.find((source) => source.id === sourceId)?.status;
+      const currentStatus = sources.find(
+        (source) => source.id === sourceId
+      )?.status;
       const result = await changeWebhookStatus({
         id: sourceId,
-        status: !currentStatus
+        status: !currentStatus,
       }).unwrap();
 
       // If the API call succeeds, update local state and show success message
       setSources(
         sources.map((source) =>
-          source.id === sourceId ? { ...source, status: !source.status } : source
+          source.id === sourceId
+            ? { ...source, status: !source.status }
+            : source
         )
       );
       toast.success("Webhook status updated successfully");
     } catch (error: any) {
       // Handle specific API error
-      const errorMessage = error.data?.error || "Failed to update webhook status";
+      const errorMessage =
+        error.data?.error || "Failed to update webhook status";
       toast.error(errorMessage);
 
       // Optionally revert the optimistic update if you're doing one
@@ -168,8 +197,11 @@ const LeadSourceManager: React.FC = () => {
         }
 
         const newId: any = uuidv4().toString();
-        const newWebhook = `${process.env.NEXT_PUBLIC_BASE_URL
-          }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${workspacesData?.data.id}`;
+        const newWebhook = `${
+          process.env.NEXT_PUBLIC_BASE_URL
+        }/leads?action=${"getLeads"}&sourceId=${newId}&workspaceId=${
+          workspacesData?.data.id
+        }`;
 
         const response = await webhook({
           status: true,
@@ -180,14 +212,17 @@ const LeadSourceManager: React.FC = () => {
         }).unwrap();
 
         // Only update local state if API call succeeds
-        setSources(prevSources => [...prevSources, {
-          id: newId,
-          ...data,
-          webhook_url: newWebhook,
-          description: data.description || "",
-          workspace_id: workspacesData.data.id,
-          status: true,
-        }]);
+        setSources((prevSources) => [
+          ...prevSources,
+          {
+            id: newId,
+            ...data,
+            webhook_url: newWebhook,
+            description: data.description || "",
+            workspace_id: workspacesData.data.id,
+            status: true,
+          },
+        ]);
         window.location.reload();
         toast.success("Lead source created successfully");
         resetDialog();
@@ -198,7 +233,8 @@ const LeadSourceManager: React.FC = () => {
         } else if (error.status === 403) {
           toast.error("You don't have permission to create a lead source");
         } else {
-          const errorMessage = error.data?.error || "Failed to create lead source";
+          const errorMessage =
+            error.data?.error || "Failed to create lead source";
           toast.error(errorMessage);
         }
       }
@@ -209,17 +245,18 @@ const LeadSourceManager: React.FC = () => {
         const updatedSources = sources.map((source) =>
           source.id === selectedSource.id
             ? {
-              ...source,
-              ...data,
-              description: data.description || "",
-            }
+                ...source,
+                ...data,
+                description: data.description || "",
+              }
             : source
         );
         setSources(updatedSources);
         toast.success("Lead source updated successfully");
         resetDialog();
       } catch (error: any) {
-        const errorMessage = error.data?.error || "Failed to update lead source";
+        const errorMessage =
+          error.data?.error || "Failed to update lead source";
         toast.error(errorMessage);
       }
     }
@@ -236,13 +273,18 @@ const LeadSourceManager: React.FC = () => {
       toast.error(errorMessage);
     }
   };
-  if (workspaceLoading) return <div className="flex items-center justify-center min-h-screen">
-    <Loader2 className="h-8 w-8 animate-spin" />
-  </div>
+  if (workspaceLoading)
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
 
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${isCollapsed ? "ml-[80px]" : "ml-[250px]"} w-auto overflow-hidden`}
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
+        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      } w-auto overflow-hidden`}
     >
       <Card className="w-full">
         <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
@@ -298,8 +340,9 @@ const LeadSourceManager: React.FC = () => {
                           onCheckedChange={() => toggleWebhookStatus(source.id)}
                         />
                         <span
-                          className={`text-sm ${source.status ? "text-green-600" : "text-red-600"
-                            }`}
+                          className={`text-sm ${
+                            source.status ? "text-green-600" : "text-red-600"
+                          }`}
                         >
                           {source.status ? "Enabled" : "Disabled"}
                         </span>
@@ -399,7 +442,7 @@ const LeadSourceManager: React.FC = () => {
                     className="w-full sm:w-auto"
                   >
                     Cancel
-                  </Button >
+                  </Button>
                 </DialogClose>
                 <Button type="submit" className="w-full sm:w-auto">
                   {isWebhookAdded || isUpdated ? (
@@ -409,20 +452,20 @@ const LeadSourceManager: React.FC = () => {
                         {dialogMode === "create"
                           ? "Adding..."
                           : isUpdated
-                            ? "Updating..."
-                            : "Updating..."}
+                          ? "Updating..."
+                          : "Updating..."}
                       </span>
                     </>
                   ) : (
                     <>
                       <span className="ml-2">
-                        {dialogMode === "create" ? "Add Source" : "Update Source"}
+                        {dialogMode === "create"
+                          ? "Add Source"
+                          : "Update Source"}
                       </span>
                     </>
                   )}
                 </Button>
-
-
               </DialogFooter>
             </form>
           </Form>
