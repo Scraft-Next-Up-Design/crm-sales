@@ -282,7 +282,7 @@
 //     </Card>
 //   );
 // }
-'use client'
+"use client";
 import React, { useState, useRef } from "react";
 import {
   Card,
@@ -311,16 +311,12 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Users,
-  Mail,
-  Trash2,
-  Upload,
-  UserCircle,
-  Loader2,
-} from "lucide-react";
+import { Users, Mail, Trash2, Upload, UserCircle, Loader2 } from "lucide-react";
 import { useGetMembersQuery } from "@/lib/store/services/members";
 import { useParams } from "next/navigation";
+import { useGetProfileQuery } from "@/lib/store/services/authApi";
+import CartForm from "@/components/ui/cardForm";
+import { Pencil } from "lucide-react";
 
 interface WorkspaceMember {
   id?: string;
@@ -352,13 +348,16 @@ export default function MemberManagement({
   isAdding,
   isDeleting,
   isResending,
-  isLoading
+  isLoading,
 }: MemberManagementProps) {
   const searchParams = useParams();
   const { id: workspaceId }: any = searchParams;
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
-  const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(null);
+  const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(
+    null
+  );
+  const [isOpen, setIsOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleInviteMember = async () => {
@@ -400,7 +399,7 @@ export default function MemberManagement({
 
     const imageUrl = "/api/placeholder/32/32";
 
-    const updatedMember = members.find(m => m.id === memberId);
+    const updatedMember = members.find((m) => m.id === memberId);
     if (updatedMember) {
       await onMemberUpdate({ ...updatedMember, profileImage: imageUrl });
     }
@@ -408,6 +407,35 @@ export default function MemberManagement({
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
+  };
+
+  const openEditDialog = () => {
+    setIsOpen(true);
+  };
+
+  const closeDialog = () => {
+    setIsOpen(false);
+  };
+
+  const handleSubmit = async (data: {
+    email: string;
+    role: "admin" | "member";
+  }) => {
+    // Find the member with the matching email
+    const updatedMember = members.find((m) => m.email === data.email);
+
+    if (updatedMember) {
+      const newMemberData = { ...updatedMember, role: data.role };
+
+      await onMemberUpdate(newMemberData); // Ensure this updates DB/state
+
+      // );
+    } else {
+      console.error("Member not found!");
+    }
+
+    console.log("Submitted Data:", data);
+    closeDialog();
   };
 
   return (
@@ -499,7 +527,9 @@ export default function MemberManagement({
                         accept="image/*"
                         className="hidden"
                         ref={fileInputRef}
-                        onChange={(e) => member?.id && handleProfileImageUpload(member.id, e)}
+                        onChange={(e) =>
+                          member?.id && handleProfileImageUpload(member.id, e)
+                        }
                       />
                       <Button
                         variant="ghost"
@@ -536,10 +566,38 @@ export default function MemberManagement({
                             Resending...
                           </>
                         ) : (
-                          'Resend'
+                          "Resend"
                         )}
                       </Button>
                     )}
+
+                    <div>
+                      {/* Edit Button */}
+                      <button
+                        onClick={openEditDialog}
+                        className="h-6 w-6 border rounded-full flex items-center justify-center p-1"
+                      >
+                        <Pencil className="h-3 w-3" />
+                      </button>
+
+                      {/* Dialog */}
+                      {isOpen && (
+                        <div className="fixed inset-0 flex items-center justify-center bg-#f7f7f7bb bg-opacity-50">
+                          <div className="bg-white p-6 rounded-lg w-96">
+                            <h2 className="text-lg font-semibold mb-4">
+                              Assign Role
+                            </h2>
+                            <CartForm onSubmit={handleSubmit} />
+                            <button
+                              onClick={closeDialog}
+                              className="absolute top-45 right-45 text-gray-500"
+                            >
+                              ✖
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -575,7 +633,9 @@ export default function MemberManagement({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:flex-row sm:justify-end gap-2">
-              <AlertDialogCancel className="sm:w-auto">Cancel</AlertDialogCancel>
+              <AlertDialogCancel className="sm:w-auto">
+                Cancel
+              </AlertDialogCancel>
               <AlertDialogAction
                 onClick={confirmDeleteMember}
                 className="bg-destructive text-destructive-foreground hover:bg-destructive/90 sm:w-auto"
@@ -587,7 +647,7 @@ export default function MemberManagement({
                     Deleting...
                   </>
                 ) : (
-                  'Delete'
+                  "Delete"
                 )}
               </AlertDialogAction>
             </AlertDialogFooter>
