@@ -283,7 +283,7 @@
 //   );
 // }
 "use client";
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Card,
   CardHeader,
@@ -311,12 +311,15 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useUpdateMemberMutation } from "@/lib/store/services/members"; // Adjust the import path
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+
 import { Users, Mail, Trash2, Upload, UserCircle, Loader2 } from "lucide-react";
-import { useGetMembersQuery } from "@/lib/store/services/members";
+
 import { useParams } from "next/navigation";
-import { useGetProfileQuery } from "@/lib/store/services/authApi";
 import CartForm from "@/components/ui/cardForm";
 import { Pencil } from "lucide-react";
+import { toast } from "sonner";
 
 interface WorkspaceMember {
   id?: string;
@@ -354,6 +357,7 @@ export default function MemberManagement({
   const { id: workspaceId }: any = searchParams;
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
+  // const [isAllowToEdit, setIsAllowToEdit] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(
     null
   );
@@ -373,6 +377,12 @@ export default function MemberManagement({
     setNewInviteEmail("");
     setNewInviteRole("member");
   };
+
+  const {
+    data: activeWorkspace,
+    isLoading: activeWorkspaceLoading,
+    isError: activeWorkspaceError,
+  } = useGetActiveWorkspaceQuery();
 
   const handleDeleteMember = (member: WorkspaceMember) => {
     setMemberToDelete(member);
@@ -409,6 +419,22 @@ export default function MemberManagement({
     }
   };
 
+  /// it is working in future if someone want to allow some part on based of login user role
+
+  // const { data } = useGetMemberRoleQuery(workspaceId);
+  // const userRole = data?.data?.role ?? "No Role Found";
+
+  // useEffect(() => {
+  //   console.log(userRole);
+
+  //   if (userRole === "SuperAdmin") {
+  //     setIsAllowToEdit(true);
+  //   } else {
+  //     setIsAllowToEdit(false);
+  //   }
+  //   console.log(isAllowToEdit);
+  // }, [userRole, isAllowToEdit]);
+
   const openEditDialog = () => {
     setIsOpen(true);
   };
@@ -417,24 +443,33 @@ export default function MemberManagement({
     setIsOpen(false);
   };
 
+  const [updateMember] = useUpdateMemberMutation();
+
   const handleSubmit = async (data: {
     email: string;
     role: "admin" | "member";
   }) => {
-    // Find the member with the matching email
     const updatedMember = members.find((m) => m.email === data.email);
-
-    if (updatedMember) {
-      const newMemberData = { ...updatedMember, role: data.role };
-
-      await onMemberUpdate(newMemberData); // Ensure this updates DB/state
-
-      // );
-    } else {
-      console.error("Member not found!");
+    if (!updatedMember) {
+      toast.error("Member not found!");
+      return;
     }
 
-    console.log("Submitted Data:", data);
+    try {
+      // Call the API to update the member role
+      const response = await updateMember({
+        workspaceId,
+        id: updatedMember.id ?? " ",
+        updates: { role: data.role },
+      }).unwrap();
+
+      // Optionally update local state if needed
+      await onMemberUpdate({ ...updatedMember, role: data.role });
+      toast.success("Role updated successfully");
+    } catch (error) {
+      toast.error("Error updating member role");
+    }
+
     closeDialog();
   };
 
@@ -573,27 +608,35 @@ export default function MemberManagement({
 
                     <div>
                       {/* Edit Button */}
-                      <button
-                        onClick={openEditDialog}
-                        className="h-6 w-6 border rounded-full flex items-center justify-center p-1"
-                      >
-                        <Pencil className="h-3 w-3" />
+                      <button onClick={openEditDialog}>
+                        {member.role === "member" && (
+                          <Pencil className="h-3 w-3" />
+                        )}
                       </button>
 
                       {/* Dialog */}
                       {isOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center bg-#f7f7f7bb bg-opacity-50">
-                          <div className="bg-white p-6 rounded-lg w-96">
-                            <h2 className="text-lg font-semibold mb-4">
-                              Assign Role
-                            </h2>
+                        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-20">
+                          <div className="relative p-6 rounded-lg w-[40rem] h-[24rem] bg-white shadow-lg">
+                            <h3 className="text-lg font-semibold mb-4 text- border-b  border-#dbd5d55d-300 pb-2">
+                              Edit User Role
+                            </h3>
+                            <h1 className="text-lg font-semibold mb-4">
+                              Workspace:
+                              <span className="text-gray-500">
+                                {activeWorkspace?.data?.name}
+                              </span>
+                            </h1>
+
                             <CartForm onSubmit={handleSubmit} />
-                            <button
-                              onClick={closeDialog}
-                              className="absolute top-45 right-45 text-gray-500"
-                            >
-                              ✖
-                            </button>
+                            <div className="absolute h-6 w-6 border top-3 right-3 bg-gray-200 bg-gray rounded-full flex items-center justify-center p-1">
+                              <button
+                                onClick={closeDialog}
+                                className=" text-gray-400"
+                              >
+                                ✖
+                              </button>
+                            </div>
                           </div>
                         </div>
                       )}

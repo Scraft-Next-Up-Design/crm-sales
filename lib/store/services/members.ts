@@ -76,6 +76,14 @@ export const memberApi = membersApi.injectEndpoints({
       }),
     }),
 
+    // get member role
+    getMemberRole: builder.query<MembersResponse, string>({
+      query: (workspaceId) => ({
+        url: `?action=getMemberRole&workspaceId=${workspaceId}`,
+        method: "GET",
+      }),
+    }),
+
     // Add a new member
     addMember: builder.mutation<AddMemberResponse, any>({
       query: ({ workspaceId, ...body }) => ({
@@ -85,12 +93,11 @@ export const memberApi = membersApi.injectEndpoints({
       }),
     }),
 
-    // Update member details
     updateMember: builder.mutation<UpdateMemberResponse, UpdateMemberRequest>({
       query: ({ workspaceId, id, updates }) => ({
-        url: `workspace/${workspaceId}/members/${id}`,
-        method: "PATCH",
-        body: updates,
+        url: `?action=updateMemberRole&workspaceId=${workspaceId}&memberId=${id}`,
+        method: "PUT",
+        body: updates, // { role: "newRole" }
       }),
     }),
 
@@ -132,6 +139,7 @@ export const memberApi = membersApi.injectEndpoints({
 // Export hooks for usage in components
 export const {
   useGetMembersQuery,
+  useGetMemberRoleQuery,
   useAddMemberMutation,
   useUpdateMemberMutation,
   useDeleteMemberMutation,

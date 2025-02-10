@@ -132,9 +132,6 @@ const LeadManagement: React.FC = () => {
     isLoading,
   } = useGetWebhooksQuery({ id: workspaceId });
 
-  console.log("array", leadSources);
-  // console.log(Array.isArray(leadSources));
-
   const { data: workspaceData, isLoading: isLoadingLeads }: any =
     useGetLeadsByWorkspaceQuery(
       workspaceId
@@ -178,8 +175,6 @@ const LeadManagement: React.FC = () => {
           })
         );
 
-        // console.log("leads..", fetchLeads);
-
         const duplicates = new Set();
         fetchedLeads.forEach((lead: any) => {
           const duplicate = fetchedLeads.find(
@@ -217,8 +212,6 @@ const LeadManagement: React.FC = () => {
     // Cleanup
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
-
-  // console.log(activeWorkspace);
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
@@ -321,11 +314,6 @@ const LeadManagement: React.FC = () => {
       return true;
     });
   }, [leads, filters, searchQuery, leadSources]);
-
-  // useEffect(() => {
-  //   console.log("Current Leads:", leads);
-  //   console.log("Current Filter:", filters.leadsSource);
-  // }, [leads, filters.leadsSource]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);

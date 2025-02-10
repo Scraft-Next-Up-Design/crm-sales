@@ -34,7 +34,8 @@ const CartForm = ({
         Email:
         <input
           type="email"
-          className="w-full px-3 py-2 border rounded mt-1"
+          placeholder="user@gmail.com"
+          className="w-full px-3 py-2 bg-gray-100 border rounded mt-1 border-none "
           {...register("email")}
         />
       </label>
@@ -43,10 +44,7 @@ const CartForm = ({
       )}
 
       {/* Role Selection */}
-      <div className="mb-4">
-        <label className="block text-sm font-medium text-gray-700">
-          Select Role
-        </label>
+      <div className=" pt-2 pb-6 border-b border-gray-300">
         <div className="flex space-x-4 mt-2">
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -58,12 +56,12 @@ const CartForm = ({
             <div
               className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                 selectedRole === "member"
-                  ? "border-blue-500"
+                  ? "border-gray-900"
                   : "border-gray-400"
               }`}
             >
               {selectedRole === "member" && (
-                <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                <div className="h-3 w-3 rounded-full bg-gray-900"></div>
               )}
             </div>
             <span className="text-gray-700">Member</span>
@@ -78,11 +76,11 @@ const CartForm = ({
             />
             <div
               className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                selectedRole === "admin" ? "border-blue-500" : "border-gray-400"
+                selectedRole === "admin" ? "border-gray-900" : "border-gray-400"
               }`}
             >
               {selectedRole === "admin" && (
-                <div className="h-3 w-3 rounded-full bg-blue-500"></div>
+                <div className="h-3 w-3 rounded-full bg-gray-900"></div>
               )}
             </div>
             <span className="text-gray-700">Admin</span>
@@ -91,12 +89,12 @@ const CartForm = ({
       </div>
 
       {/* Buttons */}
-      <div className="mt-6 flex justify-end space-x-2">
+      <div className="mt-6 flex p-4  justify-end space-x-2">
         <button
           type="submit"
-          className="px-4 py-2 bg-blue-500 text-white rounded"
+          className="px-8 py-4 bg-black rounded-lg text-white"
         >
-          Submit
+          Update
         </button>
       </div>
     </form>
