@@ -273,11 +273,16 @@ export const FilterComponent: React.FC<FilterComponentProps> = ({
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Owners</SelectItem>
-                  {owner.map((item) => (
-                    <SelectItem key={item.id} value={item.name}>
-                      {item.name}
-                    </SelectItem>
-                  ))}
+                  {owner
+                    .filter(
+                      (status: { name: string | null }) =>
+                        status.name && status.name !== "null"
+                    )
+                    .map((item) => (
+                      <SelectItem key={item.id} value={item.name}>
+                        {item.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
             </div>
