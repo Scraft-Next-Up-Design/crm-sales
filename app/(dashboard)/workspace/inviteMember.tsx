@@ -357,6 +357,9 @@ export default function MemberManagement({
   const { id: workspaceId }: any = searchParams;
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
+  const [selectedEmail, setSelectedEmail] = useState<string | undefined>(
+    undefined
+  );
   // const [isAllowToEdit, setIsAllowToEdit] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<WorkspaceMember | null>(
     null
@@ -435,12 +438,14 @@ export default function MemberManagement({
   //   console.log(isAllowToEdit);
   // }, [userRole, isAllowToEdit]);
 
-  const openEditDialog = () => {
+  const openEditDialog = (member: { email: string }) => {
+    setSelectedEmail(member.email || undefined);
     setIsOpen(true);
   };
 
   const closeDialog = () => {
     setIsOpen(false);
+    setSelectedEmail(undefined);
   };
 
   const [updateMember] = useUpdateMemberMutation();
@@ -588,27 +593,9 @@ export default function MemberManagement({
                     </div>
                   </div>
                   <div className="flex items-center space-x-2 self-end sm:self-center">
-                    {member?.status === "pending" && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResendInvite(member)}
-                        disabled={isResending}
-                      >
-                        {isResending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Resending...
-                          </>
-                        ) : (
-                          "Resend"
-                        )}
-                      </Button>
-                    )}
-
                     <div>
                       {/* Edit Button */}
-                      <button onClick={openEditDialog}>
+                      <button onClick={() => openEditDialog(member)}>
                         {member.role === "member" && (
                           <Pencil className="h-3 w-3" />
                         )}
@@ -628,7 +615,10 @@ export default function MemberManagement({
                               </span>
                             </h1>
 
-                            <CartForm onSubmit={handleSubmit} />
+                            <CartForm
+                              onSubmit={handleSubmit}
+                              defaultEmail={selectedEmail}
+                            />
                             <div className="absolute h-6 w-6 border top-3 right-3 bg-gray-200 bg-gray rounded-full flex items-center justify-center p-1">
                               <button
                                 onClick={closeDialog}
@@ -641,6 +631,24 @@ export default function MemberManagement({
                         </div>
                       )}
                     </div>
+                    {member?.status === "pending" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendInvite(member)}
+                        disabled={isResending}
+                      >
+                        {isResending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Resending...
+                          </>
+                        ) : (
+                          "Resend"
+                        )}
+                      </Button>
+                    )}
+
                     <Button
                       variant="ghost"
                       size="icon"

@@ -9,8 +9,10 @@ const cartSchema = z.object({
 
 const CartForm = ({
   onSubmit,
+  defaultEmail,
 }: {
   onSubmit: (data: z.infer<typeof cartSchema>) => void;
+  defaultEmail?: string;
 }) => {
   const {
     register,
@@ -20,7 +22,7 @@ const CartForm = ({
   } = useForm<z.infer<typeof cartSchema>>({
     resolver: zodResolver(cartSchema),
     defaultValues: {
-      email: "",
+      email: defaultEmail || "",
       role: "member", // Default value
     },
   });
@@ -37,6 +39,7 @@ const CartForm = ({
           placeholder="user@gmail.com"
           className="w-full px-3 py-2 bg-gray-100 border rounded mt-1 border-none "
           {...register("email")}
+          disabled
         />
       </label>
       {errors.email && (
