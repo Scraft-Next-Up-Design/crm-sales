@@ -69,8 +69,8 @@ export default async function handler(
               email: email,
               status: status,
             })
-            .select('*')
-            .single(); 
+            .select("*")
+            .single();
           await sendMail(
             email,
             "You have been added to a workspace",
@@ -286,7 +286,10 @@ export default async function handler(
             .eq("user_id", user.id)
             .single();
 
-          if (!adminCheck || adminCheck.role !== "admin") {
+          if (
+            !adminCheck ||
+            (adminCheck.role !== "admin" && adminCheck.role !== "SuperAdmin")
+          ) {
             return res
               .status(403)
               .json({ error: "Only admins can update member roles" });
@@ -296,7 +299,7 @@ export default async function handler(
             .from("workspace_members")
             .update({ role })
             .eq("workspace_id", workspaceId)
-            .eq("user_id", memberId);
+            .eq("id", memberId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -330,9 +333,9 @@ export default async function handler(
         }
 
         case "getMemberRole": {
-          const { workspaceId, userId } = query;
+          const { workspaceId } = query;
 
-          if (!workspaceId || !userId) {
+          if (!workspaceId) {
             return res
               .status(400)
               .json({ error: "Workspace ID and User ID are required" });
@@ -346,17 +349,17 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
+          console.log("user", user);
           const { data, error } = await supabase
             .from("workspace_members")
             .select("role")
             .eq("workspace_id", workspaceId)
-            .eq("user_id", userId)
+            .eq("user_id", user.id)
             .single();
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log(data);
           return res.status(200).json({ data });
         }
 
