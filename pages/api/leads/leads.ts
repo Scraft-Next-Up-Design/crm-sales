@@ -1,3 +1,4 @@
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
@@ -432,3 +433,4 @@ export default async function handler(
     }
   }
 }
+

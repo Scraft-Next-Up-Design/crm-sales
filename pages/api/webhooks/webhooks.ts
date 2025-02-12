@@ -1,3 +1,4 @@
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
@@ -486,3 +487,4 @@ export default async function handler(
       return res.status(405).json({ error: AUTH_MESSAGES.API_ERROR });
   }
 }
+
