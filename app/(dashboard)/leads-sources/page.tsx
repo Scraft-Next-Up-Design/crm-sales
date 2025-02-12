@@ -106,6 +106,7 @@ const LeadSourceManager: React.FC = () => {
     }
   }, [webhooks]);
   console.log(webhooksData);
+  // console.log(sources);
   const form = useForm<z.infer<typeof sourceSchema>>({
     resolver: zodResolver(sourceSchema),
     defaultValues: {
@@ -126,8 +127,6 @@ const LeadSourceManager: React.FC = () => {
   };
 
   const openCreateDialog = () => {
-    console.log(workspacesData === undefined);
-
     if (workspacesData === undefined) {
       toast.error("No workspace selected. Please select a workspace");
       return; // Prevent dialog from opening

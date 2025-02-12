@@ -1,3 +1,4 @@
+
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
@@ -69,7 +70,6 @@ export default async function handler(
         case "updateNotesById": {
           const { id } = query; // Extract ID from query parameters
           const body = req.body; // Extract body payload
-          console.log("Request Body:", body, "Lead ID:", id);
 
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -88,7 +88,7 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-          console.log(body);
+
           // Update the `leads` table
           const { data, error } = await supabase
             .from("leads")
@@ -112,7 +112,8 @@ export default async function handler(
         case "updateLeadById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id);
+          console.log(body, id); // Debug to check received data
+
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
           }
@@ -125,15 +126,14 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          if (!body) {
+          if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
 
           const { data, error } = await supabase
             .from("leads")
-            .update({ status: body })
+            .update(body) // ✅ Now updates correct fields dynamically
             .eq("id", id);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -141,10 +141,10 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+
         case "assignRoleById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id);
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
           }
@@ -284,7 +284,6 @@ export default async function handler(
 
         case "getLeadById": {
           const id = query.id as string;
-          console.log(query);
 
           const {
             data: { user },
@@ -434,3 +433,4 @@ export default async function handler(
     }
   }
 }
+
