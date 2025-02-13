@@ -57,6 +57,8 @@ import { useGetStatusQuery } from "@/lib/store/services/status";
 
 import { Label } from "@/components/ui/label";
 import WebhookStatus from "@/components/ui/WebhookStatus";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/store/store";
 // import { useRouter } from "next/router";
 // import { Loader2} from "@/components/ui";
 
@@ -82,7 +84,12 @@ export default function ContactPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [editInfoId, setEditInfoId] = useState(null);
   const [businessInfo, setBusinessInfo] = useState(""); // Single field for input
-  // const [selectedTags, setSelectedTags] = useState<string[]>(leads.tags ?? []);
+  const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
+    {}
+  );
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
 
   const [updateLead, { isLoading }] = useUpdateLeadMutation();
 
@@ -156,7 +163,7 @@ export default function ContactPage() {
             is_phone_valid: lead.is_phone_valid,
             sourceId: lead.lead_source_id || null,
             businessInfo: lead.businessInfo ?? "",
-            tag: lead.tags ?? [], // Instead of a single string, store an array
+            tag: lead.tags ?? {}, // Instead of a single string, store an array
           })
         );
 
@@ -205,15 +212,15 @@ export default function ContactPage() {
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
 
-  useEffect(() => {}, [contacts]);
+  // useEffect(() => {
+  //   console.log("contact", contacts);
+  // }, [contacts]);
 
   // Filter contacts based on search and status
   const filteredContacts = contacts?.filter((contact) => {
-    // Normalize search and statusFilter
     const searchLower = search.toLowerCase();
     const statusLower = statusFilter.toLowerCase();
 
-    // Check if contact matches search (Name, email, or phone)
     const matchesSearch =
       contact?.Name?.toLowerCase().includes(searchLower) ||
       contact?.email?.toLowerCase().includes(searchLower) ||
@@ -274,24 +281,31 @@ export default function ContactPage() {
     }
   };
 
-  const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
-    {}
-  );
-
   const handleTagChange = (id: string, value: string) => {
     setSelectedTags((prev) => {
       const currentTags = prev[id] || [];
       const updatedTags = currentTags.includes(value)
-        ? currentTags.filter((tag) => tag !== value) // Remove if already selected
-        : [...currentTags, value]; // Add if not selected
+        ? currentTags.filter((tag) => tag !== value)
+        : [...currentTags, value];
 
-      // 🔥 Update backend AFTER updating state
-      setTimeout(() => {
-        handleUpdate(id, { tags: updatedTags });
-      }, 0);
+      // console.log("Updated tags for contact:", updatedTags);
+
+      handleUpdate(id, { tags: updatedTags });
 
       return { ...prev, [id]: updatedTags };
     });
+  };
+
+  // useEffect(() => {
+  //   console.log("Updated selectedTags:", selectedTags);
+  //   // console.log("tags",contacts.tags)
+  // }, [selectedTags]);
+
+  const handleRemoveTag = (contactId: string, tagToRemove: string) => {
+    setSelectedTags((prev) => ({
+      ...prev,
+      [contactId]: prev[contactId].filter((tag) => tag !== tagToRemove),
+    }));
   };
 
   // Calculate pagination
@@ -329,83 +343,87 @@ export default function ContactPage() {
     );
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <div
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
+        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      } w-auto overflow-hidden`}
+    >
       {/* <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Contacts</h1>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button className="flex items-center gap-2">
-              <UserPlus className="h-4 w-4" />
-              Add Contact
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Contact</DialogTitle>
-            </DialogHeader>
-            <form onSubmit={handleAddContact} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input
-                  id="name"
-                  value={newContact.name}
-                  onChange={(e) =>
-                    setNewContact({ ...newContact, name: e.target.value })
-                  }
-                  placeholder="Enter name"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={newContact.email}
-                  onChange={(e) =>
-                    setNewContact({ ...newContact, email: e.target.value })
-                  }
-                  placeholder="Enter email"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">Phone</Label>
-                <Input
-                  id="phone"
-                  value={newContact.phone}
-                  onChange={(e) =>
-                    setNewContact({ ...newContact, phone: e.target.value })
-                  }
-                  placeholder="Enter phone number"
-                  required
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="status">Status</Label>
-                <Select
-                  value={newContact.status}
-                  onValueChange={(value) =>
-                    setNewContact({ ...newContact, status: value })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
-                    <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button type="submit" className="w-full">
+          <h1 className="text-2xl font-bold">Contacts</h1>
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button className="flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
                 Add Contact
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
-      </div> */}
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add New Contact</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleAddContact} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    value={newContact.name}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, name: e.target.value })
+                    }
+                    placeholder="Enter name"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={newContact.email}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, email: e.target.value })
+                    }
+                    placeholder="Enter email"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="phone">Phone</Label>
+                  <Input
+                    id="phone"
+                    value={newContact.phone}
+                    onChange={(e) =>
+                      setNewContact({ ...newContact, phone: e.target.value })
+                    }
+                    placeholder="Enter phone number"
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="status">Status</Label>
+                  <Select
+                    value={newContact.status}
+                    onValueChange={(value) =>
+                      setNewContact({ ...newContact, status: value })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
+                      <SelectItem value="Inactive">Inactive</SelectItem>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button type="submit" className="w-full">
+                  Add Contact
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div> */}
 
       {/* Filters */}
       <div className="flex gap-4 items-center">
@@ -445,34 +463,28 @@ export default function ContactPage() {
           <Table className="min-w-full border-collapse table-auto">
             <TableHeader>
               <TableRow>
-                <TableHead className="sticky left-0 bg-white dark:bg-gray-900 z-10 w-[100px] text-center">
+                <TableHead className="sticky left-0 bg-white dark:bg-gray-900 z-10  text-center">
                   Name
                 </TableHead>
-                <TableHead className="w-[150px] text-center">Email</TableHead>
-                <TableHead className="w-[100px] text-center">Phone</TableHead>
-                <TableHead className="w-[100px] text-center">Status</TableHead>
-                <TableHead className="w-[100px] text-center">
-                  Email Validation
-                </TableHead>
-                <TableHead className="w-[170px] text-center">
-                  Platform
-                </TableHead>
-                <TableHead className="w-[200px] text-center">
-                  Bussiness Info
-                </TableHead>
-                <TableHead className="w-[100px] text-center">Tag</TableHead>
+                <TableHead className=" text-center">Email</TableHead>
+                <TableHead className=" text-center">Phone</TableHead>
+
+                <TableHead className=" text-center">Email Validation</TableHead>
+                <TableHead className=" text-center">Platform</TableHead>
+                <TableHead className=" text-center">Bussiness Info</TableHead>
+                <TableHead className=" text-center">Tag</TableHead>
                 {/* <TableHead className="min-w-[50px] text-center">
-                  Actions
-                </TableHead> */}
+                    Actions
+                  </TableHead> */}
               </TableRow>
             </TableHeader>
             <TableBody>
               {contacts.map((contact) => (
                 <TableRow key={contact.id}>
-                  <TableCell className="left-0 bg-white dark:bg-gray-900 z-10 font-medium w-[150px] text-center">
+                  <TableCell className="left-0 bg-white dark:bg-gray-900 z-10 font-medium  text-center">
                     {contact.Name}
                   </TableCell>
-                  <TableCell className="relative group w-[150px] text-center">
+                  <TableCell className="relative group  text-center">
                     <div className="inline-block relative">
                       {/* Email Address */}
                       <span className="cursor-pointer group-hover:underline">
@@ -504,9 +516,7 @@ export default function ContactPage() {
                     </div>
                   </TableCell>
 
-                  {/* Phone Number with Hover Menu */}
-                  {/* Phone Number with Hover Menu */}
-                  <TableCell className="relative text-center w-[100px]">
+                  <TableCell className="relative text-center ">
                     <div className="inline-block group relative">
                       {/* Phone Number */}
                       <span className="cursor-pointer group-hover:underline">
@@ -546,30 +556,11 @@ export default function ContactPage() {
                           <Phone className="h-4 w-4 text-blue-500" />
                           Call
                         </button>
-
-                        {/* SMS */}
-                        {/* <button
-                          onClick={() =>
-                            (window.location.href = `sms:${contact.phone}`)
-                          }
-                          className="flex items-center gap-2 text-sm text-gray-800 hover:text-purple-600 mt-1"
-                        >
-                          <MessageCircle className="h-4 w-4 text-purple-500" />
-                          SMS
-                        </button> */}
                       </div>
                     </div>
                   </TableCell>
 
-                  <TableCell className="min-w-[200px] text-center">
-                    <span
-                      className="px-2 py-1 rounded-full text-xs text-white"
-                      style={{ backgroundColor: contact?.status?.color }}
-                    >
-                      {contact?.status?.name}
-                    </span>
-                  </TableCell>
-                  <TableCell className="w-[100px] text-center">
+                  <TableCell className=" text-center">
                     <span
                       className={`px-2 py-1 text-sm font-semibold rounded ${
                         contact.is_email_valid
@@ -591,77 +582,52 @@ export default function ContactPage() {
                     )}
                   </TableCell>
 
-                  <TableCell className="w-[250px] text-center">
-                    {contact.businessInfo ? (
-                      editInfoId === contact.id ? (
-                        // If editing mode is enabled, show input and buttons
-                        <div className="flex gap-2">
-                          <input
-                            type="text"
-                            placeholder="Enter Business Info..."
-                            className="px-2 py-1 border rounded-md w-full"
-                            value={businessInfo}
-                            onChange={(e) => setBusinessInfo(e.target.value)}
-                          />
-                          <button
-                            onClick={() =>
-                              handleUpdate(contact.id, { businessInfo })
-                            }
-                            className="px-1 py-1 bg-green-500 text-white rounded-md hover:bg-green-600"
-                            disabled={isLoading}
-                          >
-                            {isLoading ? "Saving..." : "✅"}
-                          </button>
-                          <button
-                            onClick={() => {
-                              setEditInfoId(null);
-                              setBusinessInfo(""); // Clear input on cancel
-                            }}
-                            className="px-1 py-1 bg-gray-400 text-white rounded-md hover:bg-gray-500"
-                          >
-                            ❌
-                          </button>
-                        </div>
-                      ) : (
-                        // If businessInfo exists but not in edit mode, show info with edit button
-                        <div className="flex items-center justify-center gap-2">
-                          <span className="text-gray-700 dark:text-gray-300">
-                            {contact.businessInfo}
-                          </span>
-                          <button
-                            onClick={() => {
-                              setEditInfoId(contact.id);
-                              setBusinessInfo(contact.businessInfo || ""); // Pre-fill existing info
-                            }}
-                            className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                          >
-                            Edit
-                          </button>
-                        </div>
-                      )
-                    ) : (
-                      // If no businessInfo exists, show "Add Info" button
-                      <button
-                        onClick={() => {
-                          setEditInfoId(contact.id);
-                          setBusinessInfo(""); // Start with empty input
+                  <TableCell
+                    className=" text-center cursor-pointer"
+                    onDoubleClick={() => {
+                      setEditInfoId(contact.id);
+                      setBusinessInfo(contact.businessInfo || ""); // Pre-fill existing info
+                    }}
+                  >
+                    {editInfoId === contact.id ? (
+                      // Editing mode: Show input field
+                      <input
+                        type="text"
+                        placeholder="Enter Business Info..."
+                        className="px-2 py-1 border rounded-md w-full"
+                        value={businessInfo}
+                        onChange={(e) => setBusinessInfo(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            handleUpdate(contact.id, { businessInfo });
+                          } else if (e.key === "Escape") {
+                            setEditInfoId(null);
+                            setBusinessInfo(""); // Clear input on cancel
+                          }
                         }}
-                        className="px-2 py-1 bg-blue-500 text-white rounded-md hover:bg-blue-600"
-                      >
-                        Add Info
-                      </button>
+                        autoFocus
+                      />
+                    ) : (
+                      // Normal display mode
+                      <span className="text-gray-700 dark:text-gray-300">
+                        {contact.businessInfo || (
+                          <span className="text-gray-400 italic">
+                            Double-click to add info
+                          </span>
+                        )}
+                      </span>
                     )}
                   </TableCell>
 
-                  <TableCell className=" w-[150px] border-none">
-                    <Select>
-                      <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
-                        <div className="flex flex-wrap items-center gap-2">
-                          {selectedTags[contact.id]?.length > 0 ? (
-                            selectedTags[contact.id].map((tag) => (
+                  <TableCell className="border-none">
+                    <div className="flex flex-col gap-2 items-center">
+                      <div className="flex flex-col gap-2 items-center">
+                        <div className="flex flex-row flex-wrap gap-2 items-center">
+                          {Array.isArray(contact?.tag) ? (
+                            contact.tag.map((tag: string) => (
                               <div
                                 key={tag}
-                                className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded-md"
+                                className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md"
                               >
                                 <div
                                   className="h-3 w-3 rounded-lg"
@@ -671,118 +637,74 @@ export default function ContactPage() {
                                       "#ccc",
                                   }}
                                 />
+                                {/* Tag Name */}
                                 <span className="text-sm font-medium">
                                   {tag}
                                 </span>
+                                {/* Remove Tag Button */}
+                                <button
+                                  onClick={() =>
+                                    handleRemoveTag(contact.id, tag)
+                                  }
+                                  className="text-xs text-red-500 hover:text-red-700"
+                                >
+                                  ✕
+                                </button>
                               </div>
                             ))
                           ) : (
-                            <span className="text-sm font-medium">
-                              Select Tags
+                            <span className="text-gray-500">
+                              No tags available
                             </span>
                           )}
                         </div>
-                      </SelectTrigger>
+                      </div>
 
-                      <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                        {tags.map((tag) => {
-                          const isSelected =
-                            selectedTags[contact.id]?.includes(tag.name) ||
-                            false;
+                      {/* Select Dropdown (Vertical Options) */}
+                      <Select
+                        onValueChange={(value) =>
+                          handleTagChange(contact.id, value)
+                        }
+                      >
+                        <SelectTrigger className="relative w-[180px] overflow-hidden rounded-xl border-0 bg-white px-4 py-2 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                          <span className="text-sm font-medium">+ Add Tag</span>
+                        </SelectTrigger>
 
-                          return (
-                            <SelectItem
-                              key={tag.name}
-                              value={tag.name} // Store only the tag name
-                              className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
-                              onClick={() =>
-                                handleTagChange(contact.id, tag.name)
-                              }
-                              // Handle multi-selection manually
-                            >
-                              <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
-                                <div className="relative">
-                                  <div
-                                    className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
-                                    style={{ backgroundColor: tag.color }}
-                                  />
-                                  <div
-                                    className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
-                                    style={{ backgroundColor: tag.color }}
-                                  />
+                        {/* Dropdown remains Vertical */}
+                        <SelectContent className="w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                          <div className="flex flex-col gap-2">
+                            {tags.map((tag) => (
+                              <SelectItem key={tag.name} value={tag.name}>
+                                <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                  <div className="relative">
+                                    <div
+                                      className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
+                                      style={{ backgroundColor: tag.color }}
+                                    />
+                                    <div
+                                      className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
+                                      style={{ backgroundColor: tag.color }}
+                                    />
+                                  </div>
+                                  <span
+                                    className={`text-sm font-medium ${
+                                      selectedTags[contact.id]?.includes(
+                                        tag.name
+                                      )
+                                        ? "font-bold text-blue-600"
+                                        : "text-gray-700 dark:text-gray-200"
+                                    }`}
+                                  >
+                                    {tag.name}
+                                  </span>
                                 </div>
-                                <span
-                                  className={`text-sm font-medium ${
-                                    isSelected
-                                      ? "font-bold text-blue-600"
-                                      : "text-gray-700 dark:text-gray-200"
-                                  }`}
-                                >
-                                  {tag.name}
-                                </span>
-                              </div>
-                            </SelectItem>
-                          );
-                        })}
-                      </SelectContent>
-                    </Select>
+                              </SelectItem>
+                            ))}
+                          </div>
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </TableCell>
-
-                  {/* <TableCell className="min-w-[200px] text-center">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                          <MoreVertical className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem
-                          onClick={() => {
-                            window.location.href = `mailto:${contact.email}`;
-                          }}
-                          className="cursor-pointer"
-                        >
-                          <Mail className="mr-2 h-4 w-4" />
-                          Email
-                        </DropdownMenuItem>
-
-                        <DropdownMenuItem>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            onClick={() =>
-                              initiateDirectContact(
-                                contact,
-                                contact.contact_method
-                              )
-                            }
-                            className="h-6 w-6"
-                            title={`Contact via ${contact.contact_method}`}
-                          >
-                            {contact.contact_method === "WhatsApp" && (
-                              <Send className="h-3 w-3" />
-                            )}
-                            {contact?.contact_method === "Call" && (
-                              <Phone className="h-3 w-3" />
-                            )}
-                            {contact?.contact_method === "SMS" && (
-                              <MessageCircle className="h-3 w-3" />
-                            )}
-                          </Button>
-                          Call
-                        </DropdownMenuItem>
-                        <DropdownMenuItem>
-                          <User
-                            variant="outline"
-                            size="icon"
-                            onClick={() => handleView(contact.id)}
-                            className="h-3 w-3"
-                          />
-                          View Profile
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell> */}
                 </TableRow>
               ))}
             </TableBody>

@@ -130,9 +130,14 @@ export default async function handler(
             return res.status(400).json({ error: "Update data is required" });
           }
 
+          const updatedBody = {
+            ...body, // Spread other fields dynamically
+            tags: body.tags ? JSON.stringify(body.tags) : undefined, // Convert only if tags exist
+          };
+
           const { data, error } = await supabase
             .from("leads")
-            .update(body) // ✅ Now updates correct fields dynamically
+            .update(updatedBody) // ✅ Now updates correct fields dynamically
             .eq("id", id);
 
           if (error) {
