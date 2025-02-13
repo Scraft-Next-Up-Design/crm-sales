@@ -127,8 +127,6 @@ const LeadSourceManager: React.FC = () => {
   };
 
   const openCreateDialog = () => {
-    console.log(workspacesData === undefined);
-
     if (workspacesData === undefined) {
       toast.error("No workspace selected. Please select a workspace");
       return; // Prevent dialog from opening

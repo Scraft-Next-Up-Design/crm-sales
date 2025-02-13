@@ -107,7 +107,6 @@ export default function ContactPage() {
         pollingInterval: 10000, // Poll every 2 seconds (2000 ms)
       }
     );
-  console.log("Raw workspaceData:", workspaceData?.data);
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
     useGetWorkspaceMembersQuery(workspaceId);
 
@@ -191,7 +190,6 @@ export default function ContactPage() {
         const QualifiedContacts = sortedLeads.filter((lead: any) =>
           contactStatuses.has(lead.status.name)
         );
-        console.log("q", QualifiedContacts);
 
         setContacts(QualifiedContacts);
       }
@@ -207,13 +205,7 @@ export default function ContactPage() {
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
 
-  useEffect(() => {
-    console.log("Updated Contacts State:", contacts);
-  }, [contacts]);
-
-  console.log("Contacts:", contacts);
-
-  console.log("leds", leads);
+  useEffect(() => {}, [contacts]);
 
   // Filter contacts based on search and status
   const filteredContacts = contacts?.filter((contact) => {
@@ -286,9 +278,7 @@ export default function ContactPage() {
     {}
   );
 
-  console.log("select", selectedTags);
   const handleTagChange = (id: string, value: string) => {
-    console.log("value", value);
     setSelectedTags((prev) => {
       const currentTags = prev[id] || [];
       const updatedTags = currentTags.includes(value)

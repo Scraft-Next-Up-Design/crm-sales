@@ -19,8 +19,6 @@ const WebhookStatus: React.FC<WebhookStatusProps> = ({
     sourceId && workspaceId ? { id: sourceId, workspaceId } : skipToken
   );
 
-  console.log("Fetched Webhooks:", webhooks);
-
   if (isLoading) return <span>Loading...</span>;
   if (isError) return <span>Error fetching webhooks</span>;
 

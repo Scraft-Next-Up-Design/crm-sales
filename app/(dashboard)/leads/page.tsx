@@ -224,8 +224,6 @@ const LeadManagement: React.FC = () => {
     setShowFilters(false);
   };
 
-  console.log("leds", leads);
-
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       if (searchQuery) {

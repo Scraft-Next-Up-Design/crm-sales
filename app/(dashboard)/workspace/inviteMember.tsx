@@ -448,7 +448,6 @@ export default function MemberManagement({
     setSelectedEmail(undefined);
   };
 
-  console.log("membets", members);
   const [updateMember] = useUpdateMemberMutation();
 
   const handleSubmit = async (data: {
