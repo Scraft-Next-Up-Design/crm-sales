@@ -112,7 +112,8 @@ export default async function handler(
         case "updateLeadById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id);
+          console.log(body, id); // Debug to check received data
+
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
           }
@@ -125,15 +126,14 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          if (!body) {
+          if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
 
           const { data, error } = await supabase
             .from("leads")
-            .update({ status: body })
+            .update(body) // ✅ Now updates correct fields dynamically
             .eq("id", id);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -141,6 +141,7 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+
         case "assignRoleById": {
           const { id } = query;
           const body = req.body;

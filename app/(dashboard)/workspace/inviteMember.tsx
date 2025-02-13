@@ -448,6 +448,7 @@ export default function MemberManagement({
     setSelectedEmail(undefined);
   };
 
+  console.log("membets", members);
   const [updateMember] = useUpdateMemberMutation();
 
   const handleSubmit = async (data: {
@@ -603,26 +604,32 @@ export default function MemberManagement({
 
                       {/* Dialog */}
                       {isOpen && (
-                        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 bg-opacity-20">
-                          <div className="relative p-6 rounded-lg w-[40rem] h-[24rem] bg-white shadow-lg">
-                            <h3 className="text-lg font-semibold mb-4 text- border-b  border-#dbd5d55d-300 pb-2">
+                        <div className="fixed inset-0 flex items-center justify-center bg-gray-50 dark:bg-gray-900 bg-opacity-20 dark:bg-opacity-10">
+                          <div className="relative p-6 rounded-lg w-[40rem] h-[24rem] bg-white dark:bg-gray-800 shadow-lg">
+                            {/* Modal Header */}
+                            <h3 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-100 border-b border-gray-300 dark:border-gray-600 pb-2">
                               Edit User Role
                             </h3>
-                            <h1 className="text-lg font-semibold mb-4">
+
+                            {/* Workspace Name */}
+                            <h1 className="text-lg font-semibold mb-4 text-gray-900 dark:text-gray-200">
                               Workspace:
-                              <span className="text-gray-500">
+                              <span className="text-gray-500 dark:text-gray-400">
                                 {activeWorkspace?.data?.name}
                               </span>
                             </h1>
 
+                            {/* Cart Form */}
                             <CartForm
                               onSubmit={handleSubmit}
                               defaultEmail={selectedEmail}
                             />
-                            <div className="absolute h-6 w-6 border top-3 right-3 bg-gray-200 bg-gray rounded-full flex items-center justify-center p-1">
+
+                            {/* Close Button */}
+                            <div className="absolute h-6 w-6 top-3 right-3 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center p-1">
                               <button
                                 onClick={closeDialog}
-                                className=" text-gray-400"
+                                className="text-gray-400 dark:text-gray-300"
                               >
                                 ✖
                               </button>

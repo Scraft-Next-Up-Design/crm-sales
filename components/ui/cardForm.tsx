@@ -32,22 +32,24 @@ const CartForm = ({
   return (
     <form onSubmit={handleSubmit(onSubmit)}>
       {/* Email Input */}
-      <label className="block mb-2">
+      <label className="block mb-2 text-gray-700 dark:text-gray-200">
         Email:
         <input
           type="email"
           placeholder="user@gmail.com"
-          className="w-full px-3 py-2 bg-gray-100 border rounded mt-1 border-none "
+          className="w-full px-3 py-2 bg-gray-100 dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded mt-1"
           {...register("email")}
           disabled
         />
       </label>
       {errors.email && (
-        <p className="text-red-500 text-sm">{errors.email.message}</p>
+        <p className="text-red-500 dark:text-red-400 text-sm">
+          {errors.email.message}
+        </p>
       )}
 
       {/* Role Selection */}
-      <div className=" pt-2 pb-6 border-b border-gray-300">
+      <div className="pt-2 pb-6 border-b border-gray-300 dark:border-gray-700">
         <div className="flex space-x-4 mt-2">
           <label className="flex items-center space-x-2 cursor-pointer">
             <input
@@ -59,15 +61,15 @@ const CartForm = ({
             <div
               className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
                 selectedRole === "member"
-                  ? "border-gray-900"
-                  : "border-gray-400"
+                  ? "border-gray-900 dark:border-gray-100"
+                  : "border-gray-400 dark:border-gray-600"
               }`}
             >
               {selectedRole === "member" && (
-                <div className="h-3 w-3 rounded-full bg-gray-900"></div>
+                <div className="h-3 w-3 rounded-full bg-gray-900 dark:bg-gray-100"></div>
               )}
             </div>
-            <span className="text-gray-700">Member</span>
+            <span className="text-gray-700 dark:text-gray-300">Member</span>
           </label>
 
           <label className="flex items-center space-x-2 cursor-pointer">
@@ -79,23 +81,24 @@ const CartForm = ({
             />
             <div
               className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${
-                selectedRole === "admin" ? "border-gray-900" : "border-gray-400"
+                selectedRole === "admin"
+                  ? "border-gray-900 dark:border-gray-100"
+                  : "border-gray-400 dark:border-gray-600"
               }`}
             >
               {selectedRole === "admin" && (
-                <div className="h-3 w-3 rounded-full bg-gray-900"></div>
+                <div className="h-3 w-3 rounded-full bg-gray-900 dark:bg-gray-100"></div>
               )}
             </div>
-            <span className="text-gray-700">Admin</span>
+            <span className="text-gray-700 dark:text-gray-300">Admin</span>
           </label>
         </div>
       </div>
-
       {/* Buttons */}
       <div className="mt-6 flex p-4  justify-end space-x-2">
         <button
           type="submit"
-          className="px-8 py-4 bg-black rounded-lg text-white"
+          className="px-8 py-4 bg-black dark:bg-gray-100 rounded-lg text-white dark:text-black"
         >
           Update
         </button>

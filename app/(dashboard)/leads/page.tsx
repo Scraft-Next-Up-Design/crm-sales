@@ -224,6 +224,8 @@ const LeadManagement: React.FC = () => {
     setShowFilters(false);
   };
 
+  console.log("leds", leads);
+
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       if (searchQuery) {
@@ -250,12 +252,12 @@ const LeadManagement: React.FC = () => {
         return false;
 
       // Step 1: Find the leadSourceId
-      let leadSourceId = leadSources.data.find(
+      let leadSourceId = leadSources?.data?.find(
         (source: any) => source.name === filters.leadsSource
       )?.id;
 
       // Step 2: Find the webhook_url in workspaceData based on leadSourceId
-      let webhook_url = leadSources.data.find(
+      let webhook_url = leadSources?.data.find(
         (entry: any) => entry.id === leadSourceId
       )?.webhook_url;
 

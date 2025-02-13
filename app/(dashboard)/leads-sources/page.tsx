@@ -106,6 +106,7 @@ const LeadSourceManager: React.FC = () => {
     }
   }, [webhooks]);
   console.log(webhooksData);
+  // console.log(sources);
   const form = useForm<z.infer<typeof sourceSchema>>({
     resolver: zodResolver(sourceSchema),
     defaultValues: {

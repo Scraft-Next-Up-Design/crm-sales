@@ -58,7 +58,7 @@ import {
   useGetActiveWorkspaceQuery,
   useGetWorkspacesByOwnerIdQuery,
   useGetWorkspacesQuery,
-  useUpdateWorkspaceStatusMutation
+  useUpdateWorkspaceStatusMutation,
 } from "@/lib/store/services/workspace";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
@@ -69,7 +69,7 @@ import { ThemeToggle } from "../theme-toggle";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
@@ -95,24 +95,40 @@ export function Sidebar({
   logoAlt = "Company Logo",
 }: SidebarProps) {
   const dispatch = useDispatch();
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
-  const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
+  const {
+    data: workspacesData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useGetWorkspacesQuery();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [createWorkspace] = useCreateWorkspaceMutation();
   const [user, setUser] = useState<any>(null);
   const [isOpen, setIsOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(
+    workspacesData?.data || []
+  );
+  const [selectedWorkspace, setSelectedWorkspace] = useState(
+    workspaces[0] || []
+  );
   const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
     { workspaceId: selectedWorkspace.id },
     { pollingInterval: 2000 }
   );
-  const { data: activeWorkspace, isLoading: activeWorkspaceLoading, isError: activeWorkspaceError } = useGetActiveWorkspaceQuery();
-  console.log(activeWorkspace)
+  const {
+    data: activeWorkspace,
+    isLoading: activeWorkspaceLoading,
+    isError: activeWorkspaceError,
+  } = useGetActiveWorkspaceQuery();
+  console.log(activeWorkspace);
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -127,7 +143,9 @@ export function Sidebar({
     },
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
+    null
+  );
 
   // Mock total leads count
   const totalLeads = workspaceData?.data?.length || "NA";
@@ -149,11 +167,11 @@ export function Sidebar({
       href: "/leads",
       badge: totalLeads,
     },
-    // {
-    //   label: "Contact",
-    //   icon: MessageSquare,
-    //   href: "/contact",
-    // },
+    {
+      label: "Contact",
+      icon: MessageSquare,
+      href: "/contact",
+    },
     {
       label: "Analytics",
       icon: BarChart,
@@ -173,13 +191,10 @@ export function Sidebar({
       toast.success("Logout completed");
 
       window.location.href = "/login"; // Redirect with full page reload
-
-
     } catch (error: any) {
       toast.error(error.message);
     }
   };
-
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -197,7 +212,7 @@ export function Sidebar({
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
-        role: 'Admin',
+        role: "Admin",
       };
       console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
@@ -215,12 +230,12 @@ export function Sidebar({
         setSelectedWorkspace(newWorkspaceItem);
 
         setNewWorkspace({
-          name: '',
-          industry: '',
-          type: 'sales',
-          companySize: '',
-          companyType: '',
-          timezone: '',
+          name: "",
+          industry: "",
+          type: "sales",
+          companySize: "",
+          companyType: "",
+          timezone: "",
           notifications: {
             email: true,
             sms: true,
@@ -230,7 +245,6 @@ export function Sidebar({
         toast.success("Workspace created successfully");
         setDialogOpen(false);
         window.location.reload();
-
       } catch (error: any) {
         toast.error(error.data.error);
       }
@@ -262,31 +276,27 @@ export function Sidebar({
 
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
-      const workspace = workspaces.find(w => w.id === workspaceId);
+      const workspace = workspaces.find((w) => w.id === workspaceId);
       if (!workspace) return;
 
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
 
-      if (window.location.href.includes('workspace')) {
+      if (window.location.href.includes("workspace")) {
         await router.push(`/workspace/${workspaceId}`);
-      } else if (window.location.href.includes('dashboard')) {
+      } else if (window.location.href.includes("dashboard")) {
         await router.push(`/dashboard`);
-      }
-      else if (window.location.href.includes('leads-sources')) {
+      } else if (window.location.href.includes("leads-sources")) {
         await router.push(`/leads-sources`);
-      } else if (window.location.href.includes('leads')) {
+      } else if (window.location.href.includes("leads")) {
         await router.push(`/leads`);
-      }
-      else if (window.location.href.includes('analytics')) {
+      } else if (window.location.href.includes("analytics")) {
         await router.push(`/analytics`);
       }
-
 
       setTimeout(() => {
         window.location.reload();
       }, 100);
-
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }
@@ -329,7 +339,10 @@ export function Sidebar({
 
         {/* Logo Section */}
         <div className="flex items-center justify-center py-4 bg-inherit">
-          <a href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <a
+            href="/dashboard"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+          >
             <Zap className="h-6 w-6 text-primary" />
             {!isCollapsed && (
               <span className="text-xl font-bold">SCRAFT PRE CRM</span>
@@ -481,7 +494,9 @@ export function Sidebar({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="startup">Startup</SelectItem>
-                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="enterprise">
+                              Enterprise
+                            </SelectItem>
                             <SelectItem value="agency">Agency</SelectItem>
                             <SelectItem value="nonprofit">Nonprofit</SelectItem>
                           </SelectContent>
@@ -502,9 +517,13 @@ export function Sidebar({
                             <SelectValue placeholder="Select industry" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Technology">Technology</SelectItem>
+                            <SelectItem value="Technology">
+                              Technology
+                            </SelectItem>
                             <SelectItem value="Finance">Finance</SelectItem>
-                            <SelectItem value="Healthcare">Healthcare</SelectItem>
+                            <SelectItem value="Healthcare">
+                              Healthcare
+                            </SelectItem>
                             <SelectItem value="Education">Education</SelectItem>
                           </SelectContent>
                         </Select>
@@ -555,7 +574,9 @@ export function Sidebar({
                 {isCollapsed && (
                   <TooltipContent side="right">
                     <p>{route.label}</p>
-                    {route.badge && <span className="ml-2">({route.badge})</span>}
+                    {route.badge && (
+                      <span className="ml-2">({route.badge})</span>
+                    )}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -587,7 +608,11 @@ export function Sidebar({
                 {/* User Info */}
                 <div className="px-4 py-3 text-sm">
                   <p className="font-semibold text-base">
-                    {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "User"}
+                    {user?.name ||
+                      `${user?.firstName || ""} ${
+                        user?.lastName || ""
+                      }`.trim() ||
+                      "User"}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {user?.email || "Email not available"}
@@ -608,7 +633,7 @@ export function Sidebar({
                 {/* Theme Toggle */}
                 <DropdownMenuItem className="flex items-center  px-1 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
                   <ThemeToggle />
-                  <span >Toggle Theme</span>
+                  <span>Toggle Theme</span>
                 </DropdownMenuItem>
 
                 {/* Logout */}
@@ -620,7 +645,6 @@ export function Sidebar({
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-
             </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-3 overflow-hidden w-full justify-between">
