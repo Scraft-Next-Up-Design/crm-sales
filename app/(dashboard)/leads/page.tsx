@@ -250,13 +250,13 @@ const LeadManagement: React.FC = () => {
         return false;
 
       // Step 1: Find the leadSourceId
-      let leadSourceId = leadSources?.data?.find(
-        (source: any) => source.name === filters.leadsSource
+      let leadSourceId = leadSources?.data.find(
+        (source: any) => source?.name === filters?.leadsSource
       )?.id;
 
       // Step 2: Find the webhook_url in workspaceData based on leadSourceId
       let webhook_url = leadSources?.data.find(
-        (entry: any) => entry.id === leadSourceId
+        (entry: any) => entry?.id === leadSourceId
       )?.webhook_url;
 
       // Step 3: Extract sourceId from webhook_url
