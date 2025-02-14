@@ -1,4 +1,3 @@
-
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
@@ -129,7 +128,6 @@ export default async function handler(
           if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
-
           const updatedBody = {
             ...body, // Spread other fields dynamically
             tags: body.tags ? JSON.stringify(body.tags) : undefined, // Convert only if tags exist
@@ -137,7 +135,8 @@ export default async function handler(
 
           const { data, error } = await supabase
             .from("leads")
-            .update(updatedBody) // ✅ Now updates correct fields dynamically
+            .update(updatedBody)
+
             .eq("id", id);
 
           if (error) {
@@ -438,4 +437,3 @@ export default async function handler(
     }
   }
 }
-
