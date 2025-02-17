@@ -46,6 +46,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useGetTagsQuery } from "@/lib/store/services/tags";
 import {
   useGetLeadsByWorkspaceQuery,
   useUpdateLeadMutation,
@@ -75,6 +76,12 @@ const mockContacts = Array.from({ length: 50 }, (_, i) => ({
   ).toLocaleDateString(),
 }));
 
+interface Tags {
+  id?: string;
+  name: string;
+  color: string;
+}
+
 export default function ContactPage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<any[]>([]);
@@ -85,6 +92,7 @@ export default function ContactPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [editInfoId, setEditInfoId] = useState(null);
   const [businessInfo, setBusinessInfo] = useState(""); // Single field for input
+  const [tags, setTags] = useState<Tags[]>([]);
   const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
     {}
   );
@@ -119,6 +127,8 @@ export default function ContactPage() {
     );
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
     useGetWorkspaceMembersQuery(workspaceId);
+  const { data: tagsData, isLoading: isLoadingTags }: any =
+    useGetTagsQuery(workspaceId);
 
   const POLLING_INTERVAL = 10000;
   const { data: statusData, isLoading: isLoadingStatus }: any =
@@ -233,6 +243,13 @@ export default function ContactPage() {
       }
     }
   }, [editInfoId, contacts]);
+
+  useEffect(() => {
+    if (tagsData?.data) {
+      setTags(tagsData.data);
+    }
+  }, [tagsData]);
+
   // Filter contacts based on search and status
   const filteredContacts = contacts?.filter((contact) => {
     const searchLower = search.toLowerCase();
@@ -271,12 +288,12 @@ export default function ContactPage() {
 
   //update
 
-  const tags = [
-    { name: "Facebook", color: "#1877F2" }, // Blue
-    { name: "SEO", color: "#22C55E" }, // Green
-    { name: "Google Ads", color: "#FACC15" }, // Yellow
-    { name: "LinkedIn", color: "#0A66C2" }, // Dark Blue
-  ];
+  // const tags = [
+  //   { name: "Facebook", color: "#1877F2" }, // Blue
+  //   { name: "SEO", color: "#22C55E" }, // Green
+  //   { name: "Google Ads", color: "#FACC15" }, // Yellow
+  //   { name: "LinkedIn", color: "#0A66C2" }, // Dark Blue
+  // ];
 
   const handleUpdate = async (
     id: string | number,

@@ -2,11 +2,11 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
 
-interface StatusRequest {
+interface TagsRequest {
   [key: string]: string;
 }
 
-interface UpdatedStatusRequest extends Partial<StatusRequest> {
+interface UpdatedTagsRequest extends Partial<TagsRequest> {
   id: string; // ID is required for updates
 }
 
@@ -38,15 +38,15 @@ export default async function handler(
 
   switch (method) {
     case "POST": {
-      if (action === "createStatus") {
+      if (action === "createTags") {
         const { workspaceId } = query;
         const { name, color, countInStatistics, showInWorkspace } = body;
         if (
           !name ||
           !workspaceId ||
-          !color ||
-          typeof countInStatistics === "undefined" ||
-          typeof showInWorkspace === "undefined"
+          !color
+          // typeof countInStatistics === "undefined" ||
+          // typeof showInWorkspace === "undefined"
         ) {
           return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
         }
@@ -87,18 +87,32 @@ export default async function handler(
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
           }
+          // console.log(body);
           // Insert status into the database
+          // const { data, error } = await supabase.from("tags").insert({
+          //   name,
+          //   color,
+          //   // count_statistics: countInStatistics,
+          //   // workspace_show: showInWorkspace,
+          //   work_id: workspaceId,
+          //   user_id: user.id,
+          // });
 
-          const { data, error } = await supabase.from("status").insert({
-            name,
-            color,
-            count_statistics: countInStatistics,
-            workspace_show: showInWorkspace,
-            work_id: workspaceId,
-            user_id: user.id,
-          });
+          // if (error) {
+          //   return res.status(400).json({ error });
+          // }
+          const { data, error } = await supabase
+            .from("tags")
+            .insert({
+              name,
+              color,
+              work_id: workspaceId,
+              user_id: user.id,
+            })
+            .select(); // Try adding .select() to return the inserted data
 
           if (error) {
+            console.error("Supabase Insert Error:", error);
             return res.status(400).json({ error });
           }
 
@@ -111,166 +125,8 @@ export default async function handler(
       return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
     }
 
-    case "PUT": {
-      if (action === "updateStatus") {
-        const { id } = query as any;
-
-        if (!id) {
-          return res.status(400).json({ error: "Status ID is required" });
-        }
-
-        try {
-          const { id } = query as any;
-          const { updatedStatus }: any = body;
-          const { name, color, count_statistics }: UpdatedStatusRequest =
-            updatedStatus;
-          const {
-            data: { user },
-          } = await supabase.auth.getUser(token);
-
-          if (!user) {
-            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-          }
-
-          // First, get the status and its workspace_id
-          const { data: statusData, error: statusError } = await supabase
-            .from("status")
-            .select("*, work_id")
-            .eq("id", id)
-            .single();
-
-          if (statusError || !statusData) {
-            return res.status(404).json({ error: "Status not found" });
-          }
-
-          // If user is not the owner, check workspace membership and role
-          // if (statusData.user_id !== user.id) {
-          //   const { data: memberData, error: memberError } = await supabase
-          //     .from("workspace_members")
-          //     .select("role")
-          //     .eq("workspace_id", statusData.work_id)
-          //     .eq("user_id", user.id)
-          //     .single();
-
-          //   if (memberError || !memberData) {
-          //     return res
-          //       .status(403)
-          //       .json({ error: "Not a member of the workspace" });
-          //   }
-
-          //   // Check if user is admin
-          //   if (memberData.role !== "admin") {
-          //     return res.status(403).json({
-          //       error: "Only workspace admins can update other users' statuses",
-          //     });
-          //   }
-          // }
-          // console.log(name);
-          // If we reach here, user is either the owner or an admin
-          const { data, error } = await supabase
-            .from("status")
-            .update({
-              color: color,
-              name: name,
-              count_statistics: count_statistics,
-            })
-            .eq("id", id)
-            .select();
-
-          if (error) {
-            console.error("Update error:", error);
-            return res.status(400).json({ error: error.message });
-          }
-
-          return res
-            .status(200)
-            .json({ message: "Status updated successfully", data });
-        } catch (error) {
-          console.error("Unexpected error:", error);
-          return res
-            .status(500)
-            .json({ error: "An unexpected error occurred" });
-        }
-      }
-
-      return res.status(400).json({ error: "Invalid action" });
-    }
-    case "DELETE": {
-      if (action === "deleteStatus") {
-        const { id } = query;
-
-        if (!id) {
-          return res.status(400).json({ error: "Status ID is required" });
-        }
-
-        try {
-          // First, get the status and its workspace_id
-          const { data: statusData, error: statusError } = await supabase
-            .from("status")
-            .select("*, work_id")
-            .eq("id", id)
-            .single();
-
-          if (statusError || !statusData) {
-            return res.status(404).json({ error: "Status not found" });
-          }
-
-          // Get workspace details to check ownership
-          const { data: workspace, error: workspaceError } = await supabase
-            .from("workspaces")
-            .select("owner_id")
-            .eq("id", statusData.work_id)
-            .single();
-
-          if (workspaceError) {
-            return res.status(500).json({ error: workspaceError.message });
-          }
-
-          // Check if user is workspace owner
-          const isOwner = workspace.owner_id === user.id;
-
-          if (!isOwner) {
-            // If not owner, check if user is a workspace member
-            const { data: membership, error: membershipError } = await supabase
-              .from("workspace_members")
-              .select("role")
-              .eq("workspace_id", statusData.work_id)
-              .eq("user_id", user.id)
-              .single();
-
-            if (membershipError || !membership) {
-              return res.status(403).json({
-                error:
-                  "You must be a workspace member or owner to delete statuses",
-              });
-            }
-          }
-
-          // Proceed with deletion
-          const { error: deleteError } = await supabase
-            .from("status")
-            .delete()
-            .eq("id", id);
-
-          if (deleteError) {
-            return res.status(400).json({ error: deleteError.message });
-          }
-
-          return res.status(200).json({
-            message: "Status deleted successfully",
-          });
-        } catch (error) {
-          console.error("Unexpected error:", error);
-          return res.status(500).json({
-            error: "An unexpected error occurred",
-          });
-        }
-      }
-      return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
-    }
-
     case "GET": {
-      if (action === "getStatus") {
+      if (action === "getTags") {
         const { workspaceId } = query;
 
         if (!workspaceId) {
@@ -316,7 +172,7 @@ export default async function handler(
 
           // Retrieve statuses from the database
           const { data, error } = await supabase
-            .from("status")
+            .from("tags")
             .select("*")
             .eq("work_id", workspaceId); // Only filter by workspace ID as the user is already authorized
 
@@ -331,6 +187,141 @@ export default async function handler(
         }
       }
 
+      return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
+    }
+    case "PUT": {
+      if (action === "updateTags") {
+        const { id } = query as any;
+
+        if (!id) {
+          return res.status(400).json({ error: "Tags ID is required" });
+        }
+
+        try {
+          const { id } = query as any;
+          const { updatedTags }: any = body;
+          const { name, color, count_statistics }: UpdatedTagsRequest =
+            updatedTags;
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          // First, get the status and its workspace_id
+          const { data: tagsData, error: tagsError } = await supabase
+            .from("tags")
+            .select("*, work_id")
+            .eq("id", id)
+            .single();
+
+          if (tagsError || !tagsData) {
+            return res.status(404).json({ error: "Tags not found" });
+          }
+
+          // console.log(name);
+          // If we reach here, user is either the owner or an admin
+          const { data, error } = await supabase
+            .from("tags")
+            .update({
+              color: color,
+              name: name,
+              count_statistics: count_statistics,
+            })
+            .eq("id", id)
+            .select();
+
+          if (error) {
+            console.error("Update error:", error);
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res
+            .status(200)
+            .json({ message: "Tags updated successfully", data });
+        } catch (error) {
+          console.error("Unexpected error:", error);
+          return res
+            .status(500)
+            .json({ error: "An unexpected error occurred" });
+        }
+      }
+
+      return res.status(400).json({ error: "Invalid action" });
+    }
+
+    case "DELETE": {
+      if (action === "deleteTags") {
+        const { id } = query;
+
+        if (!id) {
+          return res.status(400).json({ error: "Tags ID is required" });
+        }
+
+        try {
+          // First, get the status and its workspace_id
+          const { data: tagsData, error: tagsError } = await supabase
+            .from("tags")
+            .select("*, work_id")
+            .eq("id", id)
+            .single();
+
+          if (tagsError || !tagsData) {
+            return res.status(404).json({ error: "Tags not found" });
+          }
+
+          // Get workspace details to check ownership
+          const { data: workspace, error: workspaceError } = await supabase
+            .from("workspaces")
+            .select("owner_id")
+            .eq("id", tagsData.work_id)
+            .single();
+
+          if (workspaceError) {
+            return res.status(500).json({ error: workspaceError.message });
+          }
+
+          // Check if user is workspace owner
+          const isOwner = workspace.owner_id === user.id;
+
+          if (!isOwner) {
+            // If not owner, check if user is a workspace member
+            const { data: membership, error: membershipError } = await supabase
+              .from("workspace_members")
+              .select("role")
+              .eq("workspace_id", tagsData.work_id)
+              .eq("user_id", user.id)
+              .single();
+
+            if (membershipError || !membership) {
+              return res.status(403).json({
+                error: "You must be a workspace member or owner to delete tags",
+              });
+            }
+          }
+
+          // Proceed with deletion
+          const { error: deleteError } = await supabase
+            .from("tags")
+            .delete()
+            .eq("id", id);
+
+          if (deleteError) {
+            return res.status(400).json({ error: deleteError.message });
+          }
+
+          return res.status(200).json({
+            message: "Tags deleted successfully",
+          });
+        } catch (error) {
+          console.error("Unexpected error:", error);
+          return res.status(500).json({
+            error: "An unexpected error occurred",
+          });
+        }
+      }
       return res.status(400).json({ error: AUTH_MESSAGES.API_ERROR });
     }
 
