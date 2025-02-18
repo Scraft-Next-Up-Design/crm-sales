@@ -31,9 +31,8 @@ export default function DashboardLayout({
         <aside className="hidden md:block border-r min-h-[calc(100vh-4rem)]">
           <Sidebar />
         </aside>
-        <main className="flex-1">{children}</main>
+        <main className="flex-1 ">{children}</main>
       </div>
     </div>
   );
 }
-

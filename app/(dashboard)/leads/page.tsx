@@ -568,7 +568,7 @@ const LeadManagement: React.FC = () => {
     const { name, color } = JSON.parse(value);
 
     try {
-      await updateLead({ id, leads: { name, color } });
+      await updateLead({ id, leads: { status: { name, color } } });
 
       // Update the leads state with the new status
       setLeads((prevLeads) =>

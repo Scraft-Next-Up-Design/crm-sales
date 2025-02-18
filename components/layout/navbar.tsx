@@ -31,16 +31,16 @@ export function Navbar() {
 
   const navigation = [
     { name: "Dashboard", href: "/dashboard" },
+    { name: "Leads Sources", href: "/leads-sources" },
     { name: "Leads", href: "/leads" },
-    { name: "Messages", href: "/messages" },
-    { name: "Calls", href: "/calls" },
+    { name: "Contact", href: "/contact" },
     { name: "Analytics", href: "/analytics" },
   ];
 
   return (
     <>
       {/* Mobile Navbar */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden fixed top-0 left-0 right-0 z-50">
+      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden fixed top-0 left-0 right-0 z-50 ">
         <div className="flex h-16 items-center justify-between px-4">
           {/* Logo */}
           <Link href="/" className="font-bold text-xl">
@@ -50,7 +50,7 @@ export function Navbar() {
           <div className="flex items-center space-x-4">
             {/* Theme Toggle */}
             <ThemeToggle />
-            
+
             {/* Menu Button */}
             <Sheet>
               <SheetTrigger asChild>

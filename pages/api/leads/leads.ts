@@ -130,11 +130,13 @@ export default async function handler(
           }
           const updatedBody = {
             ...body, // Spread other fields dynamically
+            status: body.status,
             tags: body.tags ? JSON.stringify(body.tags) : undefined, // Convert only if tags exist
           };
 
           const { data, error } = await supabase
             .from("leads")
+            // .update({ status: body })
             .update(updatedBody)
 
             .eq("id", id);

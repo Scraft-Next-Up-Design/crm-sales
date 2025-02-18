@@ -46,6 +46,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useGetTagsQuery } from "@/lib/store/services/tags";
 import {
   useGetLeadsByWorkspaceQuery,
   useUpdateLeadMutation,
@@ -75,6 +76,12 @@ const mockContacts = Array.from({ length: 50 }, (_, i) => ({
   ).toLocaleDateString(),
 }));
 
+interface Tags {
+  id?: string;
+  name: string;
+  color: string;
+}
+
 export default function ContactPage() {
   const router = useRouter();
   const [contacts, setContacts] = useState<any[]>([]);
@@ -85,6 +92,7 @@ export default function ContactPage() {
   const [leads, setLeads] = useState<any[]>([]);
   const [editInfoId, setEditInfoId] = useState(null);
   const [businessInfo, setBusinessInfo] = useState(""); // Single field for input
+  const [tags, setTags] = useState<Tags[]>([]);
   const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
     {}
   );
@@ -119,6 +127,8 @@ export default function ContactPage() {
     );
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
     useGetWorkspaceMembersQuery(workspaceId);
+  const { data: tagsData, isLoading: isLoadingTags }: any =
+    useGetTagsQuery(workspaceId);
 
   const POLLING_INTERVAL = 10000;
   const { data: statusData, isLoading: isLoadingStatus }: any =
@@ -164,10 +174,10 @@ export default function ContactPage() {
             isDuplicate: false,
             is_email_valid: lead.is_email_valid,
             is_phone_valid: lead.is_phone_valid,
-            sourceId: lead.lead_source_id || null,
-            businessInfo: lead.businessInfo ?? "",
-            tag: lead.tags ?? {},
-            address: lead.address ?? "",
+            sourceId: lead?.lead_source_id ?? null,
+            businessInfo: lead?.businessInfo ?? "",
+            tag: lead?.tags ?? {},
+            address: lead?.address ?? "",
           })
         );
 
@@ -233,6 +243,13 @@ export default function ContactPage() {
       }
     }
   }, [editInfoId, contacts]);
+
+  useEffect(() => {
+    if (tagsData?.data) {
+      setTags(tagsData.data);
+    }
+  }, [tagsData]);
+
   // Filter contacts based on search and status
   const filteredContacts = contacts?.filter((contact) => {
     const searchLower = search.toLowerCase();
@@ -271,12 +288,12 @@ export default function ContactPage() {
 
   //update
 
-  const tags = [
-    { name: "Facebook", color: "#1877F2" }, // Blue
-    { name: "SEO", color: "#22C55E" }, // Green
-    { name: "Google Ads", color: "#FACC15" }, // Yellow
-    { name: "LinkedIn", color: "#0A66C2" }, // Dark Blue
-  ];
+  // const tags = [
+  //   { name: "Facebook", color: "#1877F2" }, // Blue
+  //   { name: "SEO", color: "#22C55E" }, // Green
+  //   { name: "Google Ads", color: "#FACC15" }, // Yellow
+  //   { name: "LinkedIn", color: "#0A66C2" }, // Dark Blue
+  // ];
 
   const handleUpdate = async (
     id: string | number,
@@ -291,7 +308,7 @@ export default function ContactPage() {
     if (
       !updatedData.businessInfo?.trim() &&
       (!updatedData.tags || updatedData.tags.length === 0) &&
-      !updatedData.address?.trim() // ✅ Now checking the address field
+      !updatedData.address?.trim()
     ) {
       return; // Prevent empty updates
     }
@@ -308,12 +325,12 @@ export default function ContactPage() {
 
   const handleTagChange = (id: string, value: string) => {
     setSelectedTags((prev) => {
-      const currentTags = prev[id] || [];
+      const currentTags = prev?.[id] ?? [];
       const updatedTags = currentTags.includes(value)
         ? currentTags.filter((tag) => tag !== value) // Remove tag if already selected
-        : [...currentTags, value]; // Add tag if not selected
+        : [...currentTags, value];
 
-      handleUpdate(id, { tags: updatedTags });
+      handleUpdate?.(id, { tags: updatedTags });
 
       return { ...prev, [id]: updatedTags };
     });
@@ -324,31 +341,28 @@ export default function ContactPage() {
   //   // console.log("tags",contacts.tags)
   // }, [selectedTags]);
 
-  useEffect(() => {
-    if (contacts.length > 0) {
-      const initialTags = contacts.reduce((acc, contact) => {
-        acc[contact.id] = JSON.parse(contact.tag || "[]"); // Ensure it's an array
-        return acc;
-      }, {} as Record<string, string[]>);
+  // useEffect(() => {
+  //   if (contacts.length > 0) {
+  //     const initialTags = contacts.reduce((acc, contact) => {
+  //       acc[contact.id] = JSON.parse(contact.tag || "[]"); // Ensure it's an array
+  //       return acc;
+  //     }, {} as Record<string, string[]>);
 
-      setSelectedTags(initialTags);
-    }
-  }, [contacts]); // Make sure to update when `contacts` change
+  //     setSelectedTags(initialTags);
+  //   }
+  // }, [contacts]); // Make sure to update when `contacts` change
 
   const handleRemoveTag = async (contactId: string, tagToRemove: string) => {
-    console.log("Removing tag:", tagToRemove);
-
     setSelectedTags((prev) => {
-      if (!prev || !prev[contactId]) return prev; // Ensure data exists
+      if (!prev || !prev[contactId]) return prev;
 
       const updatedTags = prev[contactId].filter((tag) => tag !== tagToRemove);
-      console.log("Updated tags:", updatedTags);
 
-      handleUpdate(contactId, { tags: updatedTags });
+      handleUpdate(contactId, { tags: updatedTags.length ? updatedTags : [] });
 
       return {
         ...prev,
-        [contactId]: updatedTags,
+        [contactId]: updatedTags.length ? updatedTags : [],
       };
     });
   };
@@ -744,9 +758,10 @@ export default function ContactPage() {
                       <div className="flex flex-col gap-2 items-center">
                         <div className="flex flex-row flex-wrap gap-2 items-center">
                           {(() => {
-                            const parsedTags = contact?.tag
-                              ? JSON.parse(contact.tag)
-                              : [];
+                            const parsedTags =
+                              typeof contact?.tag === "string"
+                                ? JSON.parse(contact.tag)
+                                : contact?.tag || [];
 
                             return Array.isArray(parsedTags) ? (
                               parsedTags.map((tag: string) => (

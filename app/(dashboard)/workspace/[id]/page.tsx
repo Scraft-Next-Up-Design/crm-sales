@@ -50,6 +50,7 @@ import {
   Edit2,
   Plus,
   Loader2,
+  Tags,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -60,6 +61,12 @@ import {
   useGetStatusQuery,
   useUpdateStatusMutation,
 } from "@/lib/store/services/status";
+import {
+  useAddTagsMutation,
+  useDeleteTagsMutation,
+  useGetTagsQuery,
+  useUpdateTagsMutation,
+} from "@/lib/store/services/tags";
 import {
   useGetWorkspaceMembersQuery,
   useGetWorkspacesByIdQuery,
@@ -92,6 +99,15 @@ interface Status {
   count_statistics?: boolean;
   countInStatistics?: any;
   workspace_show: boolean;
+}
+
+interface Tags {
+  id?: string;
+  name: string;
+  color: string;
+  // count_statistics?: boolean;
+  // countInStatistics?: any;
+  // workspace_show: boolean;
 }
 
 interface WorkspaceSettings {
@@ -133,19 +149,30 @@ const StatusForm = ({ status, onSubmit }: any) => (
         />
       </div>
     </div>
+  </div>
+);
+
+//Tags Form
+const TagsForm = ({ tags, onSubmit }: any) => (
+  <div className="grid gap-4">
     <div className="flex flex-col sm:flex-row gap-4">
-      <div className="flex items-center space-x-2">
-        <Checkbox
-          id="countInStatistics"
-          checked={status.count_statistics}
-          onCheckedChange={(checked) =>
-            onSubmit({
-              ...status,
-              count_statistics: checked,
-            })
-          }
+      <Input
+        placeholder="Tags name"
+        value={tags.name}
+        onChange={(e) => onSubmit({ ...tags, name: e.target.value })}
+        className="flex-1"
+      />
+      <div className="flex items-center gap-2">
+        <Label htmlFor="color" className="whitespace-nowrap">
+          Pick Color:
+        </Label>
+        <Input
+          id="color"
+          type="color"
+          value={tags.color}
+          onChange={(e) => onSubmit({ ...tags, color: e.target.value })}
+          className="w-20 h-10 p-1 bg-transparent"
         />
-        <Label htmlFor="countInStatistics">Count As Qualified</Label>
       </div>
     </div>
   </div>
@@ -163,12 +190,19 @@ export default function WorkspaceSettingsPage() {
     updateStatus,
     { isLoading: isUpdatingMember, error: errorUpdatingMember },
   ] = useUpdateStatusMutation();
+  const [updateTags, { isLoading: isUpdatingTags, error: errorUpdatingTags }] =
+    useUpdateTagsMutation();
+
   const [addStatus, { isLoading: isAddingStat, error: statusAddError }] =
     useAddStatusMutation();
   const [
     deleteStatus,
     { isLoading: isDeletingStatus, error: errorDeletingStatus },
   ] = useDeleteStatusMutation();
+  const [deleteTags, { isLoading: isDeletingTags, error: errorDeletingTags }] =
+    useDeleteTagsMutation();
+  const [addTags, { isLoading: isAddingTag, error: tagAddError }] =
+    useAddTagsMutation();
   const [resendInvite, { isLoading: isResending, error: errorResending }] =
     useResendInviteMutation();
   const [deleteMember, { isLoading: isDeleting, error: errorDeleting }] =
@@ -192,6 +226,8 @@ export default function WorkspaceSettingsPage() {
     useGetStatusQuery(workspaceId);
   const { data: workspaceData, isLoading: isLoadingWorkspace } =
     useGetWorkspacesByIdQuery(workspaceId);
+  const { data: tagsData, isLoading: isLoadingTags }: any =
+    useGetTagsQuery(workspaceId);
   const [isEditMode, setIsEditMode] = useState(false);
   const [tempSettings, setTempSettings] = useState<WorkspaceSettings | null>(
     null
@@ -212,6 +248,19 @@ export default function WorkspaceSettingsPage() {
     },
   });
 
+  // Tags Managmenent States
+  const [newTags, setNewTags] = useState({
+    name: "",
+    color: "#0ea5e9",
+    // countInStatistics: false,
+    // showInWorkspace: false,
+    // count_statistics: false,
+  });
+  const [isAddingTags, setIsAddingTags] = useState(false);
+  const [tags, setTags] = useState<Tags[]>([]);
+  const [tagsToEdit, setTagsToEdit] = useState<Tags | null>(null);
+  const [tagsToDelete, setTagsToDelete] = useState<any | null>(null);
+
   // Status Management States
   const [newStatus, setNewStatus] = useState({
     name: "",
@@ -223,6 +272,7 @@ export default function WorkspaceSettingsPage() {
   const [statusToDelete, setStatusToDelete] = useState<any | null>(null);
   const [statusToEdit, setStatusToEdit] = useState<Status | null>(null);
   const [isAddingStatus, setIsAddingStatus] = useState(false);
+
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
 
@@ -243,8 +293,8 @@ export default function WorkspaceSettingsPage() {
         toast.error(errorDetails.error);
         return;
       }
-      console.log(result);
-      console.log(newMember);
+      // console.log(result);
+      // console.log(newMember);
       setMembers([...members, result?.data?.data]);
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -324,6 +374,12 @@ export default function WorkspaceSettingsPage() {
       setStatuses(statusData.data);
     }
   }, [statusData]);
+
+  useEffect(() => {
+    if (tagsData?.data) {
+      setTags(tagsData.data);
+    }
+  }, [tagsData]);
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
@@ -440,6 +496,80 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
+  // Tags Handle functions
+  const handleAddTags = async () => {
+    if (!newTags.name) return;
+    console.log(newTags);
+    const tags: any = {
+      id: "",
+      ...newTags,
+      // countInStatistics: newStatus.count_statistics,
+      // showInWorkspace: newStatus.showInWorkspace,
+    };
+    // console.log(tags);
+    try {
+      const result = await addTags({
+        tagsData: tags,
+        workspaceId,
+      }).unwrap();
+      // If successful, update the local state
+      setTags((prevTags) => [
+        ...prevTags,
+        {
+          id: result.id || "",
+          name: tags.name,
+          color: tags.color,
+          // countInStatistics: status.count_statistics,
+          // workspace_show: status.showInWorkspace,
+        },
+      ]);
+
+      setNewTags({
+        name: "",
+        color: "#0ea5e9",
+        // countInStatistics: false,
+        // showInWorkspace: false,
+        // count_statistics: false,
+      });
+
+      setIsAddingTags(false);
+      toast.success("Tags added successfully");
+      window.location.reload();
+    } catch (error: any) {
+      console.error("Tag Creation Error:", error); // Log full error object
+      const errorMessage =
+        error.data?.error || error.message || "Failed to add tags";
+      toast.error(errorMessage);
+    }
+  };
+
+  const handleEditTags = (tags: Tags) => {
+    setTagsToEdit({ ...tags });
+  };
+
+  const handleUpdateTags = async () => {
+    if (!tagsToEdit) return;
+
+    try {
+      const result = await updateTags({
+        id: tagsToEdit.id,
+        updatedTags: tagsToEdit,
+      }).unwrap();
+
+      // Update local state only after successful API call
+      setTags((prevTags) =>
+        prevTags.map((tags) => (tags.id === tagsToEdit.id ? tagsToEdit : tags))
+      );
+
+      setTagsToEdit(null);
+      toast.success("Tags updated successfully");
+    } catch (error: any) {
+      // Handle specific API error
+      const errorMessage = error.data?.error || "Failed to update tags";
+      toast.error(errorMessage);
+    }
+  };
+
   useEffect(() => {
     if (workspaceData?.data) {
       setSettings(workspaceData?.data);
@@ -474,6 +604,49 @@ export default function WorkspaceSettingsPage() {
       setIsSaving(false);
     }
   };
+
+  const confirmDeleteTags = async () => {
+    if (!tagsToDelete) return;
+
+    try {
+      const response = await deleteTags({
+        id: tagsToDelete.id,
+        workspace_id: workspaceId,
+      }).unwrap(); // Use unwrap() to properly handle RTK Query errors
+
+      // If successful, update local state
+      setTags((prevTags) =>
+        prevTags.filter((tags) => tags.id !== tagsToDelete.id)
+      );
+
+      setTagsToDelete(null);
+      toast.success("Tags deleted successfully");
+    } catch (error: any) {
+      // Handle different types of errors from Supabase/RTK Query
+      let errorMessage = "Failed to delete tags";
+
+      if (error.status === 409) {
+        errorMessage = "This tags is currently in use and cannot be deleted";
+      } else if (error.data?.message) {
+        errorMessage = error.data.message;
+      } else if (error.error) {
+        errorMessage = error.error;
+      } else if (typeof error === "string") {
+        errorMessage = error;
+      }
+
+      // Log the full error for debugging
+      console.error("Delete tags error:", {
+        status: error.status,
+        data: error.data,
+        error: error.error,
+        fullError: error,
+      });
+
+      toast.error(errorMessage);
+    }
+  };
+
   const TabButton = ({
     id,
     icon: Icon,
@@ -527,6 +700,7 @@ export default function WorkspaceSettingsPage() {
             <TabButton id="notifications" icon={Bell} label="Notifications" />
             <TabButton id="security" icon={Lock} label="Security" />
             <TabButton id="status" icon={Tag} label="Status" />
+            <TabButton id="tags" icon={Tags} label="Tags" />
           </div>
         </div>
 
@@ -965,6 +1139,109 @@ export default function WorkspaceSettingsPage() {
           </div>
         </div>
 
+        {/* Tags Management */}
+        <div>
+          {activeTab === "tags" && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Tags Management</CardTitle>
+                <CardDescription>
+                  Create and manage Tags options for your workspace
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Add Tag Button */}
+                <div className="flex justify-end">
+                  <Button
+                    onClick={() => setIsAddingTags(true)}
+                    className="flex items-center gap-2"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Add New Tag
+                  </Button>
+                </div>
+
+                {/* Tags List */}
+                <div className="space-y-4">
+                  <div className="grid gap-4">
+                    {tags.map((tags: Tags) => (
+                      <div
+                        key={tags.id}
+                        className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
+                      >
+                        <div className="flex items-center gap-4 flex-1">
+                          <div className="flex items-center gap-2">
+                            <div
+                              className="relative"
+                              style={{
+                                display: "inline-flex",
+                                alignItems: "center",
+                              }}
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full absolute"
+                                style={{
+                                  backgroundColor: tags?.color,
+                                  filter: `blur(4px)`,
+                                  opacity: 0.7,
+                                }}
+                              />
+                              <div
+                                className="w-3 h-3 rounded-full relative"
+                                style={{
+                                  backgroundColor: tags?.color,
+                                }}
+                              />
+                            </div>
+                            <span className="text-foreground text-gray-600">
+                              {tags.name}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4 flex-wrap justify-end">
+                          {/* <div className="flex items-center gap-2">
+                            <Checkbox
+                              checked={status?.count_statistics}
+                              disabled
+                            />
+                            <Label className="text-sm">
+                              Count As Qualified
+                            </Label>
+                          </div> */}
+                          {/* <div className="flex items-center gap-2">
+                              <Checkbox
+                                checked={status?.workspace_show}
+                                disabled
+                              />
+                              <Label className="text-sm">Show in workspace</Label>
+                            </div> */}
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleEditTags(tags)}
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="text-destructive hover:text-destructive/90"
+                              onClick={() => setTagsToDelete(tags)}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
         {/* Save Button */}
         {activeTab === "general" && isEditMode && (
           <div className="flex justify-end gap-4 pt-6">
@@ -1097,6 +1374,93 @@ export default function WorkspaceSettingsPage() {
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteStatus}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      {/* Tags Dialouge */}
+      {/* Add Tags Dialog */}
+      <Dialog open={isAddingTags} onOpenChange={setIsAddingTags}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Tags</DialogTitle>
+            <DialogDescription>
+              Create a new Tags for your workspace
+            </DialogDescription>
+          </DialogHeader>
+          <StatusForm
+            status={newTags}
+            onSubmit={setNewTags}
+            // onCancel={() => setIsAddingStatus(false)}
+          />
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsAddingTags(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleAddTags}
+              className="flex items-center gap-2"
+              disabled={isAddingTag} // Disable while loading
+            >
+              {isAddingTag ? (
+                <div className="flex items-center gap-2">
+                  <Loader2 className="animate-spin w-4 h-4" />
+                  <span>Adding...</span>
+                </div>
+              ) : (
+                "Add Tag"
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* Edit Tags Dialog */}
+      <Dialog
+        open={!!tagsToEdit}
+        onOpenChange={(open) => !open && setTagsToEdit(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Tags</DialogTitle>
+            <DialogDescription>Modify the tags settings</DialogDescription>
+          </DialogHeader>
+          {tagsToEdit && (
+            <>
+              <TagsForm
+                tags={tagsToEdit}
+                onSubmit={setTagsToEdit}
+                // onCancel={() => setStatusToEdit(null)}
+              />
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setTagsToEdit(null)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUpdateTags}>Save Changes</Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+      {/* Delete Tags Confirmation Dialog */}
+      <AlertDialog
+        open={!!tagsToDelete}
+        onOpenChange={() => setTagsToDelete(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Tags</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete the tags &quot;
+              {tagsToDelete?.name}&quot;? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteTags}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
               Delete
