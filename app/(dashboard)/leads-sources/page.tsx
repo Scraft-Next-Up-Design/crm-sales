@@ -100,6 +100,10 @@ const LeadSourceManager: React.FC = () => {
   const [dialogMode, setDialogMode] = useState<
     "create" | "edit" | "delete" | null
   >(null);
+  const [expandedRow, setExpandedRow] = useState(null);
+  const toggleRow = (id: any) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
   useEffect(() => {
     if (webhooks?.data) {
       setSources(webhooks.data);
@@ -281,19 +285,21 @@ const LeadSourceManager: React.FC = () => {
 
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
-        isCollapsed ? "ml-[80px]" : "ml-[250px]"
-      } w-auto overflow-hidden`}
+      className={`grid  align-center gap-0  md:gap-2    transition-all duration-500 ease-in-out  px-2 py-6 w-auto min-h-screen
+      ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"}
+      overflow-hidden`}
     >
       <Card className="w-full">
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <CardTitle className="text-lg md:text-xl lg:text-2xl">
+        {/* Header: Move Title and Button to opposite ends on mobile */}
+        <CardHeader className="flex flex-row justify-between md:justify-between items-center">
+          <CardTitle className="text-sm md:text-xl lg:text-2xl">
             Lead Sources
           </CardTitle>
-          <Button onClick={openCreateDialog} className="w-full md:w-auto">
-            <Plus className="mr-2 h-4 w-4" /> Add Source
+          <Button onClick={openCreateDialog} className=" md:w-auto">
+            <Plus className="mr-2 h-3 w-3 text-md md:h-4 md:w-4 " /> Add Source
           </Button>
         </CardHeader>
+
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
@@ -301,80 +307,181 @@ const LeadSourceManager: React.FC = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
-                  <TableHead>Count</TableHead>
-                  <TableHead>Processing Rate</TableHead>
-                  <TableHead>Qualification Rate</TableHead>
-                  <TableHead>Webhook</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
+                  <TableHead className="hidden md:table-cell">Count</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Processing Rate
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Qualification Rate
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Webhook
+                  </TableHead>
+                  <TableHead className="hidden md:table-cell">Status</TableHead>
+                  <TableHead className="hidden md:table-cell">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {sources.map((source) => (
-                  <TableRow key={source.id}>
-                    <TableCell>{source.name}</TableCell>
-                    <TableCell>{source.type}</TableCell>
-                    <TableCell>{source.description}</TableCell>
-                    <TableCell>N/A</TableCell>
-                    <TableCell>N/A</TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <span className="truncate max-w-xs">
-                          {source.webhook_url}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => copyWebhook(source.webhook_url ?? "")}
-                          className="h-8 w-8"
-                        >
-                          <Copy className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center space-x-2">
-                        <Switch
-                          checked={source.status}
-                          onCheckedChange={() => toggleWebhookStatus(source.id)}
-                        />
-                        <span
-                          className={`text-sm ${
-                            source.status ? "text-green-600" : "text-red-600"
-                          }`}
-                        >
-                          {source.status ? "Enabled" : "Disabled"}
-                        </span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
+                  <>
+                    {/* Mobile View (Show Only Name, Type, and Expand Button) */}
+                    <TableRow className="md:hidden" key={source.id}>
+                      <TableCell>{source.name}</TableCell>
+                      <TableCell>{source.type}</TableCell>
+                      <TableCell>
                         <Button
                           variant="outline"
                           size="icon"
-                          onClick={() => openEditDialog(source)}
+                          onClick={() => toggleRow(source.id)}
                           className="h-8 w-8"
                         >
-                          <Pencil className="h-4 w-4" />
+                          {expandedRow === source.id ? "−" : "+"}
                         </Button>
-                        <Button
-                          variant="destructive"
-                          size="icon"
-                          onClick={() => openDeleteDialog(source)}
-                          className="h-8 w-8"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
-                  </TableRow>
+                      </TableCell>
+                    </TableRow>
+
+                    {/* Expanded Details for Mobile */}
+                    {expandedRow === source.id && (
+                      <TableRow>
+                        <TableCell colSpan={3}>
+                          <div className="p-4 bg-gray-100 rounded-md">
+                            <p>
+                              <strong>Count:</strong> {source.description}
+                            </p>
+                            <p>
+                              <strong>Processing Rate:</strong> N/A
+                            </p>
+                            <p>
+                              <strong>Qualification Rate:</strong> N/A
+                            </p>
+                            <p>
+                              <strong>Webhook:</strong> {source.webhook_url}
+                            </p>
+
+                            <div className="flex justify-between items-center mt-2">
+                              <div className="flex items-center space-x-2">
+                                <Switch
+                                  checked={source.status}
+                                  onCheckedChange={() =>
+                                    toggleWebhookStatus(source.id)
+                                  }
+                                />
+                                <span
+                                  className={`text-sm ${
+                                    source.status
+                                      ? "text-green-600"
+                                      : "text-red-600"
+                                  }`}
+                                >
+                                  {source.status ? "Enabled" : "Disabled"}
+                                </span>
+                              </div>
+
+                              <div className="flex space-x-2">
+                                <Button
+                                  variant="outline"
+                                  size="icon"
+                                  onClick={() => openEditDialog(source)}
+                                  className="h-8 w-8"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="destructive"
+                                  size="icon"
+                                  onClick={() => openDeleteDialog(source)}
+                                  className="h-8 w-8"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    )}
+
+                    {/* Desktop View (Show Full Data) */}
+                    <TableRow
+                      key={`${source.id}-desktop`}
+                      className="hidden md:table-row"
+                    >
+                      <TableCell>{source.name}</TableCell>
+                      <TableCell>{source.type}</TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        {source.description}
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        N/A
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        N/A
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center space-x-2">
+                          <span className="truncate max-w-xs">
+                            {source.webhook_url}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() =>
+                              copyWebhook(source.webhook_url ?? "")
+                            }
+                            className="h-8 w-8"
+                          >
+                            <Copy className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex items-center space-x-2">
+                          <Switch
+                            checked={source.status}
+                            onCheckedChange={() =>
+                              toggleWebhookStatus(source.id)
+                            }
+                          />
+                          <span
+                            className={`text-sm ${
+                              source.status ? "text-green-600" : "text-red-600"
+                            }`}
+                          >
+                            {source.status ? "Enabled" : "Disabled"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="hidden md:table-cell">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="outline"
+                            size="icon"
+                            onClick={() => openEditDialog(source)}
+                            className="h-8 w-8"
+                          >
+                            <Pencil className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="destructive"
+                            size="icon"
+                            onClick={() => openDeleteDialog(source)}
+                            className="h-8 w-8"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  </>
                 ))}
               </TableBody>
             </Table>
           </div>
         </CardContent>
       </Card>
-
       {/* Create/Edit Dialog */}
       <Dialog
         open={dialogMode === "create" || dialogMode === "edit"}

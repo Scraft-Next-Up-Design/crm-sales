@@ -184,6 +184,7 @@ export default async function handler(
 
           return res
             .status(200)
+
             .json({ message: "Status updated successfully", data });
         } catch (error) {
           console.error("Unexpected error:", error);
