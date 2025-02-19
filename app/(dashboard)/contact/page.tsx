@@ -326,20 +326,21 @@ export default function ContactPage() {
   const handleTagChange = (id: string, value: string) => {
     setSelectedTags((prev) => {
       const currentTags = prev?.[id] ?? [];
+      console.log(currentTags);
       const updatedTags = currentTags.includes(value)
         ? currentTags.filter((tag) => tag !== value) // Remove tag if already selected
         : [...currentTags, value];
 
+      console.log(updatedTags);
       handleUpdate?.(id, { tags: updatedTags });
 
       return { ...prev, [id]: updatedTags };
     });
   };
-
-  // useEffect(() => {
-  //   console.log("Updated selectedTags:", selectedTags);
-  //   // console.log("tags",contacts.tags)
-  // }, [selectedTags]);
+  useEffect(() => {
+    // console.log("Updated selectedTags:", selectedTags);
+    // console.log("tags", contacts?.tags);
+  }, [selectedTags]);
 
   // useEffect(() => {
   //   if (contacts.length > 0) {

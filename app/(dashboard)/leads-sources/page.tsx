@@ -303,10 +303,10 @@ const LeadSourceManager: React.FC = () => {
         <CardContent>
           <div className="overflow-x-auto">
             <Table>
-              <TableHeader>
+              <TableHeader className=" ">
                 <TableRow>
                   <TableHead>Name</TableHead>
-                  <TableHead>Type</TableHead>
+                  <TableHead className="hidden md:table-cell">Type</TableHead>
                   <TableHead className="hidden md:table-cell">Count</TableHead>
                   <TableHead className="hidden md:table-cell">
                     Processing Rate
@@ -328,9 +328,11 @@ const LeadSourceManager: React.FC = () => {
                 {sources.map((source) => (
                   <>
                     {/* Mobile View (Show Only Name, Type, and Expand Button) */}
-                    <TableRow className="md:hidden" key={source.id}>
-                      <TableCell>{source.name}</TableCell>
-                      <TableCell>{source.type}</TableCell>
+                    <TableRow className="flex  md:hidden" key={source.id}>
+                      <div className="flex flex-col gap-0 md:hidden">
+                        <div>{source.name}</div>
+                        <div>{source.type}</div>
+                      </div>
                       <TableCell>
                         <Button
                           variant="outline"
@@ -345,21 +347,13 @@ const LeadSourceManager: React.FC = () => {
 
                     {/* Expanded Details for Mobile */}
                     {expandedRow === source.id && (
-                      <TableRow>
+                      <TableRow className="md:hidden">
                         <TableCell colSpan={3}>
                           <div className="p-4 bg-gray-100 rounded-md">
-                            <p>
-                              <strong>Count:</strong> {source.description}
-                            </p>
-                            <p>
-                              <strong>Processing Rate:</strong> N/A
-                            </p>
-                            <p>
-                              <strong>Qualification Rate:</strong> N/A
-                            </p>
-                            <p>
-                              <strong>Webhook:</strong> {source.webhook_url}
-                            </p>
+                            <p>{source.description}</p>
+                            <p>N/A</p>
+                            <p>N/A</p>
+                            <p>{source.webhook_url}</p>
 
                             <div className="flex justify-between items-center mt-2">
                               <div className="flex items-center space-x-2">
