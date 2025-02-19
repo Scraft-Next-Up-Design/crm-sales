@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { toast } from "sonner";
 import {
   Table,
   TableBody,
@@ -90,7 +91,16 @@ export default function ContactPage() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [leads, setLeads] = useState<any[]>([]);
+  const [editNameId, setEditNameId] = useState(null);
+  const [nameInfo, setNameInfo] = useState("");
+  const [editEmailId, setEditEmailId] = useState(null);
+  const [emailInfo, setEmailInfo] = useState("");
+  const [editPhoneId, setEditPhoneId] = useState(null);
+  const [phoneInfo, setPhoneInfo] = useState("");
   const [editInfoId, setEditInfoId] = useState(null);
+  const [editEmailValidationId, setEditEmailValidationId] = useState(null);
+  const [emailValidation, setEmailValidation] = useState(false);
+
   const [businessInfo, setBusinessInfo] = useState(""); // Single field for input
   const [tags, setTags] = useState<Tags[]>([]);
   const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
@@ -301,6 +311,10 @@ export default function ContactPage() {
       businessInfo: string;
       tags: string[];
       address: string;
+      email: string;
+      name: string;
+      phone: string;
+      is_email_valid: boolean;
     }>
   ) => {
     // console.log("dataa", updatedData);
@@ -308,7 +322,11 @@ export default function ContactPage() {
     if (
       !updatedData.businessInfo?.trim() &&
       (!updatedData.tags || updatedData.tags.length === 0) &&
-      !updatedData.address?.trim()
+      !updatedData.address?.trim() &&
+      !updatedData.email?.trim() &&
+      !updatedData.phone?.trim() &&
+      updatedData.is_email_valid === undefined &&
+      !updatedData.name?.trim()
     ) {
       return; // Prevent empty updates
     }
@@ -319,19 +337,21 @@ export default function ContactPage() {
         leads: updatedData,
       }).unwrap();
     } catch (error) {
-      console.error("Update failed", error);
+      toast.error("Update failed");
     }
+
+    toast.success("Update successfully");
   };
 
   const handleTagChange = (id: string, value: string) => {
     setSelectedTags((prev) => {
       const currentTags = prev?.[id] ?? [];
-      console.log(currentTags);
+      // console.log(currentTags);
       const updatedTags = currentTags.includes(value)
         ? currentTags.filter((tag) => tag !== value) // Remove tag if already selected
         : [...currentTags, value];
 
-      console.log(updatedTags);
+      // console.log(updatedTags);
       handleUpdate?.(id, { tags: updatedTags });
 
       return { ...prev, [id]: updatedTags };
@@ -399,8 +419,16 @@ export default function ContactPage() {
     country: "",
     zipCode: "",
   });
+  const defaultHeaders = [
+    "Name",
+    "Email",
+    "Phone",
+    "Email Validation",
+    "Platform",
+    "Bussiness Info",
+    "Tag",
+  ];
 
-  // const [selectedHeaders, setSelectedHeaders] = useState(["Name", "Email"]);
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const [newColumn, setNewColumn] = useState("");
@@ -408,9 +436,42 @@ export default function ContactPage() {
   const addColumn = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedColumn = event.target.value;
     if (selectedColumn && !selectedHeaders.includes(selectedColumn)) {
-      setSelectedHeaders([...selectedHeaders, selectedColumn]);
+      const updatedHeaders = [...selectedHeaders];
+
+      // Find the correct index in the original tableHeaders
+      const insertIndex = tableHeaders.indexOf(selectedColumn);
+
+      // Find the correct position in selectedHeaders based on tableHeaders order
+      for (let i = 0; i < selectedHeaders.length; i++) {
+        if (tableHeaders.indexOf(selectedHeaders[i]) > insertIndex) {
+          updatedHeaders.splice(i, 0, selectedColumn);
+          setSelectedHeaders(updatedHeaders);
+          return;
+        }
+      }
+
+      // If it's the last item, push normally
+      updatedHeaders.push(selectedColumn);
+      setSelectedHeaders(updatedHeaders);
     }
-    setDropdownOpen(false); // Close dropdown after selection
+  };
+
+  // const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
+  const [dropdownOpenRemove, setDropdownOpenRemove] = useState<string | null>(
+    null
+  );
+
+  // Toggle dropdown for headers
+  const toggleDropdown = (header: string) => {
+    setDropdownOpenRemove((prev) => (prev === header ? null : header));
+  };
+
+  // };
+  const removeColumn = (header: string) => {
+    setSelectedHeaders((prevHeaders) =>
+      prevHeaders.filter((h) => h !== header)
+    );
+    setDropdownOpenRemove(null); // Close dropdown after removing
   };
 
   // Calculate pagination
@@ -568,9 +629,30 @@ export default function ContactPage() {
           <Table className="min-w-full border-collapse table-auto">
             <TableHeader>
               <TableRow>
-                {selectedHeaders.map((header) => (
-                  <TableHead key={header} className="text-center font-semibold">
-                    {header}
+                {selectedHeaders?.map((header) => (
+                  <TableHead
+                    key={header}
+                    className="relative text-center font-semibold"
+                  >
+                    {/* Header content with click to open dropdown */}
+                    <div
+                      className="cursor-pointer"
+                      onClick={() => toggleDropdown(header)}
+                    >
+                      {header}
+                    </div>
+
+                    {/* Dropdown menu for remove option */}
+                    {dropdownOpenRemove === header && (
+                      <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-md p-2 w-40 z-50">
+                        <button
+                          className="w-full text-left px-2 py-1 hover:bg-red-500 hover:text-white rounded-md"
+                          onClick={() => removeColumn(header)}
+                        >
+                          Remove Column
+                        </button>
+                      </div>
+                    )}
                   </TableHead>
                 ))}
                 <TableHead className="text-center">
@@ -603,100 +685,207 @@ export default function ContactPage() {
             <TableBody>
               {contacts.map((contact) => (
                 <TableRow key={contact.id}>
-                  {selectedHeaders.includes("Name") && (
-                    <TableCell className="left-0 bg-white dark:bg-gray-900 z-10 font-medium  text-center">
-                      {contact.Name}
-                    </TableCell>
-                  )}
-                  {selectedHeaders.includes("Email") && (
-                    <TableCell className="relative group  text-center">
-                      <div className="inline-block relative">
-                        {/* Email Address */}
-                        <span className="cursor-pointer group-hover:underline">
-                          {contact.email}
-                        </span>
-
-                        {/* Hover Menu - Appears Above or Below */}
-                        <div
-                          className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50 pointer-events-none"
-                          style={{
-                            bottom: "calc(100% + 2px)", // Ensures no gap
-                            transform: "translateX(-50%)",
-                            pointerEvents: "auto", // Ensures interaction
+                  {selectedHeaders?.includes("Name") && (
+                    <TableCell className="left-0 bg-white dark:bg-gray-900 z-10 font-medium text-center cursor-pointer">
+                      {editNameId === contact.id ? (
+                        // Editing mode: Show input field
+                        <input
+                          type="text"
+                          placeholder="Enter Name..."
+                          className="px-2 py-1 border rounded-md w-full"
+                          value={nameInfo}
+                          onChange={(e) => setNameInfo(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleUpdate(contact.id, { name: nameInfo });
+                              setEditNameId(null); // Exit edit mode after updating
+                            } else if (e.key === "Escape") {
+                              setEditNameId(null);
+                              setNameInfo(contact.Name || ""); // Reset on cancel
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        // Normal display mode
+                        <span
+                          className="text-gray-700 dark:text-gray-300"
+                          onDoubleClick={() => {
+                            setEditNameId(contact.id);
+                            setNameInfo(contact.Name || ""); // Pre-fill existing name
                           }}
                         >
-                          {/* Ensure menu remains clickable */}
-                          <div className="pointer-events-auto">
+                          {contact.Name || (
+                            <span className="text-gray-400 italic">
+                              Double-click to add name
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
+
+                  {selectedHeaders.includes("Email") && (
+                    <TableCell className="text-center cursor-pointer">
+                      {editEmailId === contact.id ? (
+                        <input
+                          type="email"
+                          placeholder="Enter Email..."
+                          className="px-2 py-1 border rounded-md w-full"
+                          value={emailInfo}
+                          onChange={(e) => setEmailInfo(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleUpdate(contact.id, { email: emailInfo });
+                              setEditEmailId(null);
+                            } else if (e.key === "Escape") {
+                              setEditEmailId(null);
+                              setEmailInfo(contact.email || ""); // Reset on cancel
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <span
+                          className="cursor-pointer group-hover:underline"
+                          onDoubleClick={() => {
+                            setEditEmailId(contact.id);
+                            setEmailInfo(contact?.email || ""); // Pre-fill existing email
+                          }}
+                        >
+                          {contact.email || (
+                            <span className="text-gray-400 italic">
+                              Double-click to add email
+                            </span>
+                          )}
+                        </span>
+                      )}
+                    </TableCell>
+                  )}
+
+                  {selectedHeaders.includes("Phone") && (
+                    <TableCell className="relative text-center cursor-pointer">
+                      {editPhoneId === contact.id ? (
+                        // Editing mode: Show input field
+                        <input
+                          type="text"
+                          placeholder="Enter Phone..."
+                          className="px-2 py-1 border rounded-md w-full"
+                          value={phoneInfo}
+                          onChange={(e) => setPhoneInfo(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              handleUpdate(contact.id, { phone: phoneInfo });
+                              setEditPhoneId(null); // Exit edit mode after updating
+                            } else if (e.key === "Escape") {
+                              setEditPhoneId(null);
+                              setPhoneInfo(contact.phone || ""); // Reset on cancel
+                            }
+                          }}
+                          autoFocus
+                        />
+                      ) : (
+                        <div className="inline-block group relative">
+                          {/* Phone Number */}
+                          <span
+                            className="cursor-pointer group-hover:underline"
+                            onDoubleClick={() => {
+                              setEditPhoneId(contact.id);
+                              setPhoneInfo(contact.phone || ""); // Pre-fill existing phone number
+                            }}
+                          >
+                            {contact.phone || (
+                              <span className="text-gray-400 italic">
+                                Double-click to add phone
+                              </span>
+                            )}
+                          </span>
+
+                          {/* Hover Menu - Appears Below */}
+                          <div
+                            className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50"
+                            style={{
+                              bottom: "calc(100% + 2px)", // Ensures no gap
+                              transform: "translateX(-50%)",
+                              pointerEvents: "auto", // Ensures interaction
+                            }}
+                          >
+                            {/* WhatsApp */}
                             <button
                               onClick={() =>
-                                (window.location.href = `mailto:${contact.email}`)
+                                window.open(
+                                  `https://wa.me/${contact.phone}`,
+                                  "_blank"
+                                )
                               }
-                              className="flex items-center gap-2 text-sm text-gray-800 hover:text-red-600"
+                              className="flex items-center gap-2 text-sm text-gray-800 hover:text-green-600"
                             >
-                              <Mail className="h-4 w-4 text-red-500" />
-                              Send Email
+                              <Send className="h-4 w-4 text-green-500" />
+                              WhatsApp
+                            </button>
+
+                            {/* Call */}
+                            <button
+                              onClick={() =>
+                                (window.location.href = `tel:${contact.phone}`)
+                              }
+                              className="flex items-center gap-2 text-sm text-gray-800 hover:text-blue-600 mt-1"
+                            >
+                              <Phone className="h-4 w-4 text-blue-500" />
+                              Call
                             </button>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </TableCell>
                   )}
-                  {selectedHeaders.includes("Phone") && (
-                    <TableCell className="relative text-center ">
-                      <div className="inline-block group relative">
-                        {/* Phone Number */}
-                        <span className="cursor-pointer group-hover:underline">
-                          {contact.phone}
-                        </span>
 
-                        {/* Hover Menu - Appears Below */}
-                        <div
-                          className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50"
-                          style={{
-                            bottom: "calc(100% + 2px)", // Ensures no gap
-                            transform: "translateX(-50%)",
-                            pointerEvents: "auto", // Ensures interaction
-                          }}
-                        >
-                          {/* WhatsApp */}
-                          <button
-                            onClick={() =>
-                              window.open(
-                                `https://wa.me/${contact.phone}`,
-                                "_blank"
-                              )
-                            }
-                            className="flex items-center gap-2 text-sm text-gray-800 hover:text-green-600"
-                          >
-                            <Send className="h-4 w-4 text-green-500" />
-                            WhatsApp
-                          </button>
-
-                          {/* Call */}
-                          <button
-                            onClick={() =>
-                              (window.location.href = `tel:${contact.phone}`)
-                            }
-                            className="flex items-center gap-2 text-sm text-gray-800 hover:text-blue-600 mt-1"
-                          >
-                            <Phone className="h-4 w-4 text-blue-500" />
-                            Call
-                          </button>
-                        </div>
-                      </div>
-                    </TableCell>
-                  )}
                   {selectedHeaders.includes("Email Validation") && (
-                    <TableCell className=" text-center">
-                      <span
-                        className={`px-2 py-1 text-sm font-semibold rounded ${
-                          contact.is_email_valid
-                            ? "bg-green-200 text-green-800"
-                            : "bg-red-200 text-red-800"
-                        }`}
-                      >
-                        {contact.is_email_valid ? "True" : "False"}
-                      </span>
+                    <TableCell className="text-center cursor-pointer">
+                      {editEmailValidationId === contact.id ? (
+                        // Editing mode: Show <select> dropdown
+                        <select
+                          className="px-2 py-1 border rounded-md"
+                          value={emailValidation ? "true" : "false"}
+                          onChange={async (e) => {
+                            const newValue = e.target.value === "true"; // Convert to boolean
+                            setEmailValidation(newValue);
+                            await handleUpdate(contact.id, {
+                              is_email_valid: newValue,
+                            });
+                            setEditEmailValidationId(null); // Exit edit mode after update
+                          }}
+                          autoFocus
+                        >
+                          <option
+                            className="px-2 py-1 text-sm font-semibold rounded bg-green-200 text-green-800"
+                            value="true"
+                          >
+                            True
+                          </option>
+                          <option
+                            className="px-2 py-1 text-sm font-semibold rounded-l-md bg-red-200 text-red-800"
+                            value="false"
+                          >
+                            False
+                          </option>
+                        </select>
+                      ) : (
+                        // Normal mode: Show colored text
+                        <span
+                          onDoubleClick={() => {
+                            setEditEmailValidationId(contact.id);
+                            setEmailValidation(contact.is_email_valid);
+                          }}
+                          className={`px-2 py-1 text-sm font-semibold rounded ${
+                            contact.is_email_valid
+                              ? "bg-green-200 text-green-800"
+                              : "bg-red-200 text-red-800"
+                          }`}
+                        >
+                          {contact.is_email_valid ? "True" : "False"}
+                        </span>
+                      )}
                     </TableCell>
                   )}
                   {selectedHeaders.includes("Platform") && (
@@ -711,6 +900,7 @@ export default function ContactPage() {
                       )}
                     </TableCell>
                   )}
+
                   {selectedHeaders.includes("Bussiness Info") && (
                     <TableCell
                       className=" text-center cursor-pointer"
@@ -730,9 +920,10 @@ export default function ContactPage() {
                           onKeyDown={(e) => {
                             if (e.key === "Enter") {
                               handleUpdate(contact.id, { businessInfo });
+                              setEditInfoId(null);
                             } else if (e.key === "Escape") {
                               setEditInfoId(null);
-                              setBusinessInfo(""); // Clear input on cancel
+                              setBusinessInfo(contact?.bussinessInfo || ""); // Clear input on cancel
                             }
                           }}
                           autoFocus

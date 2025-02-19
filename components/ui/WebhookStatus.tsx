@@ -1,6 +1,9 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { skipToken } from "@reduxjs/toolkit/query";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks"; // Adjust the import path
+import {
+  useGetWebhooksBySourceIdQuery,
+  useUpdateWebhookMutation,
+} from "@/lib/store/services/webhooks"; // Adjust the import path
 
 interface WebhookStatusProps {
   sourceId: string | null;
@@ -19,31 +22,73 @@ const WebhookStatus: React.FC<WebhookStatusProps> = ({
     sourceId && workspaceId ? { id: sourceId, workspaceId } : skipToken
   );
 
-  if (isLoading) return <span>Loading...</span>;
-  if (isError) return <span>Error fetching webhooks</span>;
+  const [updateWebhook] = useUpdateWebhookMutation();
+  const [isEditing, setIsEditing] = useState(false);
+  const [selectedType, setSelectedType] = useState<string>("");
 
-  // Define background colors for different types
+  // Sync state when API fetches data
+  useEffect(() => {
+    if (webhooks?.type) {
+      setSelectedType(webhooks.type.toLowerCase());
+    }
+  }, [webhooks]);
+
+  // Manually defined webhook platform options
+  const platformOptions = ["Google", "Shopify", "WordPress", "Landing Page"];
+
+  // Define background colors for platforms
   const typeColors: Record<string, string> = {
     google: "bg-blue-500 text-white dark:bg-blue-400",
     shopify: "bg-green-500 text-white dark:bg-green-400",
     wordpress: "bg-purple-500 text-white dark:bg-purple-400",
-    default: "bg-gray-500 text-white dark:bg-gray-400",
+    other: "bg-gray-500 text-white dark:bg-gray-400",
   };
 
-  const type = webhooks?.type?.toLowerCase() || "default";
-  const typeClass = typeColors[type] || typeColors.default;
+  const typeClass = typeColors[selectedType] || typeColors.other;
+
+  const handleUpdate = async (newType: string) => {
+    if (!sourceId) return;
+    try {
+      await updateWebhook({
+        id: webhooks?.id,
+        data: { type: newType },
+      }).unwrap();
+      setSelectedType(newType); // Update local state
+      setIsEditing(false);
+    } catch (error) {
+      console.error("Error updating platform:", error);
+    }
+  };
 
   return (
-    <div className="p-2">
-      {webhooks ? (
-        <span
-          className={`px-3 py-1 rounded-md text-sm font-semibold ${typeClass}`}
+    <div className="p-2 relative">
+      {isEditing ? (
+        <select
+          className="px-3 py-1 border rounded-md cursor-pointer w-full bg-white dark:bg-gray-800"
+          value={selectedType}
+          onChange={(e) => handleUpdate(e.target.value)}
+          onBlur={() => setIsEditing(false)}
+          autoFocus
         >
-          {webhooks.type}
-        </span>
+          {platformOptions.map((option) => (
+            <option
+              key={option}
+              value={option.toLowerCase()}
+              className="px-3 py-1 rounded-md"
+              // className={`px-3 py-1 rounded-md text-sm font-semibold ${typeClass} cursor-pointer`}
+            >
+              {option}
+            </option>
+          ))}
+        </select>
       ) : (
-        <span className="px-3 py-1 rounded-md text-sm font-semibold bg-gray-300 dark:bg-gray-600">
-          No Platform Found
+        <span
+          className={`px-3 py-1 rounded-md text-sm font-semibold ${typeClass} cursor-pointer`}
+          onDoubleClick={() => setIsEditing(true)}
+        >
+          {selectedType
+            ? selectedType.charAt(0).toUpperCase() + selectedType.slice(1)
+            : "No Platform"}
         </span>
       )}
     </div>
