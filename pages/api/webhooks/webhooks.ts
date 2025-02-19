@@ -1,4 +1,3 @@
-
 import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
@@ -167,12 +166,12 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log(data);
+
           // If a matching webhook is found, return its name
           if (data && data.length > 0) {
             return res
               .status(200)
-              .json({ name: data[0].name, type: data[0].type });
+              .json({ id: data[0].id, name: data[0].name, type: data[0].type });
           }
 
           // If no webhook matches, return a suitable response
@@ -423,6 +422,7 @@ export default async function handler(
 
             // Check if the user owns the webhook
             if (user_id === user.id) {
+              console.log("enter");
               const { data, error } = await supabase
                 .from("webhooks")
                 .update({ name, type, description })
@@ -487,4 +487,3 @@ export default async function handler(
       return res.status(405).json({ error: AUTH_MESSAGES.API_ERROR });
   }
 }
-

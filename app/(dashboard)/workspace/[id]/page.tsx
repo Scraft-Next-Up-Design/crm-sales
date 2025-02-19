@@ -149,6 +149,19 @@ const StatusForm = ({ status, onSubmit }: any) => (
         />
       </div>
     </div>
+    <div className="flex items-center gap-2">
+      <Checkbox
+        id="countInStatistics"
+        checked={status.count_statistics}
+        onCheckedChange={(checked) =>
+          onSubmit({
+            ...status,
+            count_statistics: checked,
+          })
+        }
+      />
+      <Label className="text-sm">Count As Qualified</Label>
+    </div>
   </div>
 );
 
