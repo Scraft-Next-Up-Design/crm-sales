@@ -126,9 +126,9 @@ const SalesDashboard = () => {
 
   return (
     <div
-      className={`grid grid-rows-[40%_45%] md:grid-rows-[25%_75%] align-center gap-0  md:gap-2    transition-all duration-500 ease-in-out  px-2 py-6 w-auto min-h-screen
+      className={`grid grid-rows-2 md:grid-rows-[25%_75%] align-center gap-0  md:gap-2    transition-all duration-500 ease-in-out  px-2 py-6 w-auto 
       ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"}
-      overflow-hidden`}
+      overflow-hidden `}
     >
       <div className="grid grid-cols-2  md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto ">
         {dashboardStats.map((stat, index) => (
