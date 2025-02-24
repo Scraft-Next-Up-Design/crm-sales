@@ -1,5 +1,11 @@
 "use client";
-import { Filter, Loader2, UserIcon } from "lucide-react";
+import {
+  Filter,
+  Loader2,
+  UserIcon,
+  ListFilter,
+  SquareCode,
+} from "lucide-react";
 import FilterComponent from "./filter";
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,6 +53,8 @@ import {
   MessageCircle,
   Send,
   Eye,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
@@ -120,6 +128,10 @@ const LeadManagement: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] =
     useAssignRoleMutation();
+  const [expandedRow, setExpandedRow] = useState(null);
+  const toggleRow = (id: any) => {
+    setExpandedRow(expandedRow === id ? null : id);
+  };
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
     useGetActiveWorkspaceQuery();
@@ -652,12 +664,12 @@ const LeadManagement: React.FC = () => {
     );
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
-        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      className={`transition-all duration-500 ease-in-out md:px-4 md:py-6 py-2 px-2 ${
+        isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
       } w-auto overflow-hidden`}
     >
       {" "}
-      <Card className="w-full overflow-x-auto">
+      <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden">
         {showFilters && (
           <FilterComponent
             values={filters}
@@ -669,11 +681,26 @@ const LeadManagement: React.FC = () => {
           />
         )}
 
-        <CardHeader className="flex flex-col md:flex-row md:items-center md:justify-between space-y-2 md:space-y-0">
-          <CardTitle className="text-lg md:text-xl lg:text-2xl ">
-            Lead Management
-          </CardTitle>
-          <div className="relative w-full md:w-64">
+        <CardHeader className="grid grid-cols-6 items-center grid-rows-3 md:gap-4 md:flex md:flex-row md:justify-between p-0 md:p-3 border-b-2 border-gray-200 md:border-none">
+          {/* Title */}
+          <div className="md:bg-white bg-gray-100 flex items-center justify-between col-start-1 col-end-7 p-3 md:p-0">
+            <div className="flex gap-2">
+              <div className="md:hidden">
+                <SquareCode />
+              </div>
+              <CardTitle className="flex mr-2 text-md md:text-xl lg:text-2xl ">
+                Lead Management
+              </CardTitle>
+            </div>
+
+            {/* Mobile "Add Lead" Button */}
+            <Button onClick={openCreateDialog} className=" md:hidden">
+              <Plus className="mr-2 h-4 w-4" /> Add Lead
+            </Button>
+          </div>
+
+          {/* Search Input */}
+          <div className="relative w-full md:w-64 row-start-2 row-end-3 px-4 md:px-0  col-start-1 col-end-6">
             <Input
               type="text"
               placeholder="Search leads..."
@@ -682,44 +709,66 @@ const LeadManagement: React.FC = () => {
               className="w-full"
             />
           </div>
-          <div className="flex space-x-2">
-            {/* Import Button */}
+
+          {/* Buttons Container (Grid Instead of Flex) */}
+          {/* <div className=" md:flex grid grid-cols-6 col-start-1 col-end-7 row-start-3 row-end-4 gap-2"> */}
+          <div className=" hidden md:flex">
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
+              className="row-start-2 row-end-3 col-start-6 col-end-7 hidden md:flex"
             >
-              <Filter className="mr-2 h-4 w-4" />
+              <Filter className="mr-2 h-4 w-4 " />
               {showFilters ? "Hide Filters" : "Show Filters"}
             </Button>
 
-            <input
-              type="file"
-              id="import-leads"
-              accept=".json"
-              className="hidden"
-              onChange={handleImport}
-            />
-            {/* <Button
+            {/* Export CSV */}
+            <Button
               variant="outline"
-              onClick={() => document.getElementById("import-leads")?.click()}
+              onClick={exportToCSV}
+              className="col-start-1 col-end-4 mx-4"
             >
-              <FileUp className="mr-2 h-4 w-4" /> Import
-            </Button> */}
-
-            {/* Export Buttons */}
-            <Button variant="outline" onClick={exportToCSV}>
               <FileDown className="mr-2 h-4 w-4" /> Export CSV
             </Button>
-            <Button variant="outline" onClick={exportToJSON}>
+            <Button
+              variant="outline"
+              onClick={exportToJSON}
+              className="col-start-4 col-end-7 mx-4"
+            >
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
             </Button>
-
-            {/* Add Lead Button */}
-            <Button onClick={openCreateDialog}>
+            <Button onClick={openCreateDialog} className=" col-span-2">
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
+
+          {/* Export CSV */}
+          <Button
+            variant="outline"
+            onClick={exportToCSV}
+            className="col-start-1 col-end-4 mx-4 md:hidden"
+          >
+            <FileDown className="mr-2 h-4 w-4" /> Export CSV
+          </Button>
+
+          {/* Export JSON */}
+          <Button
+            variant="outline"
+            onClick={exportToJSON}
+            className="col-start-4 col-end-7 mx-2 md:hidden"
+          >
+            <FileDown className="mr-2 h-4 w-4" /> Export JSON
+          </Button>
+
+          {/* Add Lead Button (Only for Desktop) */}
+          {/* <Button
+            onClick={openCreateDialog}
+            className="md:hidden  col-span-2"
+          >
+            <Plus className="mr-2 h-4 w-4" /> Add Lead
+          </Button> */}
         </CardHeader>
+
         <CardContent>
           {/* Delete Selected Button */}
           {selectedLeads.length > 0 && (
@@ -740,7 +789,7 @@ const LeadManagement: React.FC = () => {
 
           <div className="text-xs">
             <Table className="text-xs">
-              <TableHeader>
+              <TableHeader className="hidden md:table-header-group">
                 <TableRow>
                   <TableHead className="px-2 py-1">
                     <Checkbox
@@ -753,8 +802,10 @@ const LeadManagement: React.FC = () => {
                       onCheckedChange={toggleSelectAllOnPage}
                     />
                   </TableHead>
+
                   <TableHead className="px-2 py-1">Name</TableHead>
                   <TableHead className="px-2 py-1">Email</TableHead>
+
                   <TableHead className="px-2 py-1">Phone</TableHead>
                   <TableHead className="px-2 py-1">Generated At</TableHead>
                   <TableHead className="px-2 py-1">Actions</TableHead>
@@ -763,24 +814,319 @@ const LeadManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
+                {/* Mobile Veiw */}
                 {filteredLeads.map((lead) => (
-                  <TableRow key={lead.id}>
-                    <TableCell className="px-2 py-1">
+                  <>
+                    <TableRow
+                      key={lead.id}
+                      className="flex md:hidden items-center justify-between text-[14px] border-b border-gray-300 py-2 last:border-none"
+                    >
+                      <div className="flex gap:4">
+                        <TableCell className="px-2 py-1 col-start-1 col-end-2">
+                          <Checkbox
+                            checked={selectedLeads.includes(lead.id)}
+                            onCheckedChange={() => toggleLeadSelection(lead.id)}
+                          />
+                        </TableCell>
+                        <div>
+                          <div className="px-2 py-1 col-start-2 col-end-6">
+                            {lead.Name}
+                            <br />
+                            {lead.isDuplicate && (
+                              <span
+                                style={{ color: "red", fontSize: "0.7em" }}
+                                className=" hidden md:block"
+                              >
+                                Duplicate Lead
+                              </span>
+                            )}
+                          </div>
+
+                          <div className="p-3 col-start-2 col-end-6">
+                            <div className="flex items-center space-x-2">
+                              {lead.is_email_valid ? (
+                                <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
+                              ) : (
+                                <X className="w-5 h-5 text-red-600 stroke-[3]" />
+                              )}
+                              <div>
+                                <span
+                                  className={`
+                                  font-medium tracking-tight 
+                                  ${
+                                    lead.is_email_valid
+                                      ? "text-emerald-800"
+                                      : "text-red-800"
+                                  }`}
+                                >
+                                  {lead.email}
+                                </span>
+                                {!lead.is_email_valid && (
+                                  <div className="text-xs text-red-600 mt-0.5">
+                                    Invalid Email
+                                  </div>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <TableCell>
+                        <Button
+                          variant="outline"
+                          size="icon"
+                          onClick={() => toggleRow(lead.id)}
+                          className="h-8 w-8 border-none bg-gray-100 rounded-m"
+                        >
+                          {expandedRow === lead.id ? (
+                            <ChevronUp />
+                          ) : (
+                            <ChevronDown />
+                          )}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                    {expandedRow === lead.id && (
+                      <TableRow className="text-[14px]">
+                        <div className="p-3 flex items-center gap-24">
+                          <span className="text-gray-600">Phone</span>
+                          <div className="flex items-center space-x-2">
+                            {lead.is_phone_valid ? (
+                              <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
+                            ) : (
+                              <X className="w-5 h-5 text-red-600 stroke-[3]" />
+                            )}
+                            <div>
+                              <span
+                                className={`
+        font-medium tracking-tight 
+        ${lead.is_phone_valid ? "text-emerald-800" : "text-red-800"}`}
+                              >
+                                {lead.phone}
+                              </span>
+                              {!lead.is_phone_valid && (
+                                <div className="text-xs text-red-600 mt-0.5">
+                                  Invalid Phone
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className=" p-3 flex items-center gap-16">
+                          <span className="text-gray-600">Genrated At</span>
+                          <div className="px-2 py-1">
+                            {formatDate(lead.createdAt)}
+                          </div>
+                        </div>
+                        <div className="p-3 flex items-center gap-24">
+                          <span className="text-gray-600">Action</span>
+                          <div className="flex space-x-1">
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() =>
+                                initiateDirectContact(lead, lead.contact_method)
+                              }
+                              className="h-6 w-6"
+                              title={`Contact via ${lead.contact_method}`}
+                            >
+                              {lead.contact_method === "WhatsApp" && (
+                                <Send className="h-3 w-3" />
+                              )}
+                              {lead.contact_method === "Call" && (
+                                <Phone className="h-3 w-3" />
+                              )}
+                              {lead.contact_method === "SMS" && (
+                                <MessageCircle className="h-3 w-3" />
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => openEditDialog(lead)}
+                              className="h-6 w-6"
+                            >
+                              <Pencil className="h-3 w-3" />
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              onClick={() => handleView(lead.id)}
+                              className="h-6 w-6"
+                            >
+                              <Eye className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+                        <div className="px-3 py-2 flex items-center gap-24">
+                          <span className="text-gray-600">Status</span>
+                          <Select
+                            defaultValue={JSON.stringify({
+                              name: lead.status?.name || "Pending",
+                              color: lead.status?.color || "#ea1212",
+                            })}
+                            onValueChange={(value) =>
+                              handleStatusChange(lead.id, value)
+                            }
+                          >
+                            <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                              <div className="flex items-center gap-3">
+                                <div className="relative">
+                                  <div
+                                    className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30"
+                                    style={{
+                                      backgroundColor: lead?.status?.color,
+                                    }}
+                                  />
+                                  <div
+                                    className="relative h-3 w-3 rounded-lg bg-gray-400"
+                                    style={{
+                                      backgroundColor: lead?.status?.color,
+                                    }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium">
+                                  {lead?.status?.name}
+                                </span>
+                              </div>
+                            </SelectTrigger>
+
+                            <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                              {statusData?.data.map(
+                                (status: { name: string; color: string }) => (
+                                  <SelectItem
+                                    key={status.name}
+                                    value={JSON.stringify({
+                                      name: status?.name,
+                                      color: status?.color,
+                                    })}
+                                    className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                                  >
+                                    <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                      <div className="relative">
+                                        {/* Glow effect */}
+                                        <div
+                                          className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
+                                          style={{
+                                            backgroundColor: status?.color,
+                                          }}
+                                        />
+                                        {/* Main dot */}
+                                        <div
+                                          className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
+                                          style={{
+                                            backgroundColor: status?.color,
+                                          }}
+                                        />
+                                      </div>
+                                      <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                        {status.name}
+                                      </span>
+                                    </div>
+                                  </SelectItem>
+                                )
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div className="px-3  py-1 flex items-center gap-24">
+                          <span className="text-gray-600">Assign</span>
+                          <Select
+                            defaultValue={JSON.stringify({
+                              name: lead?.assign_to?.name || "Not Assigned",
+                              role: lead?.assign_to?.role || "(Not Assigned)",
+                            })}
+                            onValueChange={(value) =>
+                              handleAssignChange(lead?.id, value)
+                            } // Uncomment and use for status change handler
+                          >
+                            <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                              <div className="flex items-center gap-3">
+                                <div className="relative">
+                                  <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
+                                  <div className="relative">
+                                    <UserIcon className="h-6 w-6 text-gray-400" />
+                                  </div>
+                                </div>
+                                <span className="text-sm font-medium">
+                                  {lead?.assign_to?.name}
+                                </span>
+                              </div>
+                            </SelectTrigger>
+
+                            <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                              <SelectItem
+                                key="unassigned"
+                                value={JSON.stringify({
+                                  name: "Unassigned",
+                                  role: "none",
+                                })}
+                                className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                    Unassigned
+                                  </span>
+                                </div>
+                              </SelectItem>
+                              {workspaceMembers?.data
+                                .filter(
+                                  (status: { name: string | null }) =>
+                                    status.name && status.name !== "null"
+                                )
+                                .map(
+                                  (status: { name: string; role: string }) => (
+                                    <SelectItem
+                                      key={status.name}
+                                      value={JSON.stringify({
+                                        name: status?.name,
+                                        role: status?.role,
+                                      })}
+                                      className="cursor-pointer rounded-lg outline-none transition-colors focus:bg-transparent"
+                                    >
+                                      <div className="flex items-center gap-3">
+                                        <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
+                                          {status.name}
+                                        </span>
+                                      </div>
+                                    </SelectItem>
+                                  )
+                                )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </TableRow>
+                    )}
+                  </>
+                ))}
+
+                {/* Desktop View  */}
+                {filteredLeads.map((lead) => (
+                  <TableRow
+                    key={`${lead.id}-desktop`}
+                    className="hidden md:table-row"
+                  >
+                    <TableCell className="px-2 py-1 col-start-1 col-end-2">
                       <Checkbox
                         checked={selectedLeads.includes(lead.id)}
                         onCheckedChange={() => toggleLeadSelection(lead.id)}
                       />
                     </TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="px-2 py-1 col-start-2 col-end-6">
                       {lead.Name}
                       <br />
                       {lead.isDuplicate && (
-                        <span style={{ color: "red", fontSize: "0.7em" }}>
+                        <span
+                          style={{ color: "red", fontSize: "0.7em" }}
+                          className=" hidden md:block"
+                        >
                           Duplicate Lead
                         </span>
                       )}
                     </TableCell>
-                    <TableCell className="p-3">
+
+                    <TableCell className="p-3 col-start-2 col-end-6">
                       <div className="flex items-center space-x-2">
                         {lead.is_email_valid ? (
                           <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
@@ -790,8 +1136,12 @@ const LeadManagement: React.FC = () => {
                         <div>
                           <span
                             className={`
-        font-medium tracking-tight 
-        ${lead.is_email_valid ? "text-emerald-800" : "text-red-800"}`}
+                                  font-medium tracking-tight 
+                                  ${
+                                    lead.is_email_valid
+                                      ? "text-emerald-800"
+                                      : "text-red-800"
+                                  }`}
                           >
                             {lead.email}
                           </span>
@@ -803,7 +1153,8 @@ const LeadManagement: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="p-3">
+
+                    <TableCell className="p-3 hidden md:table-cell ">
                       <div className="flex items-center space-x-2">
                         {lead.is_phone_valid ? (
                           <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
@@ -826,10 +1177,10 @@ const LeadManagement: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="px-2 py-1 hidden md:table-cell ">
                       {formatDate(lead.createdAt)}
                     </TableCell>
-                    <TableCell className="px-2 py-1">
+                    <TableCell className="px-2 py-1 hidden md:table-cell ">
                       <div className="flex space-x-1">
                         <Button
                           variant="outline"
@@ -868,7 +1219,7 @@ const LeadManagement: React.FC = () => {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="border-none">
+                    <TableCell className="border-none hidden md:table-cell ">
                       <Select
                         defaultValue={JSON.stringify({
                           name: lead.status?.name || "Pending",
@@ -883,11 +1234,15 @@ const LeadManagement: React.FC = () => {
                             <div className="relative">
                               <div
                                 className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30"
-                                style={{ backgroundColor: lead?.status?.color }}
+                                style={{
+                                  backgroundColor: lead?.status?.color,
+                                }}
                               />
                               <div
                                 className="relative h-3 w-3 rounded-lg bg-gray-400"
-                                style={{ backgroundColor: lead?.status?.color }}
+                                style={{
+                                  backgroundColor: lead?.status?.color,
+                                }}
                               />
                             </div>
                             <span className="text-sm font-medium">
@@ -912,12 +1267,16 @@ const LeadManagement: React.FC = () => {
                                     {/* Glow effect */}
                                     <div
                                       className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
-                                      style={{ backgroundColor: status?.color }}
+                                      style={{
+                                        backgroundColor: status?.color,
+                                      }}
                                     />
                                     {/* Main dot */}
                                     <div
                                       className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
-                                      style={{ backgroundColor: status?.color }}
+                                      style={{
+                                        backgroundColor: status?.color,
+                                      }}
                                     />
                                   </div>
                                   <span className="text-sm font-medium text-gray-700 dark:text-gray-200">
@@ -931,7 +1290,7 @@ const LeadManagement: React.FC = () => {
                       </Select>
                     </TableCell>
 
-                    <TableCell className="border-none">
+                    <TableCell className="border-none hidden md:table-cell ">
                       <Select
                         defaultValue={JSON.stringify({
                           name: lead?.assign_to?.name || "Not Assigned",

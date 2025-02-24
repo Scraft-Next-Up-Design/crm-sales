@@ -8,6 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Users } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -37,7 +38,16 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Plus, Pencil, Trash2, Copy, Loader, Loader2 } from "lucide-react";
+import {
+  Plus,
+  Pencil,
+  Trash2,
+  Copy,
+  Loader,
+  Loader2,
+  ChevronDown,
+  ChevronUp,
+} from "lucide-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -285,16 +295,21 @@ const LeadSourceManager: React.FC = () => {
 
   return (
     <div
-      className={`grid  align-center gap-0  md:gap-2    transition-all duration-500 ease-in-out  px-2 py-6 w-auto min-h-screen
+      className={`grid  align-center gap-0  md:gap-2 md:rounded-none rounded-[4px]  transition-all duration-500 ease-in-out  px-2 py-6 w-auto 
       ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"}
-      overflow-hidden`}
+      overflow-hidden `}
     >
-      <Card className="w-full">
+      <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden ">
         {/* Header: Move Title and Button to opposite ends on mobile */}
-        <CardHeader className="flex flex-row justify-between md:justify-between items-center">
-          <CardTitle className="text-sm md:text-xl lg:text-2xl">
-            Lead Sources
-          </CardTitle>
+        <CardHeader className="flex flex-row justify-between md:justify-between items-center md:bg-white bg-gray-100">
+          <div className="flex gap-6">
+            <div className="md:hidden w-2 h-2 pb-4">
+              <Users />
+            </div>
+            <CardTitle className=" text-sm md:text-xl lg:text-2xl">
+              Lead Sources
+            </CardTitle>
+          </div>
           <Button onClick={openCreateDialog} className=" md:w-auto">
             <Plus className="mr-2 h-3 w-3 text-md md:h-4 md:w-4 " /> Add Source
           </Button>
@@ -305,7 +320,7 @@ const LeadSourceManager: React.FC = () => {
             <Table>
               <TableHeader className=" ">
                 <TableRow>
-                  <TableHead>Name</TableHead>
+                  <TableHead className="hidden md:table-cell">Name</TableHead>
                   <TableHead className="hidden md:table-cell">Type</TableHead>
                   <TableHead className="hidden md:table-cell">Count</TableHead>
                   <TableHead className="hidden md:table-cell">
@@ -324,73 +339,124 @@ const LeadSourceManager: React.FC = () => {
                 </TableRow>
               </TableHeader>
 
-              <TableBody>
+              <TableBody className="w-auto">
                 {sources.map((source) => (
                   <>
                     {/* Mobile View (Show Only Name, Type, and Expand Button) */}
-                    <TableRow className="flex  md:hidden" key={source.id}>
+                    <TableRow
+                      className="flex md:hidden items-center justify-between border-b border-gray-300 py-2 last:border-none"
+                      key={source.id}
+                    >
                       <div className="flex flex-col gap-0 md:hidden">
-                        <div>{source.name}</div>
-                        <div>{source.type}</div>
+                        <div className="text-[1rem]">{source.name}</div>
+                        <div className="text-gray-500">{source.type}</div>
                       </div>
                       <TableCell>
                         <Button
                           variant="outline"
                           size="icon"
                           onClick={() => toggleRow(source.id)}
-                          className="h-8 w-8"
+                          className="h-8 w-8 border-none bg-gray-100 rounded-m"
                         >
-                          {expandedRow === source.id ? "−" : "+"}
+                          {expandedRow === source.id ? (
+                            <ChevronUp />
+                          ) : (
+                            <ChevronDown />
+                          )}
                         </Button>
                       </TableCell>
                     </TableRow>
 
                     {/* Expanded Details for Mobile */}
                     {expandedRow === source.id && (
-                      <TableRow className="md:hidden">
+                      <TableRow className="md:hidden ">
                         <TableCell colSpan={3}>
-                          <div className="p-4 bg-gray-100 rounded-md">
-                            <p>{source.description}</p>
-                            <p>N/A</p>
-                            <p>N/A</p>
-                            <p>{source.webhook_url}</p>
+                          <div className=" rounded-md ">
+                            <p className="flex items-center gap-4">
+                              {source.description}
+                            </p>
+                            <p className="flex items-center  gap-[7.5rem] text-[1rem] pb-2">
+                              {" "}
+                              <span className="text-gray-500">Count</span>0
+                            </p>
+                            <p className="flex items-center gap-9 text-[1rem] pb-2">
+                              {" "}
+                              <span className="text-gray-500">
+                                Processing Rate
+                              </span>
+                              N/A
+                            </p>
+                            <p className="flex items-center gap-7 text-[1rem] pb-2">
+                              <span className="text-gray-500">
+                                Qualification Rate
+                              </span>
+                              N/A
+                            </p>
+                            <div className="flex items-center  space-x-2  text-[1rem] pb-2">
+                              <span className="text-gray-500 mr-20">
+                                Webhook
+                              </span>
+                              <span className="truncate max-w-[120px]">
+                                {source.webhook_url}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() =>
+                                  copyWebhook(source.webhook_url ?? "")
+                                }
+                                className="h-8 w-8"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </Button>
+                            </div>
 
-                            <div className="flex justify-between items-center mt-2">
-                              <div className="flex items-center space-x-2">
-                                <Switch
-                                  checked={source.status}
-                                  onCheckedChange={() =>
-                                    toggleWebhookStatus(source.id)
-                                  }
-                                />
-                                <span
-                                  className={`text-sm ${
-                                    source.status
-                                      ? "text-green-600"
-                                      : "text-red-600"
-                                  }`}
-                                >
-                                  {source.status ? "Enabled" : "Disabled"}
+                            <div className="flex flex-col  mt-1">
+                              <div className="flex items-center gap-28 text-[1rem] pb-2">
+                                <span className="text-gray-500 text-[1rem]">
+                                  Status
                                 </span>
+                                <div className="flex items-center gap-4">
+                                  <Switch
+                                    checked={source.status}
+                                    onCheckedChange={() =>
+                                      toggleWebhookStatus(source.id)
+                                    }
+                                  />
+                                  <span
+                                    className={`text-sm ${
+                                      source.status
+                                        ? "text-green-600"
+                                        : "text-red-600"
+                                    }`}
+                                  >
+                                    {source.status ? "Enabled" : "Disabled"}
+                                  </span>
+                                </div>
                               </div>
 
-                              <div className="flex space-x-2">
-                                <Button
-                                  variant="outline"
-                                  size="icon"
-                                  onClick={() => openEditDialog(source)}
-                                  className="h-8 w-8"
-                                >
-                                  <Pencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  size="icon"
-                                  onClick={() => openDeleteDialog(source)}
-                                  className="h-8 w-8"
-                                >
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
+                              <div className="flex items-center gap-28 text-[1rem] pb-2 mt-2">
+                                <span className="text-gray-500 text-[1rem]">
+                                  Action
+                                </span>
+                                <div>
+                                  <Button
+                                    variant="outline"
+                                    size="icon"
+                                    onClick={() => openEditDialog(source)}
+                                    className="h-8 w-8"
+                                  >
+                                    <Pencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    size="icon"
+                                    onClick={() => openDeleteDialog(source)}
+                                    className="h-8 w-8"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           </div>

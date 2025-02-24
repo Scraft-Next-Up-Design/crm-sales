@@ -1,4 +1,3 @@
-
 "use client";
 import Image from "next/image";
 import React, { useEffect, useState } from "react";
@@ -61,6 +60,7 @@ import {
   useGetWorkspacesQuery,
   useUpdateWorkspaceStatusMutation,
 } from "@/lib/store/services/workspace";
+import { useGetStatusQuery } from "@/lib/store/services/status";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -72,9 +72,12 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { skipToken } from "@reduxjs/toolkit/query";
+
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
+import { workerData } from "worker_threads";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -124,12 +127,35 @@ export function Sidebar({
     { workspaceId: selectedWorkspace.id },
     { pollingInterval: 2000 }
   );
+
   const {
     data: activeWorkspace,
     isLoading: activeWorkspaceLoading,
     isError: activeWorkspaceError,
   } = useGetActiveWorkspaceQuery();
   console.log(activeWorkspace);
+
+  // ✅ Ensure activeWorkspace is available before calling status query
+  const workspaceId = activeWorkspace?.data?.id;
+
+  // Ensure it's a number before passing it to the query
+  const {
+    data: statusData,
+    isLoading: isLoadingStatus,
+    error: statusError,
+  } = useGetStatusQuery(workspaceId ? Number(workspaceId) : skipToken, {
+    pollingInterval: 2000,
+  });
+
+  // **Filter Leads into Contacts**
+  const contactStatuses = new Set(
+    Array.isArray((statusData as any)?.data)
+      ? (statusData as any)?.data
+          .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
+          .map((status: any) => status.name)
+      : []
+  );
+
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -150,6 +176,11 @@ export function Sidebar({
 
   // Mock total leads count
   const totalLeads = workspaceData?.data?.length || "NA";
+
+  const totalContacts = workspaceData?.data?.filter((contact: any) =>
+    contactStatuses.has(contact?.status?.name)
+  );
+  const contactsLength = totalContacts?.length || "NA";
 
   const routes = [
     {
@@ -172,6 +203,7 @@ export function Sidebar({
       label: "Contact",
       icon: MessageSquare,
       href: "/contact",
+      badge: contactsLength,
     },
     {
       label: "Analytics",
@@ -711,4 +743,3 @@ export function Sidebar({
     </>
   );
 }
-
