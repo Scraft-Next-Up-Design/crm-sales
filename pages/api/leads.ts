@@ -89,7 +89,7 @@ export async function validatePhoneNumber(
 
 // Process data with Together AI with retry logic
 async function processWithAI(inputData: any) {
-  const MAX_RETRIES = 5;
+  const MAX_RETRIES = 3;
   let attempt = 0;
   let lastError: any;
 
