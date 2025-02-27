@@ -36,6 +36,16 @@ export const leadsApis = leadsApi.injectEndpoints({
         body,
       }),
     }),
+    createManyLead: builder.mutation<
+      { message: string; data: Lead[] },
+      { workspaceId: string; body: Partial<Lead>[] }
+    >({
+      query: ({ workspaceId, body }) => ({
+        url: `?action=createManyLead&workspaceId=${workspaceId}`,
+        method: "POST",
+        body,
+      }),
+    }),
     updateLead: builder.mutation<any, { id: any; leads: any }>({
       query: ({ id, leads }) => ({
         url: `?action=updateLeadById&id=${id}`,
@@ -95,6 +105,7 @@ export const {
   useAddNotesMutation,
   useGetNotesQuery,
   useCreateLeadMutation,
+  useCreateManyLeadMutation,
   useUpdateLeadMutation,
   useDeleteLeadMutation,
   useUpdateLeadDataMutation,

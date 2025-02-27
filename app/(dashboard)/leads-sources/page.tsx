@@ -301,17 +301,21 @@ const LeadSourceManager: React.FC = () => {
     >
       <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden ">
         {/* Header: Move Title and Button to opposite ends on mobile */}
-        <CardHeader className="flex flex-row justify-between md:justify-between items-center md:bg-white bg-gray-100">
+        <CardHeader className="flex flex-row justify-between items-center bg-gray-100 dark:bg-gray-800 md:bg-white md:dark:bg-gray-900">
           <div className="flex gap-6">
-            <div className="md:hidden w-2 h-2 pb-4">
+            <div className="md:hidden lg:hidden w-2 h-2 pb-4 text-gray-700 dark:text-gray-300">
               <Users />
             </div>
-            <CardTitle className=" text-sm md:text-xl lg:text-2xl">
+            <CardTitle className="text-sm md:text-xl lg:text-2xl text-gray-900 dark:text-white">
               Lead Sources
             </CardTitle>
           </div>
-          <Button onClick={openCreateDialog} className=" md:w-auto">
-            <Plus className="mr-2 h-3 w-3 text-md md:h-4 md:w-4 " /> Add Source
+          <Button
+            onClick={openCreateDialog}
+            className="md:w-auto bg-primary dark:bg-primary-dark text-white dark:text-gray-700"
+          >
+            <Plus className="mr-2 h-3 w-3 text-md md:h-4 md:w-4 text-gray-700 dark:text-gray-700" />
+            Add Source
           </Button>
         </CardHeader>
 
@@ -344,7 +348,7 @@ const LeadSourceManager: React.FC = () => {
                   <>
                     {/* Mobile View (Show Only Name, Type, and Expand Button) */}
                     <TableRow
-                      className="flex md:hidden items-center justify-between border-b border-gray-300 py-2 last:border-none"
+                      className="flex md:hidden lg:hidden items-center justify-between border-b border-gray-300 p-2 last:border-none"
                       key={source.id}
                     >
                       <div className="flex flex-col gap-0 md:hidden">
@@ -356,7 +360,7 @@ const LeadSourceManager: React.FC = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => toggleRow(source.id)}
-                          className="h-8 w-8 border-none bg-gray-100 rounded-m"
+                          className="h-8 w-8 border-none bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-200 rounded-md"
                         >
                           {expandedRow === source.id ? (
                             <ChevronUp />
@@ -369,7 +373,7 @@ const LeadSourceManager: React.FC = () => {
 
                     {/* Expanded Details for Mobile */}
                     {expandedRow === source.id && (
-                      <TableRow className="md:hidden ">
+                      <TableRow className="md:hidden lg:hidden">
                         <TableCell colSpan={3}>
                           <div className=" rounded-md ">
                             <p className="flex items-center gap-4">
@@ -439,7 +443,7 @@ const LeadSourceManager: React.FC = () => {
                                 <span className="text-gray-500 text-[1rem]">
                                   Action
                                 </span>
-                                <div>
+                                <div className="flex gap-2">
                                   <Button
                                     variant="outline"
                                     size="icon"
@@ -600,7 +604,7 @@ const LeadSourceManager: React.FC = () => {
                   </FormItem>
                 )}
               />
-              <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+              <DialogFooter className="flex md:flex-col flex-row space-y-2 sm:space-y-0 sm:space-x-2">
                 <DialogClose asChild>
                   <Button
                     type="button"
@@ -648,7 +652,7 @@ const LeadSourceManager: React.FC = () => {
             Are you sure you want to delete the lead source &quot;
             {selectedSource?.name}&quot;?
           </p>
-          <DialogFooter className="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-2">
+          <DialogFooter className="flex md:flex-col flex-row space-y-2 sm:space-y-0 sm:space-x-2">
             <DialogClose asChild>
               <Button
                 type="button"

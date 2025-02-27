@@ -608,6 +608,34 @@ function EditProfileDialog({
     }
   };
 
+  const handleImageDelete = async () => {
+    if (!formData.avatar) return;
+
+    try {
+      setUploadingImage(true);
+
+      // Extract the file path from the public URL
+      const filePath = formData.avatar.split("/").slice(-2).join("/");
+
+      // Delete image from Supabase Storage
+      const { error: deleteError } = await supabase.storage
+        .from("profiles")
+        .remove([filePath]);
+
+      if (deleteError) throw deleteError;
+
+      // Clear preview and form data
+      setPreviewImage("");
+      setFormData((prev) => ({ ...prev, avatar: "" }));
+      toast.success("Image deleted successfully");
+    } catch (error) {
+      console.error("Error deleting image:", error);
+      toast.error("Failed to delete image");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -626,12 +654,12 @@ function EditProfileDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[500px] max-h-[90vh] overflow-y-auto">
+      <DialogContent className="w-[90%] max-w-md max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit Profile</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 ">
           <div className="space-y-2">
             <Label>Profile Picture</Label>
             <div className="flex items-center gap-4">
@@ -642,7 +670,7 @@ function EditProfileDialog({
                   {formData.lastName[0]}
                 </AvatarFallback>
               </Avatar>
-              <div className="flex-1">
+              <div className="flex gap-8">
                 <Label htmlFor="avatar" className="cursor-pointer">
                   <div className="flex items-center gap-2 border rounded-md p-2 hover:bg-accent">
                     <Upload className="h-4 w-4" />
@@ -650,6 +678,7 @@ function EditProfileDialog({
                       {uploadingImage ? "Uploading..." : "Upload Image"}
                     </span>
                   </div>
+
                   <Input
                     id="avatar"
                     type="file"
@@ -659,6 +688,15 @@ function EditProfileDialog({
                     disabled={uploadingImage}
                   />
                 </Label>
+                {previewImage && (
+                  <button
+                    onClick={handleImageDelete}
+                    className="p-1 text-red-600 border rounded-md hover:bg-red-100"
+                    disabled={uploadingImage}
+                  >
+                    Remove Image
+                  </button>
+                )}
               </div>
             </div>
           </div>
@@ -984,10 +1022,10 @@ export default function ProfileDetailsPage() {
   return (
     <div
       className={`transition-all duration-500 ease-in-out px-4 py-6 ${
-        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+        isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
       } w-auto overflow-hidden`}
     >
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+      <div className="flex flex-row justify-between items-center mb-2 gap-4">
         <h1 className="text-2xl md:text-3xl font-bold">Profile Details</h1>
         <div className="flex items-center gap-4">
           <Button
@@ -1015,7 +1053,7 @@ export default function ProfileDetailsPage() {
 
       <div className="grid md:grid-cols-3 gap-4 md:gap-6">
         <Card className="md:col-span-1">
-          <CardContent className="pt-6 flex flex-col items-center">
+          <CardContent className="pt-6  flex flex-col items-center">
             <Avatar
               className="h-24 md:h-32 w-24 md:w
 
@@ -1038,7 +1076,7 @@ export default function ProfileDetailsPage() {
               {profileData.professionalInfo.title}
             </p>
 
-            <div className="mt-4 space-y-2 w-full">
+            <div className="my-4 space-y-2 px-4 w-full">
               <div className="flex items-center">
                 <Mail className="mr-2 h-4 w-4 text-muted-foreground shrink-0" />
                 <span className="break-all">
@@ -1057,14 +1095,14 @@ export default function ProfileDetailsPage() {
           </CardContent>
         </Card>
 
-        <Card className="md:col-span-2">
+        <Card className="md:col-span-2 p-4">
           <CardHeader>
-            <CardTitle className="flex items-center">
+            <CardTitle className="flex items-center mb-2 text-[1.2rem] md:text-2xl">
               <Briefcase className="mr-2" /> Professional Details
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-2 md:flex md:flex-col gap-4">
               <div>
                 <p className="text-muted-foreground">Company</p>
                 <p className="font-semibold">
@@ -1096,7 +1134,7 @@ export default function ProfileDetailsPage() {
         </Card>
       </div>
 
-      <Card className="mt-6">
+      <Card className="mt-6 p-4">
         <CardHeader>
           <CardTitle>Connect with Me</CardTitle>
         </CardHeader>
@@ -1133,7 +1171,9 @@ export default function ProfileDetailsPage() {
               </Button>
             )}
             {!Object.values(profileData.socialLinks).some(Boolean) && (
-              <p className="text-muted-foreground">No social links added</p>
+              <p className="pl-3 text-muted-foreground">
+                No social links added
+              </p>
             )}
           </div>
         </CardContent>

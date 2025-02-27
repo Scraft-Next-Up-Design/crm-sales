@@ -495,7 +495,7 @@ export default function MemberManagement({
         {/* Invite Form */}
         <div className="space-y-4">
           <Label>Invite New Member</Label>
-          <div className="flex flex-col sm:flex-row gap-2">
+          <div className="  flex md:flex-row flex-col   gap-2">
             <Input
               type="email"
               placeholder="Email address"
@@ -504,36 +504,38 @@ export default function MemberManagement({
               className="flex-1"
               disabled={isAdding}
             />
-            <Select
-              value={newInviteRole}
-              onValueChange={setNewInviteRole}
-              disabled={isAdding}
-            >
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <SelectValue placeholder="Role" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="admin">Admin</SelectItem>
-                <SelectItem value="member">Member</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleInviteMember}
-              className="w-full sm:w-auto"
-              disabled={isAdding || !newInviteEmail}
-            >
-              {isAdding ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Inviting...
-                </>
-              ) : (
-                <>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Invite
-                </>
-              )}
-            </Button>
+            <div className="  flex md:flex-row gap-2">
+              <Select
+                value={newInviteRole}
+                onValueChange={setNewInviteRole}
+                disabled={isAdding}
+              >
+                <SelectTrigger className="w-full sm:w-[140px]">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="member">Member</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleInviteMember}
+                className="w-full sm:w-auto"
+                disabled={isAdding || !newInviteEmail}
+              >
+                {isAdding ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Inviting...
+                  </>
+                ) : (
+                  <>
+                    <Mail className="mr-2 h-4 w-4" />
+                    Invite
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -549,18 +551,18 @@ export default function MemberManagement({
               members.map((member) => (
                 <div
                   key={member?.id}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-secondary rounded-lg gap-4"
+                  className="flex  flex-row sm:flex-row sm:items-center justify-between p-2 md:p-4 bg-secondary rounded-lg gap-2"
                 >
-                  <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
                     <div className="relative">
                       {member?.profileImage ? (
                         <img
                           src={member.profileImage}
                           alt={member.name || member.email}
-                          className="w-10 h-10 rounded-full object-cover"
+                          className="md:w-10 md:h-10 w-8 h-8 rounded-full object-cover"
                         />
                       ) : (
-                        <UserCircle className="w-10 h-10" />
+                        <UserCircle className="md:w-10 md:h-10 w-8 h-8" />
                       )}
                       <input
                         type="file"
@@ -574,14 +576,14 @@ export default function MemberManagement({
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute -bottom-1 -right-1 w-6 h-6 p-0 rounded-full bg-primary hover:bg-primary/90"
+                        className="absolute -bottom-1 -right-1 md:w-6 md:h-6 w-5 h-5 p-0 rounded-full bg-primary hover:bg-primary/90"
                         onClick={() => fileInputRef.current?.click()}
                       >
                         <Upload className="w-3 h-3 text-white" />
                       </Button>
                     </div>
                     <div>
-                      <p className="font-medium">
+                      <p className="font-medium text-[12px]">
                         {member?.name || member?.email}
                       </p>
                       <p className="text-sm text-muted-foreground">
@@ -592,8 +594,26 @@ export default function MemberManagement({
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-center space-x-2 self-end sm:self-center">
-                    <div>
+                  <div className="flex md:flex-row flex-col items-center space-x-2 self-end sm:self-center">
+                    {member?.status === "pending" && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleResendInvite(member)}
+                        disabled={isResending}
+                      >
+                        {isResending ? (
+                          <>
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            Resending...
+                          </>
+                        ) : (
+                          "Resend"
+                        )}
+                      </Button>
+                    )}
+
+                    <div className="flex ">
                       {/* Edit Button */}
                       <button onClick={() => openEditDialog(member)}>
                         {member.role === "member" && (
@@ -636,38 +656,21 @@ export default function MemberManagement({
                           </div>
                         </div>
                       )}
-                    </div>
-                    {member?.status === "pending" && (
+
                       <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleResendInvite(member)}
-                        disabled={isResending}
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive/90"
+                        onClick={() => handleDeleteMember(member)}
+                        disabled={isDeleting}
                       >
-                        {isResending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Resending...
-                          </>
+                        {isDeleting && memberToDelete?.id === member.id ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
                         ) : (
-                          "Resend"
+                          <Trash2 className="w-4 h-4" />
                         )}
                       </Button>
-                    )}
-
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="text-destructive hover:text-destructive/90"
-                      onClick={() => handleDeleteMember(member)}
-                      disabled={isDeleting}
-                    >
-                      {isDeleting && memberToDelete?.id === member.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </Button>
+                    </div>
                   </div>
                 </div>
               ))

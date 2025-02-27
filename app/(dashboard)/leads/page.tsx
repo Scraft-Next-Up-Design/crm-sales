@@ -7,6 +7,7 @@ import {
   SquareCode,
 } from "lucide-react";
 import FilterComponent from "./filter";
+import Papa from "papaparse";
 import React, { useState, useMemo, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
@@ -72,6 +73,7 @@ import {
   useAssignRoleMutation,
   useBulkDeleteLeadsMutation,
   useCreateLeadMutation,
+  useCreateManyLeadMutation,
   // useGetLeadsSourceQuery,
 } from "@/lib/store/services/leadsApi";
 import {
@@ -92,9 +94,7 @@ import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
   email: z.string().email({ message: "Invalid email address" }),
-  phone: z
-    .string()
-    .regex(/^\+?[1-9]\d{1,14}$/, { message: "Invalid phone number" }),
+  phone: z.string().regex(/^\+?[1-9]\d{9,14}$/, "Invalid phone number"),
   company: z.string().optional(),
   position: z.string().optional(),
   contact_method: z.enum(["WhatsApp", "SMS", "Call"], {
@@ -120,6 +120,10 @@ const LeadManagement: React.FC = () => {
   );
   const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] =
     useCreateLeadMutation();
+  const [
+    createManyLead,
+    { isLoading: isCreateManyLoading, error: leadCreateManyError },
+  ] = useCreateManyLeadMutation();
   const [
     updateLeadData,
     { isLoading: isUpdateLoading, error: leadUpdateError },
@@ -523,36 +527,84 @@ const LeadManagement: React.FC = () => {
   };
 
   // Import leads
-  const handleImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+
+  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const data = JSON.parse(e.target?.result as string);
-        // Validate imported data against schema
-        const validLeads = data.filter((lead: any) => {
-          try {
-            leadSchema.parse(lead);
-            return true;
-          } catch {
-            return false;
-          }
-        });
+        const csvData = e.target?.result as string;
 
-        setLeads((prev) => [
-          ...prev,
-          ...validLeads.map((lead: any) => ({
-            ...lead,
-            id: prev.length + validLeads.indexOf(lead) + 1,
-          })),
-        ]);
+        Papa.parse(csvData, {
+          header: true,
+          skipEmptyLines: true,
+          complete: async (result: any) => {
+            const normalizedData = result.data.map((lead: any) => ({
+              id: lead.id,
+              name: lead.Name?.trim() || "",
+
+              email: lead.email,
+              phone: String(lead.phone)
+                .replace(/[^\d+]/g, "")
+                .replace(/^([^+])/, "+$1")
+                .trim(),
+              company: lead.company || "",
+              position: lead.position || "",
+              contact_method: lead.contact_method || "",
+              owner: lead.owner || "Unknown",
+              status: lead.status || "Pending",
+              revenue: Number(lead.revenue) || 0,
+              assign_to: lead.assign_to || "",
+              createdAt: lead.createdAt
+                ? new Date(lead.createdAt).toISOString()
+                : new Date().toISOString(),
+
+              isDuplicate: lead.isDuplicate === "TRUE",
+              is_email_valid: lead.is_email_valid === "TRUE",
+              is_phone_valid: lead.is_phone_valid === "TRUE",
+              sourceId: lead.sourceId,
+            }));
+
+            // Validate data using Zod schema
+            const validLeads = normalizedData.filter((lead: any) => {
+              try {
+                leadSchema.parse(lead);
+                return true;
+              } catch (error) {
+                toast.error("Invalid leads");
+                return false;
+              }
+            });
+
+            if (validLeads.length === 0) {
+              toast.error("No valid leads found.");
+              return;
+            }
+
+            try {
+              const response = await createManyLead({
+                workspaceId,
+                body: validLeads, // Ensure this is an array
+              });
+
+              console.log("API Response:", response);
+
+              setLeads((prev) => [...prev, ...validLeads]);
+              toast.success("Leads created successfully");
+            } catch (error) {
+              toast.error("Error adding leads to database");
+            }
+            // Reset input value to allow re-uploading the same file
+            event.target.value = "";
+          },
+        });
       } catch (error) {
-        console.error("Invalid file format", error);
-        alert("Invalid file format. Please upload a valid JSON file.");
+        toast.error("Invalid file format");
       }
     };
+
     reader.readAsText(file);
   };
 
@@ -683,18 +735,21 @@ const LeadManagement: React.FC = () => {
 
         <CardHeader className="grid grid-cols-6 items-center grid-rows-3 md:gap-4 md:flex md:flex-row md:justify-between p-0 md:p-3 border-b-2 border-gray-200 md:border-none">
           {/* Title */}
-          <div className="md:bg-white bg-gray-100 flex items-center justify-between col-start-1 col-end-7 p-3 md:p-0">
+          <div className="md:bg-white dark:md:bg-gray-900 bg-gray-100 dark:bg-gray-800 flex items-center justify-between col-start-1 col-end-7 p-3 md:p-0">
             <div className="flex gap-2">
-              <div className="md:hidden">
+              <div className="md:hidden lg:hidden">
                 <SquareCode />
               </div>
-              <CardTitle className="flex mr-2 text-md md:text-xl lg:text-2xl ">
+              <CardTitle className="flex mr-2 text-md md:text-xl lg:text-2xl text-gray-900 dark:text-gray-100">
                 Lead Management
               </CardTitle>
             </div>
 
             {/* Mobile "Add Lead" Button */}
-            <Button onClick={openCreateDialog} className=" md:hidden">
+            <Button
+              onClick={openCreateDialog}
+              className="md:hidden lg:hidden bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
+            >
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
@@ -737,27 +792,65 @@ const LeadManagement: React.FC = () => {
             >
               <FileDown className="mr-2 h-4 w-4" /> Export JSON
             </Button>
+            <input
+              type="file"
+              id="import-leads"
+              accept=".csv"
+              className="hidden"
+              onChange={handleImportCSV}
+            />
+            <Button
+              variant="outline"
+              onClick={() => document.getElementById("import-leads")?.click()}
+              className=" mr-2"
+            >
+              <FileUp className="mr-2 h-4 w-4" /> Import
+            </Button>
             <Button onClick={openCreateDialog} className=" col-span-2">
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
 
+          <button
+            onClick={() => setShowFilters(!showFilters)}
+            className="row-start-2 row-end-3 col-start-6 col-end-7 p-1 flex md:hidden border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 items-center rounded-md justify-center"
+          >
+            <ListFilter className="mr-2 h-4 w-4 " />
+          </button>
           {/* Export CSV */}
           <Button
             variant="outline"
             onClick={exportToCSV}
-            className="col-start-1 col-end-4 mx-4 md:hidden"
+            className="col-start-1 col-end-3 mx-2 md:hidden lg:hidden"
           >
-            <FileDown className="mr-2 h-4 w-4" /> Export CSV
+            {/* <FileDown className="mr-2 h-4 w-4" /> */}
+            Export CSV
           </Button>
 
           {/* Export JSON */}
           <Button
             variant="outline"
             onClick={exportToJSON}
-            className="col-start-4 col-end-7 mx-2 md:hidden"
+            className="col-start-3 col-end-5 mx-2 md:hidden lg:hidden px-1 py-1"
           >
-            <FileDown className="mr-2 h-4 w-4" /> Export JSON
+            {/* <FileDown className="mr-2 h-4 w-4" />  */}
+            Export JSON
+          </Button>
+
+          <input
+            type="file"
+            id="import-leads"
+            accept=".csv"
+            className="hidden "
+            onChange={handleImportCSV}
+          />
+          <Button
+            variant="outline"
+            onClick={() => document.getElementById("import-leads")?.click()}
+            className="md:hidden lg:hidden mx-2 col-start-5 col-end-7"
+          >
+            Import CSV
+            {/* <FileUp className="mr-2 h-4 w-4" /> Import */}
           </Button>
 
           {/* Add Lead Button (Only for Desktop) */}
@@ -819,7 +912,7 @@ const LeadManagement: React.FC = () => {
                   <>
                     <TableRow
                       key={lead.id}
-                      className="flex md:hidden items-center justify-between text-[14px] border-b border-gray-300 py-2 last:border-none"
+                      className="flex md:hidden lg:hidden items-center justify-between text-[14px] border-b border-gray-300 py-2 last:border-none"
                     >
                       <div className="flex gap:4">
                         <TableCell className="px-2 py-1 col-start-1 col-end-2">
@@ -842,8 +935,8 @@ const LeadManagement: React.FC = () => {
                             )}
                           </div>
 
-                          <div className="p-3 col-start-2 col-end-6">
-                            <div className="flex items-center space-x-2">
+                          <div className="p-1 md:p-3 col-start-2 col-end-6">
+                            <div className="flex items-center md:space-x-2">
                               {lead.is_email_valid ? (
                                 <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
                               ) : (
@@ -876,7 +969,7 @@ const LeadManagement: React.FC = () => {
                           variant="outline"
                           size="icon"
                           onClick={() => toggleRow(lead.id)}
-                          className="h-8 w-8 border-none bg-gray-100 rounded-m"
+                          className="h-8 w-8 border-none bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-m"
                         >
                           {expandedRow === lead.id ? (
                             <ChevronUp />
@@ -888,7 +981,7 @@ const LeadManagement: React.FC = () => {
                     </TableRow>
                     {expandedRow === lead.id && (
                       <TableRow className="text-[14px]">
-                        <div className="p-3 flex items-center gap-24">
+                        <div className="p-3 grid grid-cols-2 items-center">
                           <span className="text-gray-600">Phone</span>
                           <div className="flex items-center space-x-2">
                             {lead.is_phone_valid ? (
@@ -912,15 +1005,15 @@ const LeadManagement: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <div className=" p-3 flex items-center gap-16">
+                        <div className=" p-3 grid grid-cols-2 items-center">
                           <span className="text-gray-600">Genrated At</span>
                           <div className="px-2 py-1">
                             {formatDate(lead.createdAt)}
                           </div>
                         </div>
-                        <div className="p-3 flex items-center gap-24">
+                        <div className="p-3 grid grid-cols-2 items-center ">
                           <span className="text-gray-600">Action</span>
-                          <div className="flex space-x-1">
+                          <div className="flex  space-x-1">
                             <Button
                               variant="outline"
                               size="icon"
@@ -958,7 +1051,7 @@ const LeadManagement: React.FC = () => {
                             </Button>
                           </div>
                         </div>
-                        <div className="px-3 py-2 flex items-center gap-24">
+                        <div className="px-3 py-2 grid grid-cols-2 items-center">
                           <span className="text-gray-600">Status</span>
                           <Select
                             defaultValue={JSON.stringify({
@@ -969,7 +1062,7 @@ const LeadManagement: React.FC = () => {
                               handleStatusChange(lead.id, value)
                             }
                           >
-                            <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                            <SelectTrigger className="group relative  overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                   <div
@@ -1030,7 +1123,7 @@ const LeadManagement: React.FC = () => {
                           </Select>
                         </div>
 
-                        <div className="px-3  py-1 flex items-center gap-24">
+                        <div className="px-3  py-1 grid grid-cols-2 items-center ">
                           <span className="text-gray-600">Assign</span>
                           <Select
                             defaultValue={JSON.stringify({
@@ -1041,7 +1134,7 @@ const LeadManagement: React.FC = () => {
                               handleAssignChange(lead?.id, value)
                             } // Uncomment and use for status change handler
                           >
-                            <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                            <SelectTrigger className="group relative overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                   <div className="absolute -inset-1 rounded-lg bg-gray-400 opacity-20 blur-sm transition-opacity duration-200 group-hover:opacity-30" />
@@ -1560,7 +1653,7 @@ const LeadManagement: React.FC = () => {
         open={dialogMode === "delete"}
         onOpenChange={() => setDialogMode(null)}
       >
-        <DialogContent>
+        <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Delete Selected Leads</DialogTitle>
           </DialogHeader>

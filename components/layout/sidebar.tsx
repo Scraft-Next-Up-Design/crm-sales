@@ -82,6 +82,8 @@ import { workerData } from "worker_threads";
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
+  isOpen?: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
 interface Workspace {
@@ -97,6 +99,8 @@ export function Sidebar({
   className,
   logoSrc = "/logo.svg",
   logoAlt = "Company Logo",
+  isOpen,
+  setIsOpen,
 }: SidebarProps) {
   const dispatch = useDispatch();
   const isCollapsed = useSelector(
@@ -116,7 +120,7 @@ export function Sidebar({
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [createWorkspace] = useCreateWorkspaceMutation();
   const [user, setUser] = useState<any>(null);
-  const [isOpen, setIsOpen] = useState(false);
+  // const [isOpen, setIsOpen] = useState(false);
   const [workspaces, setWorkspaces] = useState<Workspace[]>(
     workspacesData?.data || []
   );
@@ -337,19 +341,19 @@ export function Sidebar({
   return (
     <>
       {/* Mobile Menu Button */}
-      <Button
+      {/* <Button
         variant="outline"
         size="icon"
         className="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-slate-900 dark:text-white dark:border-slate-700"
-        onClick={() => setIsOpen(!isOpen)}
+        // onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </Button>
+      </Button> */}
 
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:text-white shadow-lg transform transition-all duration-300 ease-in-out z-40",
+          "fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:text-white shadow-lg transform transition-all duration-300 ease-in-out",
           "md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           isCollapsed ? "w-[80px]" : "w-64",
@@ -381,6 +385,14 @@ export function Sidebar({
               <span className="text-xl font-bold">SCRAFT PRE CRM</span>
             )}
           </a>
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden lg:hidden ml-2 bg-white dark:bg-slate-900 dark:text-white dark:border-slate-700"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen && <X className="h-6 w-6" />}
+          </Button>
         </div>
 
         {/* Workspace Selector */}
@@ -414,7 +426,7 @@ export function Sidebar({
                   </div>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="z-[100]">
                 {workspaces?.map((workspace) => (
                   <SelectItem
                     key={workspace.id}
@@ -447,7 +459,7 @@ export function Sidebar({
                       Add Workspace
                     </div>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="w-[90%] max-w-md">
                     <DialogHeader>
                       <DialogTitle>Create New Workspace</DialogTitle>
                     </DialogHeader>
@@ -584,6 +596,7 @@ export function Sidebar({
                       "w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-white dark:hover:text-white relative",
                       isCollapsed && "justify-center px-2"
                     )}
+                    onClick={() => setIsOpen(false)}
                     asChild
                   >
                     <Link href={route.href}>
@@ -710,7 +723,7 @@ export function Sidebar({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                    className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700 z-[101]"
                   >
                     <Link href="/profile">
                       <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
@@ -734,12 +747,12 @@ export function Sidebar({
       </div>
 
       {/* Mobile Overlay */}
-      {isOpen && (
+      {/* {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsOpen(false)}
         />
-      )}
+      )} */}
     </>
   );
 }
