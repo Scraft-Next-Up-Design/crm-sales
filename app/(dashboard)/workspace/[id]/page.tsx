@@ -149,6 +149,7 @@ const StatusForm = ({ status, onSubmit }: any) => (
         />
       </div>
     </div>
+
     <div className="flex items-center gap-2">
       <Checkbox
         id="countInStatistics"
@@ -672,7 +673,7 @@ export default function WorkspaceSettingsPage() {
     <button
       onClick={() => handleTabClick(id)}
       className={cn(
-        "flex items-center space-x-2 px-4 py-2 rounded-lg w-full md:w-auto",
+        "flex items-center space-x-2 md:px-4 px-1 py-2  rounded-lg w-full md:w-auto",
         activeTab === id
           ? "bg-primary text-primary-foreground"
           : "hover:bg-secondary"
@@ -698,16 +699,16 @@ export default function WorkspaceSettingsPage() {
   }
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
-        isCollapsed ? "ml-[80px]" : "ml-[250px]"
+      className={`transition-all duration-500 ease-in-out px-1 py-2 md:px-4 md:py-6 ${
+        isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
       } w-auto overflow-hidden`}
     >
       {" "}
-      <div className="container mx-auto p-4 md:p-6 space-y-6">
+      <div className="container mx-auto p-2 md:p-6 space-y-6">
         <div className="flex flex-col space-y-4">
           <h1 className="text-2xl md:text-3xl font-bold">Workspace Settings</h1>
           {/* Responsive Tab Navigation */}
-          <div className="flex flex-col sm:flex-row gap-2 overflow-x-auto">
+          <div className=" grid grid-cols-3 text-[15px] md:flex md:flex-row  md:gap-2 gap-1 overflow-x-auto">
             <TabButton id="general" icon={Building} label="General" />
             <TabButton id="members" icon={Users} label="Members" />
             <TabButton id="notifications" icon={Bell} label="Notifications" />
@@ -1076,7 +1077,7 @@ export default function WorkspaceSettingsPage() {
                       {statuses.map((status: Status) => (
                         <div
                           key={status.id}
-                          className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
+                          className="flex flex-row sm:flex-row items-center gap-4 p-2 py-3 md:p-4 bg-secondary rounded-lg"
                         >
                           <div className="flex items-center gap-4 flex-1">
                             <div className="flex items-center gap-2">
@@ -1102,18 +1103,18 @@ export default function WorkspaceSettingsPage() {
                                   }}
                                 />
                               </div>
-                              <span className="text-foreground text-gray-600">
+                              <span className="text-foreground text-[12px] md:text-[1rem] text-gray-600">
                                 {status.name}
                               </span>
                             </div>
                           </div>
-                          <div className="flex items-center gap-4 flex-wrap justify-end">
+                          <div className="flex items-center md:gap-4 gap-2 md:flex-wrap md:justify-end">
                             <div className="flex items-center gap-2">
                               <Checkbox
                                 checked={status?.count_statistics}
                                 disabled
                               />
-                              <Label className="text-sm">
+                              <Label className="md:text-sm text-[10px]">
                                 Count As Qualified
                               </Label>
                             </div>
@@ -1124,13 +1125,13 @@ export default function WorkspaceSettingsPage() {
                               />
                               <Label className="text-sm">Show in workspace</Label>
                             </div> */}
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1 md:gap-2">
                               <Button
                                 variant="outline"
                                 size="icon"
                                 onClick={() => handleEditStatus(status)}
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <Edit2 className="md:w-4 md:h-4 w-3 h-3" />
                               </Button>
                               <Button
                                 variant="ghost"
@@ -1138,7 +1139,7 @@ export default function WorkspaceSettingsPage() {
                                 className="text-destructive hover:text-destructive/90"
                                 onClick={() => setStatusToDelete(status)}
                               >
-                                <Trash2 className="w-4 h-4" />
+                                <Trash2 className="md:w-4 md:h-4 h-3 w-3" />
                               </Button>
                             </div>
                           </div>
@@ -1180,7 +1181,7 @@ export default function WorkspaceSettingsPage() {
                     {tags.map((tags: Tags) => (
                       <div
                         key={tags.id}
-                        className="flex flex-col sm:flex-row items-center gap-4 p-4 bg-secondary rounded-lg"
+                        className="flex flex-row sm:flex-row items-center gap-4 p-2 py-3 md:p-4 bg-secondary rounded-lg"
                       >
                         <div className="flex items-center gap-4 flex-1">
                           <div className="flex items-center gap-2">
@@ -1206,35 +1207,19 @@ export default function WorkspaceSettingsPage() {
                                 }}
                               />
                             </div>
-                            <span className="text-foreground text-gray-600">
+                            <span className="text-foreground text-[12px] md:text-[1rem] text-gray-600">
                               {tags.name}
                             </span>
                           </div>
                         </div>
                         <div className="flex items-center gap-4 flex-wrap justify-end">
-                          {/* <div className="flex items-center gap-2">
-                            <Checkbox
-                              checked={status?.count_statistics}
-                              disabled
-                            />
-                            <Label className="text-sm">
-                              Count As Qualified
-                            </Label>
-                          </div> */}
-                          {/* <div className="flex items-center gap-2">
-                              <Checkbox
-                                checked={status?.workspace_show}
-                                disabled
-                              />
-                              <Label className="text-sm">Show in workspace</Label>
-                            </div> */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center md:gap-2 gap-1">
                             <Button
                               variant="outline"
                               size="icon"
                               onClick={() => handleEditTags(tags)}
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="md:w-4 md:h-4 h-3 w-3" />
                             </Button>
                             <Button
                               variant="ghost"
@@ -1242,7 +1227,7 @@ export default function WorkspaceSettingsPage() {
                               className="text-destructive hover:text-destructive/90"
                               onClick={() => setTagsToDelete(tags)}
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="md:w-4 md:h-4 h-3 w-3" />
                             </Button>
                           </div>
                         </div>
@@ -1288,7 +1273,7 @@ export default function WorkspaceSettingsPage() {
         open={!!memberToDelete}
         onOpenChange={() => setMemberToDelete(null)}
       >
-        <AlertDialogContent className="sm:max-w-[425px]">
+        <AlertDialogContent className="w-[90%] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Member</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1310,7 +1295,7 @@ export default function WorkspaceSettingsPage() {
       </AlertDialog>
       {/* Add Status Dialog */}
       <Dialog open={isAddingStatus} onOpenChange={setIsAddingStatus}>
-        <DialogContent>
+        <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Status</DialogTitle>
             <DialogDescription>
@@ -1348,7 +1333,7 @@ export default function WorkspaceSettingsPage() {
         open={!!statusToEdit}
         onOpenChange={(open) => !open && setStatusToEdit(null)}
       >
-        <DialogContent>
+        <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Status</DialogTitle>
             <DialogDescription>Modify the status settings</DialogDescription>
@@ -1375,7 +1360,7 @@ export default function WorkspaceSettingsPage() {
         open={!!statusToDelete}
         onOpenChange={() => setStatusToDelete(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Status</AlertDialogTitle>
             <AlertDialogDescription>
@@ -1397,15 +1382,15 @@ export default function WorkspaceSettingsPage() {
       {/* Tags Dialouge */}
       {/* Add Tags Dialog */}
       <Dialog open={isAddingTags} onOpenChange={setIsAddingTags}>
-        <DialogContent>
+        <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Add New Tags</DialogTitle>
             <DialogDescription>
               Create a new Tags for your workspace
             </DialogDescription>
           </DialogHeader>
-          <StatusForm
-            status={newTags}
+          <TagsForm
+            tags={newTags}
             onSubmit={setNewTags}
             // onCancel={() => setIsAddingStatus(false)}
           />
@@ -1435,7 +1420,7 @@ export default function WorkspaceSettingsPage() {
         open={!!tagsToEdit}
         onOpenChange={(open) => !open && setTagsToEdit(null)}
       >
-        <DialogContent>
+        <DialogContent className="w-[90%] max-w-md">
           <DialogHeader>
             <DialogTitle>Edit Tags</DialogTitle>
             <DialogDescription>Modify the tags settings</DialogDescription>
@@ -1462,7 +1447,7 @@ export default function WorkspaceSettingsPage() {
         open={!!tagsToDelete}
         onOpenChange={() => setTagsToDelete(null)}
       >
-        <AlertDialogContent>
+        <AlertDialogContent className="w-[90%] max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Tags</AlertDialogTitle>
             <AlertDialogDescription>

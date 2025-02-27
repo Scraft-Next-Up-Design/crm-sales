@@ -61,10 +61,10 @@ const WebhookStatus: React.FC<WebhookStatusProps> = ({
   };
 
   return (
-    <div className="p-2 relative">
+    <div className="py-3 relative">
       {isEditing ? (
         <select
-          className="px-3 py-1 border rounded-md cursor-pointer w-full bg-white dark:bg-gray-800"
+          className="md:px-3 px-1 py-1 border rounded-md cursor-pointer w-full bg-white dark:bg-gray-800"
           value={selectedType}
           onChange={(e) => handleUpdate(e.target.value)}
           onBlur={() => setIsEditing(false)}
