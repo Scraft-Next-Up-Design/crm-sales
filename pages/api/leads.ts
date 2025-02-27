@@ -89,7 +89,7 @@ export async function validatePhoneNumber(
 
 // Process data with Together AI with retry logic
 async function processWithAI(inputData: any) {
-  const MAX_RETRIES = 3;
+  const MAX_RETRIES = 5;
   let attempt = 0;
   let lastError: any;
 
@@ -152,7 +152,7 @@ async function processWithAI(inputData: any) {
 // Create fallback data with all fields in custom_data
 function createFallbackData(data: any) {
   const staticFields = {
-    name: "",
+    name: "Failed to process",
     email: "",
     phone: "",
     message: "",
