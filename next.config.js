@@ -6,7 +6,7 @@ const nextConfig = {
   },
   images: { 
     unoptimized: false,
-    domains: ['*'],
+    domains: ['supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in'],
     formats: ['image/avif', 'image/webp']
   },
   swcMinify: true,
