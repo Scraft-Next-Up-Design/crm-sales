@@ -281,12 +281,6 @@ export function Sidebar({
       else if (window.location.href.includes('analytics')) {
         await router.push(`/analytics`);
       }
-
-
-      setTimeout(() => {
-        window.location.reload();
-      }, 2000);
-
     } catch (error) {
       console.error("Failed to change workspace:", error);
     }

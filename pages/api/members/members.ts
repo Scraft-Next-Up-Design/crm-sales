@@ -70,7 +70,7 @@ export default async function handler(
               status: status,
             })
             .select('*')
-            .single(); 
+            .single();
           await sendMail(
             email,
             "You have been added to a workspace",
@@ -91,7 +91,9 @@ export default async function handler(
           return res.status(200).json({ data });
         }
         case "resendInvitation": {
-          const { workspaceId, email, status }: any = query;
+          const { workspaceId, email: rawEmail, status }: any = query;
+          const email = rawEmail ? rawEmail.trim() : '';
+
           if (!workspaceId || !email) {
             return res
               .status(400)
@@ -134,7 +136,6 @@ export default async function handler(
               error: "Member not found in this workspace",
             });
           }
-
           // Resend the invitation email
           await sendMail(
             email,
@@ -148,6 +149,7 @@ export default async function handler(
               </form>
               `
           );
+          console.log(existingMember, "roka", existingError)
 
           return res.status(200).json({
             message: "Invitation email resent successfully",

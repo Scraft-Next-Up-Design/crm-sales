@@ -237,8 +237,8 @@ export default function WorkspaceSettingsPage() {
         workspaceId,
         email: member.email,
         memberId: member.id,
-        status: member.status
-      });
+        status: member.status || "pending"
+      }).unwrap();
 
       if ('error' in result) {
         const errorDetails = (result.error as any).data;
