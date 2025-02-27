@@ -268,6 +268,10 @@ export function Sidebar({
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
 
+      // Refetch all relevant data
+      await refetch();
+      
+      // Redirect to appropriate page
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
       } else if (window.location.href.includes('dashboard')) {
@@ -281,8 +285,12 @@ export function Sidebar({
       else if (window.location.href.includes('analytics')) {
         await router.push(`/analytics`);
       }
+
+      // Force a page reload to ensure all data is fresh
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
+      toast.error("Failed to change workspace");
     }
   };
   return (
