@@ -86,119 +86,126 @@ export async function validatePhoneNumber(
     return false;
   }
 }
-// Process data with Together AI
+
+// Process data with Together AI with retry logic
 async function processWithAI(inputData: any) {
-  try {
-    const normalizedInput = normalizeInput(inputData);
-    let formattedResponse = "";
+  const MAX_RETRIES = 3;
+  let attempt = 0;
+  let lastError: any;
 
-    const response = await together.chat.completions.create({
-      messages: [
-        {
-          role: "system",
-          content: SYSTEM_PROMPT,
-        },
-        {
-          role: "user",
-          content: normalizedInput,
-        },
-      ],
-      model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
-      temperature: 0,
-      top_p: 1,
-      top_k: 1,
-      max_tokens: 500,
-      stream: true,
-    });
+  while (attempt < MAX_RETRIES) {
+    try {
+      const normalizedInput = normalizeInput(inputData);
+      let formattedResponse = "";
 
-    for await (const token of response) {
-      if (token.choices[0]?.delta?.content) {
-        formattedResponse += token.choices[0].delta.content;
+      const response = await together.chat.completions.create({
+        messages: [
+          {
+            role: "system",
+            content: SYSTEM_PROMPT,
+          },
+          {
+            role: "user",
+            content: normalizedInput,
+          },
+        ],
+        model: "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+        temperature: 0,
+        top_p: 1,
+        top_k: 1,
+        max_tokens: 500,
+        stream: true,
+      });
+
+      for await (const token of response) {
+        if (token.choices[0]?.delta?.content) {
+          formattedResponse += token.choices[0].delta.content;
+        }
       }
-    }
 
-    // Find the JSON object in the response
-    const match = formattedResponse.match(/\{[\s\S]*\}/);
-    if (!match) {
-      throw new Error("No JSON found in AI response");
-    }
+      // Find the JSON object in the response
+      const match = formattedResponse.match(/\{[\s\S]*\}/);
+      if (!match) {
+        throw new Error("No JSON found in AI response");
+      }
 
-    return JSON.parse(match[0]);
-  } catch (error) {
-    console.error("AI processing error:", error);
-    throw error;
+      return JSON.parse(match[0]);
+    } catch (error) {
+      lastError = error;
+      console.error(`AI processing attempt ${attempt + 1} failed:`, error);
+      attempt++;
+      
+      // If we've exhausted all retries, use fallback processing
+      if (attempt === MAX_RETRIES) {
+        console.log("AI processing failed after all retries, using fallback processing");
+        return createFallbackData(inputData);
+      }
+      
+      // Wait for a short time before retrying (exponential backoff)
+      await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+    }
   }
+
+  throw lastError;
 }
 
-// Fallback processing if AI fails
-function fallbackProcess(data: any) {
-  const processed: any = {
+// Create fallback data with all fields in custom_data
+function createFallbackData(data: any) {
+  const staticFields = {
     name: "",
     email: "",
     phone: "",
     message: "",
-    custom_data: {},
+    custom_data: {}
   };
 
   try {
-    // If data is a string, try to parse it as JSON
     const inputData = typeof data === "string" ? JSON.parse(data) : data;
-
-    // Handle array format
-    if (Array.isArray(inputData)) {
-      inputData.forEach((field) => {
-        const value = String(field.value || "").trim();
-        const name = String(field.name || "").toLowerCase();
-
-        if (name.includes("name")) {
-          const names = value.split(" ");
-          processed.first_name = names[0] || "";
-          processed.last_name = names.slice(1).join(" ") || "";
-        } else if (name.includes("phone")) {
-          processed.phone = value.replace(/[^0-9+]/g, "");
-        } else if (name.includes("email")) {
-          processed.email = value.toLowerCase();
-        } else if (name.includes("message") || name.includes("comment")) {
-          processed.message = value;
-        } else {
-          processed.custom_data[name] = value;
-        }
-      });
-    }
-    // Handle object format
-    else if (typeof inputData === "object") {
+    
+    // First, store all data in custom_data
+    const custom_data: Record<string, any> = {};
+    
+    // If it's an object, process all its fields
+    if (typeof inputData === "object" && !Array.isArray(inputData)) {
       Object.entries(inputData).forEach(([key, value]) => {
-        const processedValue = String(value || "").trim();
-        const processedKey = key.toLowerCase();
-
-        if (processedKey.includes("name")) {
-          const names = processedValue.split(" ");
-          processed.first_name = names[0] || "";
-          processed.last_name = names.slice(1).join(" ") || "";
-        } else if (processedKey.includes("phone")) {
-          processed.phone = processedValue.replace(/[^0-9+]/g, "");
-        } else if (processedKey.includes("email")) {
-          processed.email = processedValue.toLowerCase();
-        } else if (
-          processedKey.includes("message") ||
-          processedKey.includes("comment")
-        ) {
-          processed.message = processedValue;
-        } else {
-          processed.custom_data[processedKey] = processedValue;
+        const cleanKey = key.replace(/[_\s]/g, "").toLowerCase();
+        custom_data[cleanKey] = value;
+      });
+    }
+    // If it's an array (form fields), process each field
+    else if (Array.isArray(inputData)) {
+      inputData.forEach((field) => {
+        if (field.name && field.value) {
+          const cleanKey = field.name.replace(/[_\s]/g, "").toLowerCase();
+          custom_data[cleanKey] = field.value;
         }
       });
     }
 
-    return processed;
+    // Try to extract standard fields if possible
+    if (custom_data.email) {
+      staticFields.email = String(custom_data.email).toLowerCase();
+    }
+    if (custom_data.phone) {
+      staticFields.phone = String(custom_data.phone).replace(/[^\d+]/g, "");
+    }
+    if (custom_data.name) {
+      staticFields.name = String(custom_data.name);
+    }
+    if (custom_data.message) {
+      staticFields.message = String(custom_data.message);
+    }
+
+    return {
+      ...staticFields,
+      custom_data
+    };
   } catch (error) {
     console.error("Fallback processing error:", error);
-    // Return original data in custom_data if all else fails
+    // Return basic structure with all data in custom_data
     return {
-      name: "",
-      email: "",
-      phone: "",
-      custom_data: { original_data: data },
+      ...staticFields,
+      custom_data: { raw_data: data }
     };
   }
 }
@@ -237,7 +244,7 @@ export default async function handler(
       processedData = await processWithAI(data);
     } catch (error) {
       console.log("AI processing failed, using fallback");
-      processedData = fallbackProcess(data);
+      processedData = createFallbackData(data);
     }
 
     if (customData) {
