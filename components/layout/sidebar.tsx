@@ -58,8 +58,9 @@ import {
   useGetActiveWorkspaceQuery,
   useGetWorkspacesByOwnerIdQuery,
   useGetWorkspacesQuery,
-  useUpdateWorkspaceStatusMutation
+  useUpdateWorkspaceStatusMutation,
 } from "@/lib/store/services/workspace";
+import { useGetStatusQuery } from "@/lib/store/services/status";
 import { supabase } from "@/lib/supabaseClient";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -69,15 +70,20 @@ import { ThemeToggle } from "../theme-toggle";
 import {
   Tooltip,
   TooltipContent,
-  TooltipTrigger
+  TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { skipToken } from "@reduxjs/toolkit/query";
+
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
+import { workerData } from "worker_threads";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
   logoAlt?: string;
+  isOpen?: boolean;
+  setIsOpen: (open: boolean) => void;
 }
 
 interface Workspace {
@@ -93,26 +99,67 @@ export function Sidebar({
   className,
   logoSrc = "/logo.svg",
   logoAlt = "Company Logo",
+  isOpen,
+  setIsOpen,
 }: SidebarProps) {
   const dispatch = useDispatch();
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
+  );
   const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
-  const { data: workspacesData, isLoading, isError, isFetching, refetch } = useGetWorkspacesQuery();
+  const {
+    data: workspacesData,
+    isLoading,
+    isError,
+    isFetching,
+    refetch,
+  } = useGetWorkspacesQuery();
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [createWorkspace] = useCreateWorkspaceMutation();
   const [user, setUser] = useState<any>(null);
-  const [isOpen, setIsOpen] = useState(false);
-  const [workspaces, setWorkspaces] = useState<Workspace[]>(workspacesData?.data || []);
-  const [selectedWorkspace, setSelectedWorkspace] = useState(workspaces[0] || []);
+  // const [isOpen, setIsOpen] = useState(false);
+  const [workspaces, setWorkspaces] = useState<Workspace[]>(
+    workspacesData?.data || []
+  );
+  const [selectedWorkspace, setSelectedWorkspace] = useState(
+    workspaces[0] || []
+  );
   const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
     { workspaceId: selectedWorkspace.id },
     { pollingInterval: 2000 }
   );
-  const { data: activeWorkspace, isLoading: activeWorkspaceLoading, isError: activeWorkspaceError } = useGetActiveWorkspaceQuery();
-  console.log(activeWorkspace)
+
+  const {
+    data: activeWorkspace,
+    isLoading: activeWorkspaceLoading,
+    isError: activeWorkspaceError,
+  } = useGetActiveWorkspaceQuery();
+  console.log(activeWorkspace);
+
+  // ✅ Ensure activeWorkspace is available before calling status query
+  const workspaceId = activeWorkspace?.data?.id;
+
+  // Ensure it's a number before passing it to the query
+  const {
+    data: statusData,
+    isLoading: isLoadingStatus,
+    error: statusError,
+  } = useGetStatusQuery(workspaceId ? Number(workspaceId) : skipToken, {
+    pollingInterval: 2000,
+  });
+
+  // **Filter Leads into Contacts**
+  const contactStatuses = new Set(
+    Array.isArray((statusData as any)?.data)
+      ? (statusData as any)?.data
+          .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
+          .map((status: any) => status.name)
+      : []
+  );
+
   const [newWorkspace, setNewWorkspace] = useState({
     name: "",
     industry: "",
@@ -127,10 +174,17 @@ export function Sidebar({
     },
   });
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(null);
+  const [workspaceToDelete, setWorkspaceToDelete] = useState<Workspace | null>(
+    null
+  );
 
   // Mock total leads count
   const totalLeads = workspaceData?.data?.length || "NA";
+
+  const totalContacts = workspaceData?.data?.filter((contact: any) =>
+    contactStatuses.has(contact?.status?.name)
+  );
+  const contactsLength = totalContacts?.length || "NA";
 
   const routes = [
     {
@@ -149,11 +203,12 @@ export function Sidebar({
       href: "/leads",
       badge: totalLeads,
     },
-    // {
-    //   label: "Contact",
-    //   icon: MessageSquare,
-    //   href: "/contact",
-    // },
+    {
+      label: "Contact",
+      icon: MessageSquare,
+      href: "/contact",
+      badge: contactsLength,
+    },
     {
       label: "Analytics",
       icon: BarChart,
@@ -173,13 +228,10 @@ export function Sidebar({
       toast.success("Logout completed");
 
       window.location.href = "/login"; // Redirect with full page reload
-
-
     } catch (error: any) {
       toast.error(error.message);
     }
   };
-
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -197,7 +249,7 @@ export function Sidebar({
       const newWorkspaceItem = {
         id: (workspaces.length + 1).toString(),
         name: newWorkspace.name,
-        role: 'Admin',
+        role: "Admin",
       };
       console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
@@ -215,12 +267,12 @@ export function Sidebar({
         setSelectedWorkspace(newWorkspaceItem);
 
         setNewWorkspace({
-          name: '',
-          industry: '',
-          type: 'sales',
-          companySize: '',
-          companyType: '',
-          timezone: '',
+          name: "",
+          industry: "",
+          type: "sales",
+          companySize: "",
+          companyType: "",
+          timezone: "",
           notifications: {
             email: true,
             sms: true,
@@ -230,7 +282,6 @@ export function Sidebar({
         toast.success("Workspace created successfully");
         setDialogOpen(false);
         window.location.reload();
-
       } catch (error: any) {
         toast.error(error.data.error);
       }
@@ -262,7 +313,7 @@ export function Sidebar({
 
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
-      const workspace = workspaces.find(w => w.id === workspaceId);
+      const workspace = workspaces.find((w) => w.id === workspaceId);
       if (!workspace) return;
 
       await updateWorkspaceStatus({ id: workspaceId, status: true });
@@ -274,15 +325,13 @@ export function Sidebar({
       // Redirect to appropriate page
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
-      } else if (window.location.href.includes('dashboard')) {
+      } else if (window.location.href.includes("dashboard")) {
         await router.push(`/dashboard`);
-      }
-      else if (window.location.href.includes('leads-sources')) {
+      } else if (window.location.href.includes("leads-sources")) {
         await router.push(`/leads-sources`);
-      } else if (window.location.href.includes('leads')) {
+      } else if (window.location.href.includes("leads")) {
         await router.push(`/leads`);
-      }
-      else if (window.location.href.includes('analytics')) {
+      } else if (window.location.href.includes("analytics")) {
         await router.push(`/analytics`);
       }
 
@@ -296,19 +345,19 @@ export function Sidebar({
   return (
     <>
       {/* Mobile Menu Button */}
-      <Button
+      {/* <Button
         variant="outline"
         size="icon"
         className="md:hidden fixed top-4 left-4 z-50 bg-white dark:bg-slate-900 dark:text-white dark:border-slate-700"
-        onClick={() => setIsOpen(!isOpen)}
+        // onClick={() => setIsOpen(!isOpen)}
       >
         {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-      </Button>
+      </Button> */}
 
       {/* Sidebar */}
       <div
         className={cn(
-          "fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:text-white shadow-lg transform transition-all duration-300 ease-in-out z-40",
+          "fixed top-0 left-0 h-full bg-white dark:bg-slate-900 dark:text-white shadow-lg transform transition-all duration-300 ease-in-out",
           "md:translate-x-0",
           isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0",
           isCollapsed ? "w-[80px]" : "w-64",
@@ -331,12 +380,23 @@ export function Sidebar({
 
         {/* Logo Section */}
         <div className="flex items-center justify-center py-4 bg-inherit">
-          <a href="/dashboard" className="flex items-center gap-2 hover:opacity-90 transition-opacity">
+          <a
+            href="/dashboard"
+            className="flex items-center gap-2 hover:opacity-90 transition-opacity"
+          >
             <Zap className="h-6 w-6 text-primary" />
             {!isCollapsed && (
               <span className="text-xl font-bold">SCRAFT PRE CRM</span>
             )}
           </a>
+          <Button
+            variant="outline"
+            size="icon"
+            className="md:hidden lg:hidden ml-2 bg-white dark:bg-slate-900 dark:text-white dark:border-slate-700"
+            onClick={() => setIsOpen(!isOpen)}
+          >
+            {isOpen && <X className="h-6 w-6" />}
+          </Button>
         </div>
 
         {/* Workspace Selector */}
@@ -370,7 +430,7 @@ export function Sidebar({
                   </div>
                 </SelectValue>
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent position="popper" className="z-[100]">
                 {workspaces?.map((workspace) => (
                   <SelectItem
                     key={workspace.id}
@@ -403,7 +463,7 @@ export function Sidebar({
                       Add Workspace
                     </div>
                   </DialogTrigger>
-                  <DialogContent>
+                  <DialogContent className="w-[90%] max-w-md">
                     <DialogHeader>
                       <DialogTitle>Create New Workspace</DialogTitle>
                     </DialogHeader>
@@ -483,7 +543,9 @@ export function Sidebar({
                           </SelectTrigger>
                           <SelectContent>
                             <SelectItem value="startup">Startup</SelectItem>
-                            <SelectItem value="enterprise">Enterprise</SelectItem>
+                            <SelectItem value="enterprise">
+                              Enterprise
+                            </SelectItem>
                             <SelectItem value="agency">Agency</SelectItem>
                             <SelectItem value="nonprofit">Nonprofit</SelectItem>
                           </SelectContent>
@@ -504,9 +566,13 @@ export function Sidebar({
                             <SelectValue placeholder="Select industry" />
                           </SelectTrigger>
                           <SelectContent>
-                            <SelectItem value="Technology">Technology</SelectItem>
+                            <SelectItem value="Technology">
+                              Technology
+                            </SelectItem>
                             <SelectItem value="Finance">Finance</SelectItem>
-                            <SelectItem value="Healthcare">Healthcare</SelectItem>
+                            <SelectItem value="Healthcare">
+                              Healthcare
+                            </SelectItem>
                             <SelectItem value="Education">Education</SelectItem>
                           </SelectContent>
                         </Select>
@@ -534,6 +600,7 @@ export function Sidebar({
                       "w-full justify-start hover:bg-slate-100 dark:hover:bg-slate-700 dark:text-white dark:hover:text-white relative",
                       isCollapsed && "justify-center px-2"
                     )}
+                    onClick={() => setIsOpen(false)}
                     asChild
                   >
                     <Link href={route.href}>
@@ -557,7 +624,9 @@ export function Sidebar({
                 {isCollapsed && (
                   <TooltipContent side="right">
                     <p>{route.label}</p>
-                    {route.badge && <span className="ml-2">({route.badge})</span>}
+                    {route.badge && (
+                      <span className="ml-2">({route.badge})</span>
+                    )}
                   </TooltipContent>
                 )}
               </Tooltip>
@@ -589,7 +658,11 @@ export function Sidebar({
                 {/* User Info */}
                 <div className="px-4 py-3 text-sm">
                   <p className="font-semibold text-base">
-                    {user?.name || `${user?.firstName || ""} ${user?.lastName || ""}`.trim() || "User"}
+                    {user?.name ||
+                      `${user?.firstName || ""} ${
+                        user?.lastName || ""
+                      }`.trim() ||
+                      "User"}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
                     {user?.email || "Email not available"}
@@ -610,7 +683,7 @@ export function Sidebar({
                 {/* Theme Toggle */}
                 <DropdownMenuItem className="flex items-center  px-1 py-2 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors cursor-pointer">
                   <ThemeToggle />
-                  <span >Toggle Theme</span>
+                  <span>Toggle Theme</span>
                 </DropdownMenuItem>
 
                 {/* Logout */}
@@ -622,7 +695,6 @@ export function Sidebar({
                   <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
-
             </DropdownMenu>
           ) : (
             <div className="flex items-center space-x-3 overflow-hidden w-full justify-between">
@@ -655,7 +727,7 @@ export function Sidebar({
                   </DropdownMenuTrigger>
                   <DropdownMenuContent
                     align="end"
-                    className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700"
+                    className="w-56 dark:bg-slate-800 dark:text-white dark:border-slate-700 z-[101]"
                   >
                     <Link href="/profile">
                       <DropdownMenuItem className="dark:hover:bg-slate-700 cursor-pointer">
@@ -679,12 +751,12 @@ export function Sidebar({
       </div>
 
       {/* Mobile Overlay */}
-      {isOpen && (
+      {/* {isOpen && (
         <div
           className="fixed inset-0 bg-black/50 z-30 md:hidden"
           onClick={() => setIsOpen(false)}
         />
-      )}
+      )} */}
     </>
   );
 }

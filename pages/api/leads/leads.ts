@@ -20,6 +20,8 @@ export default async function handler(
       switch (action) {
         case "createLead": {
           const body = req.body;
+          console.log(body);
+          console.log(body.name);
           if (!body || !body.name || !body.email) {
             return res
               .status(400)
@@ -33,7 +35,7 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-          console.log(body, body);
+          console.log(body);
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
           console.log(isValidEmail, isValidPhone);
@@ -66,10 +68,76 @@ export default async function handler(
           }
           return res.status(201).json({ data });
         }
+        case "createManyLead": {
+          const body = req.body;
+          console.log(body);
+
+          if (!Array.isArray(body) || body.length === 0) {
+            return res
+              .status(400)
+              .json({ error: "At least one lead is required" });
+          }
+
+          const token = req.headers.authorization?.split(" ")[1];
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          const validLeads = await Promise.all(
+            body.map(async (lead) => {
+              if (!lead.name || !lead.email) return null;
+
+              const isValidEmail = await validateEmail(lead.email);
+              const isValidPhone = await validatePhoneNumber(lead.phone);
+
+              return {
+                name: lead.name,
+                email: lead.email,
+                phone: lead.phone || null,
+                status: { name: "Arrived", color: "#FFA500" },
+                company: lead.company || null,
+                position: lead.position || null,
+                contact_method: lead.contact_method || "Call",
+                assign_to: null,
+                lead_source_id: lead.sourceId || null,
+                work_id: req.query.workspaceId,
+                user_id: user.id,
+                text_area: lead.text_area || "",
+                is_email_valid: isValidEmail,
+                is_phone_valid: isValidPhone,
+                created_at: lead.createdAt
+                  ? new Date(lead.createdAt).toISOString()
+                  : new Date().toISOString(),
+              };
+            })
+          );
+
+          const filteredLeads = validLeads.filter(Boolean);
+
+          if (filteredLeads.length === 0) {
+            return res.status(400).json({ error: "No valid leads provided" });
+          }
+
+          // Insert multiple leads into Supabase
+          const { data, error } = await supabase
+            .from("leads")
+            .insert(filteredLeads);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          return res.status(201).json({ data });
+        }
+
         case "updateNotesById": {
           const { id } = query; // Extract ID from query parameters
           const body = req.body; // Extract body payload
-          console.log("Request Body:", body, "Lead ID:", id);
 
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -88,7 +156,7 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-          console.log(body);
+
           // Update the `leads` table
           const { data, error } = await supabase
             .from("leads")
@@ -112,7 +180,8 @@ export default async function handler(
         case "updateLeadById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id);
+          console.log(body, id); // Debug to check received data
+
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
           }
@@ -125,15 +194,21 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          if (!body) {
+          if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
+          const updatedBody = {
+            ...body, // Spread other fields dynamically
+            status: body.status,
+            tags: body.tags ? JSON.stringify(body.tags) : undefined, // Convert only if tags exist
+          };
 
           const { data, error } = await supabase
             .from("leads")
-            .update({ status: body })
+            // .update({ status: body })
+            .update(updatedBody)
+
             .eq("id", id);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -141,10 +216,10 @@ export default async function handler(
 
           return res.status(200).json({ data });
         }
+
         case "assignRoleById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id);
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
           }
@@ -284,7 +359,6 @@ export default async function handler(
 
         case "getLeadById": {
           const id = query.id as string;
-          console.log(query);
 
           const {
             data: { user },

@@ -159,17 +159,19 @@ export default async function handler(
           // Query the webhooks table for matching webhook
           const { data, error } = await supabase
             .from("webhooks")
-            .select("id, name")
+            .select("id, name,type")
             // .eq("user_id", user.id)
             .eq("webhook_url", webhookUrl);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log(data);
+
           // If a matching webhook is found, return its name
           if (data && data.length > 0) {
-            return res.status(200).json({ name: data[0].name });
+            return res
+              .status(200)
+              .json({ id: data[0].id, name: data[0].name, type: data[0].type });
           }
 
           // If no webhook matches, return a suitable response
@@ -420,6 +422,7 @@ export default async function handler(
 
             // Check if the user owns the webhook
             if (user_id === user.id) {
+              console.log("enter");
               const { data, error } = await supabase
                 .from("webhooks")
                 .update({ name, type, description })
