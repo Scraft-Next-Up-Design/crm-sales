@@ -354,9 +354,11 @@ export default function MemberManagement({
   isLoading,
 }: MemberManagementProps) {
   const searchParams = useParams();
-  const { id: workspaceId }: any = searchParams;
+  const { id: workspaceId }: any = searchParams
   const [newInviteEmail, setNewInviteEmail] = useState("");
   const [newInviteRole, setNewInviteRole] = useState("member");
+  const [resendingMembers, setResendingMembers] = useState<{ [key: string]: boolean }>({});
+
   const [selectedEmail, setSelectedEmail] = useState<string | undefined>(
     undefined
   );
@@ -393,7 +395,16 @@ export default function MemberManagement({
 
   const handleResendInvite = async (member: WorkspaceMember) => {
     if (!member.id || !onInviteResend) return;
-    await onInviteResend(member);
+    
+    // Set loading state for this specific member
+    setResendingMembers(prev => ({ ...prev, [member.id!]: true }));
+    
+    try {
+      await onInviteResend(member);
+    } finally {
+      // Clear loading state for this member regardless of success/failure
+      setResendingMembers(prev => ({ ...prev, [member.id!]: false }));
+    }
   };
 
   const confirmDeleteMember = async () => {
@@ -410,6 +421,7 @@ export default function MemberManagement({
     const file = event.target.files?.[0];
     if (!file) return;
 
+    // In a real app, you would upload to your server here
     const imageUrl = "/api/placeholder/32/32";
 
     const updatedMember = members.find((m) => m.id === memberId);
@@ -600,9 +612,9 @@ export default function MemberManagement({
                         variant="outline"
                         size="sm"
                         onClick={() => handleResendInvite(member)}
-                        disabled={isResending}
+                        disabled={resendingMembers[member.id!]}
                       >
-                        {isResending ? (
+                        {resendingMembers[member.id!] ? (
                           <>
                             <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                             Resending...

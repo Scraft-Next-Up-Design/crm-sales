@@ -319,7 +319,11 @@ export function Sidebar({
       await updateWorkspaceStatus({ id: workspaceId, status: true });
       setSelectedWorkspace(workspace);
 
-      if (window.location.href.includes("workspace")) {
+      // Refetch all relevant data
+      await refetch();
+      
+      // Redirect to appropriate page
+      if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
       } else if (window.location.href.includes("dashboard")) {
         await router.push(`/dashboard`);
@@ -331,11 +335,11 @@ export function Sidebar({
         await router.push(`/analytics`);
       }
 
-      setTimeout(() => {
-        window.location.reload();
-      }, 100);
+      // Force a page reload to ensure all data is fresh
+      window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
+      toast.error("Failed to change workspace");
     }
   };
   return (
