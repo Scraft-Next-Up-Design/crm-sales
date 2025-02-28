@@ -422,7 +422,7 @@ export function Sidebar({
             >
               <SelectTrigger
                 className="w-full"
-                onClick={() => setIsOpen(!isOpen)}
+                // onClick={() => setIsOpen(!isOpen)}
               >
                 <SelectValue placeholder="Select a workspace">
                   <div className="flex items-center">
@@ -447,9 +447,7 @@ export function Sidebar({
                       variant="ghost"
                       size="icon"
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
-                      onClick={() => {
-                        setIsOpen(!isOpen), dispatch(toggleCollapse());
-                      }}
+                      onClick={() => setIsOpen(!isOpen)}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
