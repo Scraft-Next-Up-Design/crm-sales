@@ -22,6 +22,7 @@ export default async function handler(
           const body = req.body;
           console.log(body);
           console.log(body.name);
+
           if (!body || !body.name || !body.email) {
             return res
               .status(400)
@@ -35,10 +36,44 @@ export default async function handler(
           if (!user) {
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
-          console.log(body);
+
+          const { data: existingLeads, error: fetchError } = await supabase
+            .from("leads")
+            .select("created_at")
+            .eq("email", body.email)
+            .order("created_at", { ascending: false })
+            .limit(1);
+
+          if (fetchError) {
+            return res
+              .status(500)
+              .json({ error: "Error checking existing leads" });
+          }
+
+          if (existingLeads.length > 0) {
+            const existingLead = existingLeads[0];
+            const createdAt = new Date(existingLead.created_at);
+            const now = new Date();
+
+            if (!isNaN(createdAt.getTime())) {
+              const timeDifference =
+                (now.getTime() - createdAt.getTime()) / (1000 * 60);
+
+              if (timeDifference < 60) {
+                return res.status(400).json({
+                  error:
+                    "A lead with this email was created less than an hour ago.",
+                });
+              }
+            }
+          }
+
+          // Step 2: Validate email and phone
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
           console.log(isValidEmail, isValidPhone);
+
+          // Step 3: Insert new lead
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
@@ -55,7 +90,6 @@ export default async function handler(
               lead_source_id: body.source_id || null,
               work_id: req.query.workspaceId,
               user_id: user.id,
-
               text_area: body.text_area || "",
               is_email_valid: isValidEmail,
               is_phone_valid: isValidPhone,
@@ -66,8 +100,10 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+
           return res.status(201).json({ data });
         }
+
         case "createManyLead": {
           const body = req.body;
           console.log(body);

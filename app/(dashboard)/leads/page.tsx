@@ -406,9 +406,33 @@ const LeadManagement: React.FC = () => {
   // Handle form submission
   const onSubmit = async (data: z.infer<typeof leadSchema>) => {
     if (dialogMode === "create") {
-      // Add new lead
       try {
-        await createLead({ workspaceId: workspaceId, body: data });
+        const response = await createLead({
+          workspaceId: workspaceId,
+          body: data,
+        });
+
+        if (response.error) {
+          let errorMessage = "An unknown error occurred";
+          let errorParts: string[] = [];
+
+          if ("data" in response.error && response.error.data) {
+            errorMessage = JSON.stringify(response.error.data);
+            errorParts = errorMessage.split(":");
+          } else if ("error" in response.error) {
+            errorMessage = response.error.error;
+            errorParts = errorMessage.split(":");
+          }
+
+          if (errorParts.length > 1) {
+            errorMessage = errorParts[1].trim().replace(/["}]/g, "");
+          }
+
+          toast.error(errorMessage);
+          resetDialog();
+          return;
+        }
+
         setLeads([
           ...leads,
           {
@@ -418,11 +442,13 @@ const LeadManagement: React.FC = () => {
             revenue: data.revenue || 0,
           },
         ]);
-      } catch (error) {
-        console.log(error);
-      }
 
-      resetDialog();
+        toast.success("Lead created successfully");
+        resetDialog();
+      } catch (error) {
+        console.error(error);
+        toast.error("An error occurred while creating the lead.");
+      }
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
       try {
@@ -445,8 +471,8 @@ const LeadManagement: React.FC = () => {
         console.error("Error updating lead", error);
         toast.error(CRM_MESSAGES.LEAD_UPDATED_ERROR);
       }
+      toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     }
-    toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     resetDialog();
   };
 
@@ -1589,11 +1615,10 @@ const LeadManagement: React.FC = () => {
                           <SelectValue placeholder="Select contact method" />
                         </SelectTrigger>
                       </FormControl>
-                      <SelectContent>
+                      <SelectContent className="z-[1001]">
                         <SelectItem value="WhatsApp">WhatsApp</SelectItem>
                         <SelectItem value="SMS">SMS</SelectItem>
                         <SelectItem value="Call">Call</SelectItem>
-                        <SelectItem value="Email">Call</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />

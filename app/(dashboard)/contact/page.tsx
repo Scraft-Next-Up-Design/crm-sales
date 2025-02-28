@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
+import { Resizable } from "react-resizable";
+import "react-resizable/css/styles.css";
 import {
   Table,
   TableBody,
@@ -66,6 +68,7 @@ import WebhookStatus from "@/components/ui/WebhookStatus";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 import { CardTitle } from "@/components/ui/card";
+import { ResizableHandle } from "@/components/ui/resizable";
 // import { useRouter } from "next/router";
 // import { Loader2} from "@/components/ui";
 
@@ -477,6 +480,25 @@ export default function ContactPage() {
     startIndex + itemsPerPage
   );
 
+  // Rezieable columns
+  const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
+    Object.fromEntries(tableHeaders.map((header) => [header, 150])) // Default width for each column
+  );
+
+  // Correctly type 'size' as ResizeCallbackData
+  type ResizeCallbackData = {
+    size: { width: number; height: number };
+  };
+
+  const handleResize =
+    (header: string) =>
+    (event: React.SyntheticEvent, { size }: ResizeCallbackData) => {
+      setColumnWidths((prevWidths) => ({
+        ...prevWidths,
+        [header]: size.width, // Update width dynamically
+      }));
+    };
+
   const handleAddContact = (e: React.FormEvent) => {
     e.preventDefault();
     const newId = contacts.length + 1;
@@ -644,16 +666,28 @@ export default function ContactPage() {
                     <TableHead
                       key={header}
                       className="relative text-center font-semibold"
+                      style={{ width: columnWidths[header] }} // Apply dynamic width
                     >
-                      {/* Header content with click to open dropdown */}
-                      <div
-                        className="cursor-pointer"
-                        onClick={() => toggleDropdown(header)}
+                      <Resizable
+                        width={columnWidths[header]}
+                        height={30}
+                        axis="x"
+                        resizeHandles={["e"]} // Enables resizing from the right edge
+                        onResize={handleResize(header)}
                       >
-                        {header}
-                      </div>
+                        <div
+                          className="flex justify-center items-center cursor-pointer"
+                          style={{ width: "100%" }} // Ensure div stretches fully
+                        >
+                          <span onClick={() => toggleDropdown(header)}>
+                            {header}
+                          </span>
+                          {/* Resize Handle */}
+                          <span className="w-2 h-full cursor-ew-resize bg-gray-300"></span>
+                        </div>
+                      </Resizable>
 
-                      {/* Dropdown menu for remove option */}
+                      {/* Dropdown menu for removing column */}
                       {dropdownOpenRemove === header && (
                         <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-md p-2 w-40 z-50">
                           <button
@@ -695,6 +729,7 @@ export default function ContactPage() {
                   </TableHead>
                 </TableRow>
               </TableHeader>
+
               <TableBody>
                 {/* Mobile veiw */}
                 {filteredContacts.map((contact) => (
@@ -1006,7 +1041,7 @@ export default function ContactPage() {
                             }}
                           >
                             <span className="text-gray-600">Tag</span>
-                            <div className="flex flex-col ">
+                            <div className="flex flex-row ">
                               <div className="flex flex-row flex-wrap items-center">
                                 {(() => {
                                   const parsedTags =
@@ -1042,8 +1077,8 @@ export default function ContactPage() {
                                       </div>
                                     ))
                                   ) : (
-                                    <span className="text-gray-500 ">
-                                      No tags available
+                                    <span className="text-gray-400 italic">
+                                      Double click to add tags
                                     </span>
                                   );
                                 })()}
@@ -1067,7 +1102,7 @@ export default function ContactPage() {
                                   </SelectTrigger>
                                 )}
 
-                                <SelectContent className="w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                                <SelectContent className="hidden md:flex w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                                   <div className="flex flex-col gap-2">
                                     {tags.map((tag) => (
                                       <SelectItem
@@ -1585,8 +1620,8 @@ export default function ContactPage() {
                                   </div>
                                 ))
                               ) : (
-                                <span className="text-gray-500">
-                                  No tags available
+                                <span className="text-gray-400 italic">
+                                  Double click to add tags
                                 </span>
                               );
                             })()}
@@ -1611,10 +1646,10 @@ export default function ContactPage() {
                             )}
 
                             <SelectContent className="hidden md:flex   w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                              <div className="flex flex-col gap-2">
+                              <div className="hidden md:flex flex-col gap-2">
                                 {tags.map((tag) => (
                                   <SelectItem key={tag.name} value={tag.name}>
-                                    <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div className="hidden group md:flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                       <div className="relative">
                                         <div
                                           className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"

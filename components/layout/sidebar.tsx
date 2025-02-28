@@ -404,7 +404,9 @@ export function Sidebar({
                   variant="outline"
                   size="icon"
                   className="w-full"
-                  onClick={() => dispatch(toggleCollapse())}
+                  onClick={() => {
+                    setIsOpen(!isOpen), dispatch(toggleCollapse());
+                  }}
                 >
                   <Folder className="h-4 w-4" />
                 </Button>
@@ -418,7 +420,10 @@ export function Sidebar({
               value={selectedWorkspace?.id || ""}
               onValueChange={handleWorkspaceChange}
             >
-              <SelectTrigger className="w-full">
+              <SelectTrigger
+                className="w-full"
+                onClick={() => setIsOpen(!isOpen)}
+              >
                 <SelectValue placeholder="Select a workspace">
                   <div className="flex items-center">
                     <Folder className="mr-2 h-4 w-4" />
@@ -432,6 +437,7 @@ export function Sidebar({
                     key={workspace.id}
                     value={workspace.id}
                     className="relative flex items-center py-2 cursor-pointer"
+                    onClick={() => setIsOpen(!isOpen)}
                   >
                     <div className="flex items-center flex-1 mr-8">
                       <Folder className="shrink-0 mr-2 h-4 w-4" />
@@ -441,6 +447,9 @@ export function Sidebar({
                       variant="ghost"
                       size="icon"
                       className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 p-0"
+                      onClick={() => {
+                        setIsOpen(!isOpen), dispatch(toggleCollapse());
+                      }}
                       onMouseDown={(e) => {
                         e.preventDefault();
                         e.stopPropagation();
