@@ -76,6 +76,7 @@ export default async function handler(
             "You have been added to a workspace",
             `
               <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
+                  <p><strong>Note:</strong> Your invitation expires in 2 hours.</p>
               <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
                 <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;">
                   Accept Invite

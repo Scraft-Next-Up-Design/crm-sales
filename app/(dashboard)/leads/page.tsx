@@ -9,7 +9,7 @@ import {
 import FilterComponent from "./filter";
 import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import Papa from "papaparse";
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import {
@@ -75,7 +75,6 @@ import {
   useBulkDeleteLeadsMutation,
   useCreateLeadMutation,
   useCreateManyLeadMutation,
-  // useGetLeadsSourceQuery,
 } from "@/lib/store/services/leadsApi";
 import {
   useGetActiveWorkspaceQuery,
@@ -91,6 +90,7 @@ import { X } from "lucide-react";
 import { formatDate } from "@/utils/date";
 import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import { skipToken } from "@reduxjs/toolkit/query";
+import { throttle } from "lodash";
 
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -105,7 +105,7 @@ const leadSchema = z.object({
   revenue: z.number().optional(),
 });
 
-const initialFilters: any = {
+const initialFilters = {
   leadSource: "",
   owner: "",
   status: "",
@@ -116,89 +116,111 @@ const initialFilters: any = {
   showDuplicates: false,
 };
 
-const LeadManagement: React.FC = () => {
+const LeadManagement = () => {
   const isCollapsed = useSelector(
-    (state: RootState) => state.sidebar.isCollapsed
+    (state) => state.sidebar.isCollapsed
   );
-  const [createLead, { isLoading: isCreateLoading, error: leadCreateError }] =
-    useCreateLeadMutation();
-  const [
-    createManyLead,
-    { isLoading: isCreateManyLoading, error: leadCreateManyError },
-  ] = useCreateManyLeadMutation();
-  const [
-    updateLeadData,
-    { isLoading: isUpdateLoading, error: leadUpdateError },
-  ] = useUpdateLeadDataMutation();
+  
+  // RTK Query hooks
+  const [createLead, { isLoading: isCreateLoading }] = useCreateLeadMutation();
+  const [createManyLead, { isLoading: isCreateManyLoading }] = useCreateManyLeadMutation();
+  const [updateLeadData, { isLoading: isUpdateLoading }] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
-  const [searchQuery, setSearchQuery] = useState("");
-  const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] =
-    useAssignRoleMutation();
-  const [expandedRow, setExpandedRow] = useState(null);
-  const toggleRow = (id: any) => {
-    setExpandedRow(expandedRow === id ? null : id);
-  };
+  const [assignRole, { isLoading: isAssignLoading }] = useAssignRoleMutation();
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
-  const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
-    useGetActiveWorkspaceQuery();
+  
+  // State hooks
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
+  const [expandedRow, setExpandedRow] = useState(null);
+  const [filters, setFilters] = useState(initialFilters);
+  const [leads, setLeads] = useState([]);
+  const [selectedLeads, setSelectedLeads] = useState([]);
+  const [dialogMode, setDialogMode] = useState(null);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [editingLead, setEditingLead] = useState(null);
+  const [showFilters, setShowFilters] = useState(false);
+  
+  // Router
+  const router = useRouter();
+  
+  // Workspace data
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
 
-  // Fetch lead sources
-  const {
-    data: leadSources,
-    error,
-    isLoading,
-  } = useGetWebhooksQuery({ id: workspaceId });
-
-  console.log(leadSources);
-
-  const { data: workspaceData, isLoading: isLoadingLeads }: any =
-    useGetLeadsByWorkspaceQuery(
-      workspaceId
-        ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
-        : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
-      {
-        skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
-        pollingInterval: 10000, // Poll every 2 seconds (2000 ms)
-      }
-    );
-  const { data: workspaceMembers, isLoading: isLoadingMembers } =
-    useGetWorkspaceMembersQuery(workspaceId);
-
-  const POLLING_INTERVAL = 10000;
-  const { data: statusData, isLoading: isLoadingStatus }: any =
-    useGetStatusQuery(workspaceId);
-
+  // Implement debounce for search
   useEffect(() => {
-    const fetchLeads = () => {
-      if (!isLoadingLeads && workspaceData?.data) {
-        let fetchedLeads = workspaceData?.data.map(
-          (lead: any, index: number) => ({
-            id: lead.id || index + 1,
-            Name: lead.name || "",
-            email: lead.email || "",
-            phone: lead.phone || "",
-            company: lead.company || "",
-            position: lead.position || "",
-            contact_method: lead.contact_method,
-            owner: lead.owner || "Unknown",
-            status: lead.status || "New",
-            revenue: lead.revenue || 0,
-            assign_to: lead.assign_to || "Not Assigned",
-            createdAt: lead.created_at
-              ? new Date(lead.created_at).toISOString()
-              : new Date().toISOString(),
-            isDuplicate: false, // Ensure valid date format
-            is_email_valid: lead.is_email_valid,
-            is_phone_valid: lead.is_phone_valid,
-            sourceId: lead.lead_source_id || null, // Assuming sourceId is part of the lead
-          })
-        );
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 300);
+    
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
+  // Throttled version of toggleRow function
+  const toggleRow = useCallback(
+    throttle((id) => {
+      setExpandedRow((prev) => (prev === id ? null : id));
+    }, 300),
+    []
+  );
+
+  // Fetch lead sources
+  const { data: leadSources, isLoading: isLoadingSources } = useGetWebhooksQuery(
+    workspaceId ? { id: workspaceId } : skipToken
+  );
+
+  // Fetch leads data with optimized polling
+  const { data: workspaceData, isLoading: isLoadingLeads } = useGetLeadsByWorkspaceQuery(
+    workspaceId ? { workspaceId: workspaceId.toString() } : skipToken,
+    {
+      skip: !workspaceId || isLoadingWorkspace,
+      pollingInterval: 30000, // Increased to 30 seconds to reduce server load
+    }
+  );
+
+  // Fetch workspace members
+  const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(
+    workspaceId ? workspaceId : skipToken,
+    { skip: !workspaceId }
+  );
+
+  // Fetch status data
+  const { data: statusData, isLoading: isLoadingStatus } = useGetStatusQuery(
+    workspaceId ? workspaceId : skipToken,
+    { skip: !workspaceId }
+  );
+
+  // Process leads data once when it's loaded
+  useEffect(() => {
+    if (!isLoadingLeads && workspaceData?.data) {
+      const processLeads = () => {
+        let fetchedLeads = workspaceData.data.map((lead, index) => ({
+          id: lead.id || index + 1,
+          Name: lead.name || "",
+          email: lead.email || "",
+          phone: lead.phone || "",
+          company: lead.company || "",
+          position: lead.position || "",
+          contact_method: lead.contact_method,
+          owner: lead.owner || "Unknown",
+          status: lead.status || "New",
+          revenue: lead.revenue || 0,
+          assign_to: lead.assign_to || "Not Assigned",
+          createdAt: lead.created_at
+            ? new Date(lead.created_at).toISOString()
+            : new Date().toISOString(),
+          isDuplicate: false,
+          is_email_valid: lead.is_email_valid,
+          is_phone_valid: lead.is_phone_valid,
+          sourceId: lead.lead_source_id || null,
+        }));
+
+        // Find duplicates
         const duplicates = new Set();
-        fetchedLeads.forEach((lead: any) => {
+        fetchedLeads.forEach((lead) => {
           const duplicate = fetchedLeads.find(
-            (l: any) =>
+            (l) =>
               l.id !== lead.id &&
               (l.email === lead.email || l.phone === lead.phone)
           );
@@ -209,7 +231,7 @@ const LeadManagement: React.FC = () => {
         });
 
         // Mark duplicates
-        const updatedLeads = fetchedLeads.map((lead: any) => ({
+        const updatedLeads = fetchedLeads.map((lead) => ({
           ...lead,
           isDuplicate: duplicates.has(lead.id),
         }));
@@ -217,37 +239,24 @@ const LeadManagement: React.FC = () => {
         // Sort by most recent
         setLeads(
           updatedLeads.sort(
-            (a: any, b: any) =>
+            (a, b) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
         );
-      }
-    };
-    // Initial fetch
-    fetchLeads();
+      };
 
-    // Set up polling
-    const pollInterval = setInterval(fetchLeads, POLLING_INTERVAL);
-
-    // Cleanup
-    return () => clearInterval(pollInterval);
+      processLeads();
+    }
   }, [workspaceData, isLoadingLeads]);
 
-  const router = useRouter();
-  const [showFilters, setShowFilters] = useState(false);
-
-  const [filters, setFilters] = useState<any>(initialFilters);
-  const [leads, setLeads] = useState<any[]>([]);
-
-  const handleFilterReset = () => {
-    setFilters(initialFilters);
-    setShowFilters(false);
-  };
-
+  // Filter leads with optimized dependencies
   const filteredLeads = useMemo(() => {
+    if (!leads.length) return [];
+
     return leads.filter((lead) => {
-      if (searchQuery) {
-        const searchText = searchQuery.toLowerCase();
+      // Search filter
+      if (debouncedSearchQuery) {
+        const searchText = debouncedSearchQuery.toLowerCase();
         const searchableFields = [
           lead.Name,
           lead.email,
@@ -265,36 +274,34 @@ const LeadManagement: React.FC = () => {
 
         if (!matchesSearch) return false;
       }
+
       // Owner filter
-      if (filters.owner && !lead.assign_to.name?.includes(filters.owner))
+      if (filters.owner && !lead.assign_to?.name?.includes(filters.owner))
         return false;
 
-      // Step 1: Find the leadSourceId
-      let leadSourceId = leadSources?.data.find(
-        (source: any) => source?.name === filters?.leadsSource
-      )?.id;
+      // Lead source filter
+      if (filters.leadsSource && filters.leadsSource !== "all") {
+        // Find the leadSourceId
+        const leadSourceId = leadSources?.data.find(
+          (source) => source?.name === filters?.leadsSource
+        )?.id;
 
-      // Step 2: Find the webhook_url in workspaceData based on leadSourceId
-      let webhook_url = leadSources?.data.find(
-        (entry: any) => entry?.id === leadSourceId
-      )?.webhook_url;
+        // Find webhook_url
+        const webhook_url = leadSources?.data.find(
+          (entry) => entry?.id === leadSourceId
+        )?.webhook_url;
 
-      // Step 3: Extract sourceId from webhook_url
-      let sourceId: string | null = null;
-      if (webhook_url) {
-        const urlParams = new URLSearchParams(webhook_url.split("?")[1]);
-        leadSourceId = urlParams.get("sourceId");
+        // Extract sourceId from webhook_url
+        let sourceId = null;
+        if (webhook_url) {
+          const urlParams = new URLSearchParams(webhook_url.split("?")[1]);
+          sourceId = urlParams.get("sourceId");
+        }
+
+        if (sourceId && lead.sourceId !== sourceId) return false;
       }
 
-      // Apply leadSource filter if needed
-      if (
-        filters.leadsSource &&
-        filters.leadsSource !== "all" &&
-        leadSourceId
-      ) {
-        if (lead.sourceId !== leadSourceId) return false;
-      }
-      // Status filter (Fixing the bug where old data persists)
+      // Status filter
       if (filters.status && lead.status?.name !== filters.status) return false;
 
       // Contact Method filter
@@ -304,7 +311,7 @@ const LeadManagement: React.FC = () => {
       )
         return false;
 
-      // Contact Type filter (Ensure it checks correct field)
+      // Contact Type filter
       if (filters.contactType) {
         if (filters.contactType === "phone" && !lead.phone) return false;
         if (filters.contactType === "email" && !lead.email) return false;
@@ -324,41 +331,35 @@ const LeadManagement: React.FC = () => {
         return false;
 
       // Duplicate check
-      if (filters.showDuplicates) {
-        const duplicates = leads.filter(
-          (l) => l.email === lead.email || l.phone === lead.phone
-        );
-        if (duplicates.length <= 1) return false;
-      }
+      if (filters.showDuplicates && !lead.isDuplicate) return false;
 
       return true;
     });
-  }, [leads, filters, searchQuery, leadSources]);
+  }, [
+    leads,
+    debouncedSearchQuery,
+    filters.owner,
+    filters.leadsSource,
+    filters.status,
+    filters.contact_method,
+    filters.contactType,
+    filters.startDate,
+    filters.endDate,
+    filters.showDuplicates,
+    leadSources?.data
+  ]);
 
-  const handleFilterChange = (newFilters: any) => {
-    setFilters(newFilters);
-  };
-
-  const [selectedLeads, setSelectedLeads] = useState<number[]>([]);
-  const [dialogMode, setDialogMode] = useState<
-    "create" | "edit" | "delete" | null
-  >(null);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [editingLead, setEditingLead] = useState<any>(null);
-
-  // Pagination
+  // Pagination implementation
   const leadsPerPage = 10;
-  const totalPages = Math.ceil(leads.length / leadsPerPage);
+  const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
+  
+  const paginatedLeads = useMemo(() => {
+    const startIndex = (currentPage - 1) * leadsPerPage;
+    return filteredLeads.slice(startIndex, startIndex + leadsPerPage);
+  }, [filteredLeads, currentPage, leadsPerPage]);
 
-  // Paginated leads
-  // const paginatedLeads = useMemo(() => {
-  //   const startIndex = (currentPage - 1) * leadsPerPage;
-  //   return leads.slice(startIndex, startIndex + leadsPerPage);
-  // }, [leads, currentPage]);
-
-  const paginatedLeads = leads;
   // Form setup
-  const form = useForm<z.infer<typeof leadSchema>>({
+  const form = useForm({
     resolver: zodResolver(leadSchema),
     defaultValues: {
       name: "",
@@ -372,7 +373,7 @@ const LeadManagement: React.FC = () => {
   });
 
   // Reset dialog state
-  const resetDialog = () => {
+  const resetDialog = useCallback(() => {
     form.reset({
       name: "",
       email: "",
@@ -384,16 +385,16 @@ const LeadManagement: React.FC = () => {
     });
     setEditingLead(null);
     setDialogMode(null);
-  };
+  }, [form]);
 
   // Open create dialog
-  const openCreateDialog = () => {
+  const openCreateDialog = useCallback(() => {
     resetDialog();
     setDialogMode("create");
-  };
+  }, [resetDialog]);
 
   // Open edit dialog
-  const openEditDialog = (lead: any) => {
+  const openEditDialog = useCallback((lead) => {
     form.reset({
       name: lead.Name,
       email: lead.email,
@@ -405,10 +406,10 @@ const LeadManagement: React.FC = () => {
     });
     setEditingLead(lead);
     setDialogMode("edit");
-  };
+  }, [form]);
 
   // Handle form submission
-  const onSubmit = async (data: z.infer<typeof leadSchema>) => {
+  const onSubmit = async (data) => {
     if (dialogMode === "create") {
       try {
         const response = await createLead({
@@ -418,7 +419,7 @@ const LeadManagement: React.FC = () => {
 
         if (response.error) {
           let errorMessage = "An unknown error occurred";
-          let errorParts: string[] = [];
+          let errorParts = [];
 
           if ("data" in response.error && response.error.data) {
             errorMessage = JSON.stringify(response.error.data);
@@ -437,66 +438,52 @@ const LeadManagement: React.FC = () => {
           return;
         }
 
-        setLeads([
-          ...leads,
-          {
-            ...data,
-            company: data.company || "",
-            position: data.position || "",
-            revenue: data.revenue || 0,
-          },
-        ]);
-
+        // Update local state (let RTK Query handle refetching)
         toast.success("Lead created successfully");
         resetDialog();
       } catch (error) {
-        console.error(error);
         toast.error("An error occurred while creating the lead.");
       }
     } else if (dialogMode === "edit" && editingLead) {
       // Update existing lead
       try {
-        updateLeadData({ id: editingLead.id, leads: data });
-        setLeads((prevLeads) =>
-          prevLeads.map((lead) =>
-            lead.id === editingLead.id
-              ? {
-                  ...lead,
-                  ...data,
-                  company: data.company || "",
-                  position: data.position || "",
-                  revenue: data.revenue || 0,
-                }
-              : lead
-          )
-        );
-        setEditingLead(null);
+        await updateLeadData({ id: editingLead.id, leads: data });
+        // Let RTK Query handle the data update
+        toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
       } catch (error) {
-        console.error("Error updating lead", error);
         toast.error(CRM_MESSAGES.LEAD_UPDATED_ERROR);
       }
-      toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
     }
+    
     resetDialog();
   };
+
+  // Handle filter changes
+  const handleFilterChange = useCallback((newFilters) => {
+    setFilters(newFilters);
+    setCurrentPage(1); // Reset to first page on filter change
+  }, []);
+
+  // Filter reset
+  const handleFilterReset = useCallback(() => {
+    setFilters(initialFilters);
+    setShowFilters(false);
+    setCurrentPage(1);
+  }, []);
 
   // Delete selected leads
   const handleDelete = async () => {
     try {
-      const response = await deleteLeadsData({
+      await deleteLeadsData({
         id: selectedLeads,
         workspaceId: workspaceId,
-      }).unwrap(); // Add .unwrap() for RTK Query
+      }).unwrap();
 
-      setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
+      // Let RTK Query handle the data update
       setSelectedLeads([]);
       setDialogMode(null);
       toast.success("Selected leads deleted successfully");
-    } catch (error: any) {
-      // Log the error to see its structure
-      console.error("Delete error:", error);
-
-      // RTK Query specific error handling
+    } catch (error) {
       const errorMessage =
         error.data?.message ||
         error.data?.error ||
@@ -507,22 +494,22 @@ const LeadManagement: React.FC = () => {
     }
   };
 
-  // Toggle lead selection
-  const toggleLeadSelection = (leadId: number) => {
+  // Toggle lead selection - optimized
+  const toggleLeadSelection = useCallback((leadId) => {
     setSelectedLeads((prev) =>
       prev.includes(leadId)
         ? prev.filter((id) => id !== leadId)
         : [...prev, leadId]
     );
-  };
+  }, []);
 
   // Deselect all leads
-  const deselectAll = () => {
+  const deselectAll = useCallback(() => {
     setSelectedLeads([]);
-  };
+  }, []);
 
   // Select all leads on current page
-  const toggleSelectAllOnPage = () => {
+  const toggleSelectAllOnPage = useCallback(() => {
     const currentPageLeadIds = paginatedLeads.map((lead) => lead.id);
     const allSelected = currentPageLeadIds.every((id) =>
       selectedLeads.includes(id)
@@ -533,72 +520,97 @@ const LeadManagement: React.FC = () => {
         ? prev.filter((id) => !currentPageLeadIds.includes(id))
         : Array.from(new Set([...prev, ...currentPageLeadIds]))
     );
-  };
+  }, [paginatedLeads, selectedLeads]);
 
-  // export csv
-  console.log(leads);
-  const exportToCSV = () => {
-    const formattedLeads = leads.map((lead) => {
-      // Find the matching lead source based on sourceId
-      const matchedSource = leadSources?.data.find((source: any) =>
-        source.webhook_url.includes(lead.sourceId)
-      );
+  // Export to CSV with chunking for large datasets
+  const exportToCSV = useCallback(() => {
+    // Function to process leads in chunks
+    const processLeadsInChunks = (allLeads, chunkSize = 100) => {
+      let processed = [];
+      
+      for (let i = 0; i < allLeads.length; i += chunkSize) {
+        const chunk = allLeads.slice(i, i + chunkSize);
+        
+        const formattedChunk = chunk.map((lead) => {
+          // Find the matching lead source based on sourceId
+          const matchedSource = leadSources?.data.find((source) =>
+            source.webhook_url?.includes(lead.sourceId)
+          );
 
-      const formattedSourceDate = matchedSource
-        ? new Date(matchedSource.created_at)
-            .toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false, // 24-hour format
-            })
-            .replace(",", "")
-        : "";
+          const formattedSourceDate = matchedSource
+            ? new Date(matchedSource.created_at)
+                .toLocaleString("en-GB", {
+                  day: "2-digit",
+                  month: "2-digit",
+                  year: "numeric",
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: false,
+                })
+                .replace(",", "")
+            : "";
 
-      return {
-        Name: lead.Name,
-        email: lead.email.toLowerCase(),
-        phone: lead.phone,
-        company: lead.company,
-        position: lead.position,
-        contact_method: lead.contact_method,
-        owner: lead.owner,
-        status: lead.status ? String(lead?.status?.name) : "Unknown",
-        revenue: lead.revenue,
-        assign_to: lead.assign_to,
-
-        createdAt: new Date(lead.createdAt)
-          .toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false, // 24-hour format
-          })
-          .replace(",", ""),
-
-        isDuplicate: lead.isDuplicate,
-        is_email_valid: lead.is_email_valid,
-        is_phone_valid: lead.is_phone_valid,
-
-        // Use the lead source name if found, otherwise set "No Source"
-        source: matchedSource
-          ? `${matchedSource.name}-${formattedSourceDate}`
-          : "No Source",
-      };
-    });
+          return {
+            Name: lead.Name,
+            email: lead.email.toLowerCase(),
+            phone: lead.phone,
+            company: lead.company,
+            position: lead.position,
+            contact_method: lead.contact_method,
+            owner: lead.owner,
+            status: lead.status ? String(lead?.status?.name) : "Unknown",
+            revenue: lead.revenue,
+            assign_to: lead.assign_to,
+            createdAt: new Date(lead.createdAt)
+              .toLocaleString("en-GB", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                hour12: false,
+              })
+              .replace(",", ""),
+            isDuplicate: lead.isDuplicate,
+            is_email_valid: lead.is_email_valid,
+            is_phone_valid: lead.is_phone_valid,
+            source: matchedSource
+              ? `${matchedSource.name}-${formattedSourceDate}`
+              : "No Source",
+          };
+        });
+        
+        processed = [...processed, ...formattedChunk];
+      }
+      
+      return processed;
+    };
+    
+    // Process leads in chunks
+    const formattedLeads = processLeadsInChunks(leads);
+    
+    // Create and download workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedLeads);
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
     XLSX.writeFile(workbook, "leads_export.csv");
-  };
+  }, [leads, leadSources?.data]);
 
-  // Export to JSON
-  const exportToJSON = () => {
-    const dataStr = JSON.stringify(leads, null, 2);
+  // Export to JSON with chunking
+  const exportToJSON = useCallback(() => {
+    const processInChunks = (data, chunkSize = 100) => {
+      let result = [];
+      
+      for (let i = 0; i < data.length; i += chunkSize) {
+        const chunk = data.slice(i, i + chunkSize);
+        result = [...result, ...chunk];
+      }
+      
+      return result;
+    };
+    
+    const processedData = processInChunks(leads);
+    const dataStr = JSON.stringify(processedData, null, 2);
     const dataUri =
       "data:application/json;charset=utf-8," + encodeURIComponent(dataStr);
     const exportFileDefaultName = "leads_export.json";
@@ -607,27 +619,25 @@ const LeadManagement: React.FC = () => {
     linkElement.setAttribute("href", dataUri);
     linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
-  };
+  }, [leads]);
 
   // Import leads
-
-  const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImportCSV = useCallback((event) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
     const reader = new FileReader();
     reader.onload = (e) => {
       try {
-        const csvData = e.target?.result as string;
+        const csvData = e.target?.result;
 
         Papa.parse(csvData, {
           header: true,
           skipEmptyLines: true,
-          complete: async (result: any) => {
-            const normalizedData = result.data.map((lead: any) => ({
+          complete: async (result) => {
+            const normalizedData = result.data.map((lead) => ({
               id: lead.id,
               name: lead.Name?.trim() || "",
-
               email: lead.email,
               phone: String(lead.phone)
                 .replace(/[^\d+]/g, "")
@@ -643,23 +653,36 @@ const LeadManagement: React.FC = () => {
               createdAt: lead.createdAt
                 ? new Date(lead.createdAt).toISOString()
                 : new Date().toISOString(),
-
               isDuplicate: lead.isDuplicate === "TRUE",
               is_email_valid: lead.is_email_valid === "TRUE",
               is_phone_valid: lead.is_phone_valid === "TRUE",
               sourceId: lead.sourceId,
             }));
 
-            // Validate data using Zod schema
-            const validLeads = normalizedData.filter((lead: any) => {
-              try {
-                leadSchema.parse(lead);
-                return true;
-              } catch (error) {
-                toast.error("Invalid leads");
-                return false;
+            // Validate data (process in chunks for large imports)
+            const processInChunks = (data, chunkSize = 50) => {
+              let validLeads = [];
+              
+              for (let i = 0; i < data.length; i += chunkSize) {
+                const chunk = data.slice(i, i + chunkSize);
+                
+                // Validate leads in this chunk
+                const validChunk = chunk.filter((lead) => {
+                  try {
+                    leadSchema.parse(lead);
+                    return true;
+                  } catch (error) {
+                    return false;
+                  }
+                });
+                
+                validLeads = [...validLeads, ...validChunk];
               }
-            });
+              
+              return validLeads;
+            };
+            
+            const validLeads = processInChunks(normalizedData);
 
             if (validLeads.length === 0) {
               toast.error("No valid leads found.");
@@ -667,19 +690,17 @@ const LeadManagement: React.FC = () => {
             }
 
             try {
-              const response = await createManyLead({
+              await createManyLead({
                 workspaceId,
-                body: validLeads, // Ensure this is an array
+                body: validLeads,
               });
 
-              // console.log("API Response:", response);
-
-              setLeads((prev) => [...prev, ...validLeads]);
-              toast.success("Leads created successfully");
+              toast.success(`${validLeads.length} leads created successfully`);
             } catch (error) {
               toast.error("Error adding leads to database");
             }
-            // Reset input value to allow re-uploading the same file
+            
+            // Reset input value
             event.target.value = "";
           },
         });
@@ -689,9 +710,15 @@ const LeadManagement: React.FC = () => {
     };
 
     reader.readAsText(file);
-  };
+  }, [workspaceId, createManyLead]);
 
-  const initiateDirectContact = (lead: any, method: string) => {
+  // Handle view
+  const handleView = useCallback((id) => {
+    router.push(`/leads/${id}`);
+  }, [router]);
+
+  // Contact methods
+  const initiateDirectContact = useCallback((lead, method) => {
     const sanitizedPhone = lead.phone.replace(/\D/g, "");
 
     switch (method) {
@@ -706,69 +733,38 @@ const LeadManagement: React.FC = () => {
         break;
       default:
     }
-  };
-  const handleView = (id: number) => {
-    router.push(`/leads/${id}`);
-  };
+  }, []);
 
-  const handleStatusChange = async (id: number, value: string) => {
+  // Handle status change
+  const handleStatusChange = useCallback(async (id, value) => {
     const { name, color } = JSON.parse(value);
 
     try {
       await updateLead({ id, leads: { status: { name, color } } });
-
-      // Update the leads state with the new status
-      setLeads((prevLeads) =>
-        prevLeads.map((lead) =>
-          lead.id === id
-            ? {
-                ...lead,
-                status: {
-                  name,
-                  color,
-                },
-              }
-            : lead
-        )
-      );
-
+      // Let RTK Query handle the data update
       toast.success(`Lead status updated to ${name}`);
     } catch (error) {
-      console.error("Error updating lead status:", error);
       toast.error("Failed to update lead status");
     }
-  };
+  }, [updateLead]);
 
-  const handleAssignChange = async (id: number, assign: string) => {
+  // Handle assign change
+  const handleAssignChange = useCallback(async (id, assign) => {
     const { name, role } = JSON.parse(assign);
 
     try {
       await assignRole({ id, data: { name, role } });
-
-      // Update the leads state with the new assignment
-      setLeads((prevLeads) =>
-        prevLeads.map((lead) =>
-          lead.id === id
-            ? {
-                ...lead,
-                assign_to: {
-                  name,
-                  role,
-                },
-              }
-            : lead
-        )
-      );
-
+      // Let RTK Query handle the data update
       toast.success(`Lead assigned to ${name}`);
     } catch (error) {
-      console.error("Error assigning lead:", error);
       toast.error("Failed to assign lead");
     }
-  };
-  const handleGoBack = () => {
+  }, [assignRole]);
+
+  const handleGoBack = useCallback(() => {
     router.push("/dashboard");
-  };
+  }, [router]);
+
   if (workspaceData?.data.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
