@@ -127,10 +127,6 @@ export function Sidebar({
   const [selectedWorkspace, setSelectedWorkspace] = useState(
     workspaces[0] || []
   );
-  const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
-    { workspaceId: selectedWorkspace.id },
-    { pollingInterval: 2000 }
-  );
 
   const {
     data: activeWorkspace,
@@ -138,6 +134,10 @@ export function Sidebar({
     isError: activeWorkspaceError,
   } = useGetActiveWorkspaceQuery();
   console.log(activeWorkspace);
+  const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
+    { workspaceId: selectedWorkspace?.id },
+    { skip: !selectedWorkspace?.id, pollingInterval: 2000 }
+  );
 
   // ✅ Ensure activeWorkspace is available before calling status query
   const workspaceId = activeWorkspace?.data?.id;
@@ -155,8 +155,8 @@ export function Sidebar({
   const contactStatuses = new Set(
     Array.isArray((statusData as any)?.data)
       ? (statusData as any)?.data
-          .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
-          .map((status: any) => status.name)
+        .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
+        .map((status: any) => status.name)
       : []
   );
 
@@ -234,12 +234,26 @@ export function Sidebar({
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data) setUser(data.user);
-      if (error) toast.error("Error fetching user data:", error.message as any);
+      try {
+        const { data, error } = await supabase.auth.getUser();
+        if (error) {
+          if (isMounted) toast.error("Error fetching user data:", error.message as any);
+          return;
+        }
+        if (data && isMounted) setUser(data.user);
+      } catch (error: any) {
+        if (isMounted) toast.error(error.message);
+      }
     };
+
     fetchUser();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleAddWorkspace = async (e: React.FormEvent) => {
@@ -288,27 +302,31 @@ export function Sidebar({
     }
   };
   useEffect(() => {
-    if (activeWorkspace?.data) {
+    let isMounted = true;
+
+    if (activeWorkspace?.data && isMounted) {
       setSelectedWorkspace(activeWorkspace.data);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [activeWorkspace]);
+
 
   const handleEditWorkspace = (workspace: Workspace) => {
     router.push(`/workspace/${workspace.id}`);
   };
+  useEffect(() => {
+    let isMounted = true;
 
-  useEffect(() => {
-    const fetchUser = async () => {
-      const { data, error } = await supabase.auth.getUser();
-      if (data) setUser(data.user?.user_metadata);
-      if (error) console.error("Error fetching user data:", error);
-    };
-    fetchUser();
-  }, []);
-  useEffect(() => {
-    if (workspacesData?.data) {
+    if (workspacesData?.data && isMounted) {
       setWorkspaces(workspacesData.data);
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [workspacesData?.data]);
 
   const handleWorkspaceChange = async (workspaceId: string) => {
@@ -321,7 +339,7 @@ export function Sidebar({
 
       // Refetch all relevant data
       await refetch();
-      
+
       // Redirect to appropriate page
       if (window.location.href.includes('workspace')) {
         await router.push(`/workspace/${workspaceId}`);
@@ -426,7 +444,7 @@ export function Sidebar({
             >
               <SelectTrigger
                 className="w-full"
-                // onClick={() => setIsOpen(!isOpen)}
+              // onClick={() => setIsOpen(!isOpen)}
               >
                 <SelectValue placeholder="Select a workspace">
                   <div className="flex items-center">
@@ -666,9 +684,8 @@ export function Sidebar({
                 <div className="px-4 py-3 text-sm">
                   <p className="font-semibold text-base">
                     {user?.name ||
-                      `${user?.firstName || ""} ${
-                        user?.lastName || ""
-                      }`.trim() ||
+                      `${user?.firstName || ""} ${user?.lastName || ""
+                        }`.trim() ||
                       "User"}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
