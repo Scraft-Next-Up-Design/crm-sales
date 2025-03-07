@@ -165,7 +165,6 @@ const LeadManagement: React.FC = () => {
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
     useGetWorkspaceMembersQuery(workspaceId);
 
-  const POLLING_INTERVAL = 10000;
   const { data: statusData, isLoading: isLoadingStatus }: any =
     useGetStatusQuery(workspaceId);
 
@@ -227,10 +226,8 @@ const LeadManagement: React.FC = () => {
     fetchLeads();
 
     // Set up polling
-    const pollInterval = setInterval(fetchLeads, POLLING_INTERVAL);
 
     // Cleanup
-    return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
 
   const router = useRouter();
@@ -461,12 +458,12 @@ const LeadManagement: React.FC = () => {
           prevLeads.map((lead) =>
             lead.id === editingLead.id
               ? {
-                  ...lead,
-                  ...data,
-                  company: data.company || "",
-                  position: data.position || "",
-                  revenue: data.revenue || 0,
-                }
+                ...lead,
+                ...data,
+                company: data.company || "",
+                position: data.position || "",
+                revenue: data.revenue || 0,
+              }
               : lead
           )
         );
@@ -546,15 +543,15 @@ const LeadManagement: React.FC = () => {
 
       const formattedSourceDate = matchedSource
         ? new Date(matchedSource.created_at)
-            .toLocaleString("en-GB", {
-              day: "2-digit",
-              month: "2-digit",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-              hour12: false, // 24-hour format
-            })
-            .replace(",", "")
+          .toLocaleString("en-GB", {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false, // 24-hour format
+          })
+          .replace(",", "")
         : "";
 
       return {
@@ -722,12 +719,12 @@ const LeadManagement: React.FC = () => {
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-                ...lead,
-                status: {
-                  name,
-                  color,
-                },
-              }
+              ...lead,
+              status: {
+                name,
+                color,
+              },
+            }
             : lead
         )
       );
@@ -750,12 +747,12 @@ const LeadManagement: React.FC = () => {
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-                ...lead,
-                assign_to: {
-                  name,
-                  role,
-                },
-              }
+              ...lead,
+              assign_to: {
+                name,
+                role,
+              },
+            }
             : lead
         )
       );
@@ -799,9 +796,8 @@ const LeadManagement: React.FC = () => {
     );
   return (
     <div
-      className={`transition-all duration-500 ease-in-out md:px-4 md:py-6 py-2 px-2 ${
-        isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
-      } w-auto overflow-hidden`}
+      className={`transition-all duration-500 ease-in-out md:px-4 md:py-6 py-2 px-2 ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
+        } w-auto overflow-hidden`}
     >
       {" "}
       <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden">
@@ -1029,11 +1025,10 @@ const LeadManagement: React.FC = () => {
                                 <span
                                   className={`
                                   font-medium tracking-tight 
-                                  ${
-                                    lead.is_email_valid
+                                  ${lead.is_email_valid
                                       ? "text-emerald-800"
                                       : "text-red-800"
-                                  }`}
+                                    }`}
                                 >
                                   {lead.email}
                                 </span>
@@ -1313,11 +1308,10 @@ const LeadManagement: React.FC = () => {
                           <span
                             className={`
                                   font-medium tracking-tight 
-                                  ${
-                                    lead.is_email_valid
-                                      ? "text-emerald-800"
-                                      : "text-red-800"
-                                  }`}
+                                  ${lead.is_email_valid
+                                ? "text-emerald-800"
+                                : "text-red-800"
+                              }`}
                           >
                             {lead.email}
                           </span>
