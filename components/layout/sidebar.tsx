@@ -147,9 +147,8 @@ export function Sidebar({
     data: statusData,
     isLoading: isLoadingStatus,
     error: statusError,
-  } = useGetStatusQuery(workspaceId ? Number(workspaceId) : skipToken, {
-    pollingInterval: 2000,
-  });
+  } = useGetStatusQuery(workspaceId ? Number(workspaceId) : skipToken);
+  
 
   // **Filter Leads into Contacts**
   const contactStatuses = new Set(

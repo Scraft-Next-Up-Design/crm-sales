@@ -68,7 +68,7 @@ const IndividualLeadPage: React.FC = () => {
   } = useGetLeadByIdQuery(
     { id: leadId },
     {
-      pollingInterval: 2000, // 2 seconds
+      pollingInterval: 5000, // 2 seconds
     }
   );
   const currentLead = leadsData?.data?.[0];
