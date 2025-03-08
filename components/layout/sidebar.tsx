@@ -211,16 +211,16 @@ export function Sidebar({
       icon: BarChart,
       href: "/analytics",
     },
-    {
-      label: "Integration",
-      icon: Settings,
-      href: "/integration",
-    },
-    {
-      label: "Documentation",
-      icon: Settings,
-      href: "/documentation",
-    },
+    // {
+    //   label: "Integration",
+    //   icon: Settings,
+    //   href: "/integration",
+    // },
+    // {
+    //   label: "Documentation",
+    //   icon: Settings,
+    //   href: "/documentation",
+    // },
   ];
   const handleLogout = async () => {
     try {
