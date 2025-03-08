@@ -77,7 +77,6 @@ import { skipToken } from "@reduxjs/toolkit/query";
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
-import { workerData } from "worker_threads";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -106,7 +105,6 @@ export function Sidebar({
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed
   );
-  const params = useParams();
   const pathname = usePathname();
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
@@ -213,11 +211,16 @@ export function Sidebar({
       icon: BarChart,
       href: "/analytics",
     },
-    // {
-    //   label: "Setting",
-    //   icon: Settings,
-    //   href: "/setting",
-    // },
+    {
+      label: "Integration",
+      icon: Settings,
+      href: "/integration",
+    },
+    {
+      label: "Documentation",
+      icon: Settings,
+      href: "/documentation",
+    },
   ];
   const handleLogout = async () => {
     try {
@@ -359,6 +362,7 @@ export function Sidebar({
       toast.error("Failed to change workspace");
     }
   };
+  console.log(user)
   return (
     <>
       {/* Mobile Menu Button */}
@@ -733,7 +737,7 @@ export function Sidebar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                    {user?.firstName + " " + user?.lastName || user?.name}
+                    {user?.user_metadata.firstName + " " + user?.user_metadata.lastName || user?.user_metadata.name}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {user?.email || "Email not available"}
