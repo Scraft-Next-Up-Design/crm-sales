@@ -130,6 +130,7 @@ const SalesDashboard = () => {
       ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"}
       overflow-hidden `}
     >
+        
       <div className="grid grid-cols-2  md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto ">
         {dashboardStats.map((stat, index) => (
           <Card

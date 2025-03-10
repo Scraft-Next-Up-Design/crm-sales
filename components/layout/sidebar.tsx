@@ -131,7 +131,6 @@ export function Sidebar({
     isLoading: activeWorkspaceLoading,
     isError: activeWorkspaceError,
   } = useGetActiveWorkspaceQuery();
-  console.log(activeWorkspace);
   const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
     { workspaceId: selectedWorkspace?.id },
     { skip: !selectedWorkspace?.id, pollingInterval: 2000 }
@@ -211,6 +210,11 @@ export function Sidebar({
       icon: BarChart,
       href: "/analytics",
     },
+    {
+      label:'Notifications',
+      icon:Bell ,
+      href:'/notifications'
+    }
     // {
     //   label: "Integration",
     //   icon: Settings,
@@ -362,7 +366,7 @@ export function Sidebar({
       toast.error("Failed to change workspace");
     }
   };
-  console.log(user)
+  // console.log(user)
   return (
     <>
       {/* Mobile Menu Button */}

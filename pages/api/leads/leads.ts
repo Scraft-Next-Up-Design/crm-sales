@@ -3,6 +3,72 @@ import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
 import { validateEmail, validatePhoneNumber } from "../leads";
 
+// Notification interfaces
+interface NotificationDetails {
+  [key: string]: any;
+}
+
+interface Notification {
+  lead_id: string;
+  action_type: string;
+  user_id: string;
+  workspace_id: string;
+  details: NotificationDetails;
+  read: boolean;
+  created_at: string;
+}
+
+interface WorkspaceMember {
+  user_id: string;
+}
+
+async function notifyLeadChange(
+  leadId: string,
+  action: string,
+  userId: string,
+  workspaceId: string,
+  details: NotificationDetails = {}
+): Promise<Notification[] | undefined> {
+  try {
+    console.log({
+      leadId,
+      action,
+      userId,
+      workspaceId,
+      details,
+    })
+    const { data, error } = await supabase.from("notifications").insert([
+      {
+        lead_id: leadId,
+        action_type: action, // e.g., "created", "updated", "assigned", "deleted"
+        user_id: userId,
+        workspace_id: workspaceId,
+        details: details,
+        read: false,
+        created_at: new Date().toISOString(),
+      },
+    ]);
+
+    if (error) {
+      console.error("Failed to create notification:", error.message);
+    }
+
+    // const { data: members, error: membersError } = await supabase
+    //   .from("workspace_members")
+    //   .select("user_id")
+    //   .eq("workspace_id", workspaceId);
+
+    // if (membersError) {
+    //   console.error("Failed to fetch workspace members:", membersError.message);
+    //   return;
+    // }
+    
+    return data || undefined;
+  } catch (err) {
+    console.error("Notification error:", err);
+  }
+}
+
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
@@ -10,18 +76,19 @@ export default async function handler(
   const { method, query, headers } = req;
   const action = query.action as string;
   const authHeader = headers.authorization;
+  
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
   }
-
+  
   const token = authHeader.split(" ")[1];
+  
   switch (method) {
     case "POST":
       switch (action) {
         case "createLead": {
           const body = req.body;
-          console.log(body);
-          console.log(body.name);
+         
 
           if (!body || !body.name || !body.email) {
             return res
@@ -100,6 +167,17 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+            console.log(data);
+          await notifyLeadChange(
+            data[0].id,
+            "created",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              lead_name: body.name,
+              lead_email: body.email
+            }
+          );
 
           return res.status(201).json({ data });
         }
@@ -167,7 +245,18 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-
+          
+          await notifyLeadChange(
+            "bulk",
+            "bulk_created",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              count: filteredLeads.length,
+              lead_names: filteredLeads.filter(lead => lead !== null).map(lead => lead.name)
+            }
+          );
+          
           return res.status(201).json({ data });
         }
 
@@ -204,7 +293,18 @@ export default async function handler(
             console.error("Supabase Update Error:", error.message);
             return res.status(400).json({ error: error.message });
           }
-
+            
+          await notifyLeadChange(
+            id as string,
+            "notes_updated",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              lead_id: id,
+              updated_by: user.id
+            }
+          );
+          
           return res.status(200).json({ data });
         }
         default:
@@ -233,6 +333,18 @@ export default async function handler(
           if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
+          
+          // Get current lead data to determine changes
+          const { data: currentLead, error: fetchError } = await supabase
+            .from("leads")
+            .select("*")
+            .eq("id", id)
+            .single();
+            
+          if (fetchError) {
+            return res.status(400).json({ error: fetchError.message });
+          }
+          
           const updatedBody = {
             ...body, // Spread other fields dynamically
             status: body.status,
@@ -241,15 +353,37 @@ export default async function handler(
 
           const { data, error } = await supabase
             .from("leads")
-            // .update({ status: body })
             .update(updatedBody)
-
             .eq("id", id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-
+          
+          // Determine what changed
+          const changes: Record<string, { old: any; new: any }> = {};
+          Object.keys(updatedBody).forEach(key => {
+            if (JSON.stringify(currentLead[key]) !== JSON.stringify(updatedBody[key]) && updatedBody[key] !== undefined) {
+              changes[key] = {
+                old: currentLead[key],
+                new: updatedBody[key]
+              };
+            }
+          });
+          
+          await notifyLeadChange(
+            id as string,
+            "updated",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              lead_id: id,
+              lead_name: currentLead.name,
+              updated_by: user.id,
+              changes: changes
+            }
+          );
+          
           return res.status(200).json({ data });
         }
 
@@ -272,18 +406,43 @@ export default async function handler(
             return res.status(400).json({ error: "Update data is required" });
           }
 
+          // Get current assignment for notification
+          const { data: currentLead, error: fetchError } = await supabase
+            .from("leads")
+            .select("name, assign_to")
+            .eq("id", id)
+            .single();
+            
+          if (fetchError) {
+            return res.status(400).json({ error: fetchError.message });
+          }
+
           const { data, error } = await supabase
             .from("leads")
             .update({ assign_to: body })
             .eq("id", id);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+          
+          await notifyLeadChange(
+            id as string,
+            "assigned",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              lead_id: id,
+              lead_name: currentLead.name,
+              previous_assignee: currentLead.assign_to,
+              new_assignee: body,
+              assigned_by: user.id
+            }
+          );
 
           return res.status(200).json({ data });
         }
+        
         case "updateLeadData": {
           const { id } = query;
           const body = req.body;
@@ -302,19 +461,54 @@ export default async function handler(
           if (!body) {
             return res.status(400).json({ error: "Update data is required" });
           }
+          
+          // Get current lead data to determine changes
+          const { data: currentLead, error: fetchError } = await supabase
+            .from("leads")
+            .select("*")
+            .eq("id", id)
+            .single();
+            
+          if (fetchError) {
+            return res.status(400).json({ error: fetchError.message });
+          }
 
           const { data, error } = await supabase
             .from("leads")
             .update(body)
             .eq("id", id);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
+          
+          // Determine what changed
+          const changes: Record<string, { old: any; new: any }> = {};
+          Object.keys(body).forEach(key => {
+            if (JSON.stringify(currentLead[key]) !== JSON.stringify(body[key])) {
+              changes[key] = {
+                old: currentLead[key],
+                new: body[key]
+              };
+            }
+          });
+          
+          await notifyLeadChange(
+            id as string,
+            "data_updated",
+            user.id,
+            req.query.workspaceId as string,
+            { 
+              lead_id: id,
+              lead_name: currentLead.name,
+              updated_by: user.id,
+              changes: changes
+            }
+          );
 
           return res.status(200).json({ data });
         }
+        
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
@@ -341,7 +535,6 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("source_id", sourceId);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -357,7 +550,6 @@ export default async function handler(
           }
 
           const { data, error } = await supabase.from("leads").select("*");
-          // .eq("user_id", userId);
 
           if (error) {
             return res.status(400).json({ error: error.message });
@@ -376,7 +568,6 @@ export default async function handler(
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
-
           if (!user) {
             return res.status(400).json({ error: "User ID is required" });
           }
@@ -385,12 +576,13 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("work_id", workspaceId);
-          // .eq("user_id", user.id);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          return res.status(200).json({ data });
+          //send notification
+          
+          return res.status(200).json({ data});
         }
 
         case "getLeadById": {
@@ -411,8 +603,8 @@ export default async function handler(
           const { data, error } = await supabase
             .from("leads")
             .select("*")
-            // .eq("user_id", user.id)
             .eq("id", id);
+            
           if (error) {
             return res.status(400).json({ error: error.message });
           }
@@ -420,47 +612,68 @@ export default async function handler(
           return res.status(200).json({ data });
         }
 
+        case "getNotesById": {
+          const id = query.id as string;
+          console.log(query);
+
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+
+          if (!id) {
+            return res.status(400).json({ error: "Lead ID is required" });
+          }
+
+          // Fetching only the 'text_area' column from the 'leads' table
+          const { data, error } = await supabase
+            .from("leads")
+            .select("text_area") // Select only the 'text_area' field
+            .eq("id", id);
+
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+
+          if (!data || data.length === 0) {
+            return res.status(404).json({ error: "No notes found for this lead" });
+          }
+
+          return res.status(200).json({ data });
+        }
+        case "getNotifications": {  
+          const {
+            data: { user },
+          } = await supabase.auth.getUser(token);
+
+          const workspaceId = query.workspaceId as string;
+          if (!user) {
+            return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
+          }
+          if (!workspaceId) {
+            return res.status(400).json({ error: "Workspace ID is required" });
+          }
+          const { data, error } = await supabase
+          .from("notifications")
+          .select("*")
+          .eq("workspace_id", workspaceId)
+          .eq("user_id", user.id)
+          .order("created_at", { ascending: false })
+          .limit(20);
+          console.log(data);
+          if (error) {
+            return res.status(400).json({ error: error.message });
+          }
+          return res.status(200).json({ data });
+        }
+
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
-    case "getNotesById": {
-      const id = query.id as string;
-      console.log(query);
-
-      const {
-        data: { user },
-      } = await supabase.auth.getUser(token);
-
-      if (!user) {
-        return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
-      }
-
-      if (!id) {
-        return res.status(400).json({ error: "Lead ID is required" });
-      }
-
-      // Fetching only the 'text_area' column from the 'leads' table
-      const { data, error } = await supabase
-        .from("leads")
-        .select("text_area") // Select only the 'text_area' field
-        // .eq("user_id", user.id)
-        .eq("id", id);
-
-      if (error) {
-        return res.status(400).json({ error: error.message });
-      }
-
-      if (!data || data.length === 0) {
-        return res.status(404).json({ error: "No notes found for this lead" });
-      }
-
-      return res.status(200).json({ data });
-    }
-    default:
-      return res.status(405).json({
-        error: AUTH_MESSAGES.API_ERROR,
-        message: `Method ${method} is not allowed.`,
-      });
+      
     case "DELETE": {
       if (action === "deleteLeads") {
         const { id, workspaceId } = req.body;
@@ -521,6 +734,22 @@ export default async function handler(
             });
           }
         }
+        
+        // Get lead names for notification
+        const { data: leadsToDelete, error: fetchError } = await supabase
+          .from("leads")
+          .select("id, name")
+          .in("id", id)
+          .eq("work_id", workspaceId);
+          
+        if (fetchError) {
+          console.error("Fetch leads error:", fetchError.message);
+          return res.status(400).json({ error: fetchError.message });
+        }
+        
+        // Store lead names before deletion
+        const leadNames = leadsToDelete ? leadsToDelete.map(lead => lead.name) : [];
+        const leadIds = leadsToDelete ? leadsToDelete.map(lead => lead.id) : [];
 
         // Proceed with deletion if authorized
         const { data, error } = await supabase
@@ -533,6 +762,20 @@ export default async function handler(
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });
         }
+        
+        // Create notification for deleted leads
+        await notifyLeadChange(
+          "multiple",
+          "leads_deleted",
+          user.id,
+          workspaceId,
+          {
+            deleted_by: user.id,
+            lead_count: leadIds.length,
+            lead_names: leadNames,
+            lead_ids: leadIds
+          }
+        );
 
         return res.status(200).json({
           message: "Leads deleted successfully",
@@ -542,5 +785,11 @@ export default async function handler(
 
       return res.status(400).json({ error: `Unknown action: ${action}` });
     }
+    
+    default:
+      return res.status(405).json({
+        error: AUTH_MESSAGES.API_ERROR,
+        message: `Method ${method} is not allowed.`,
+      });
   }
 }

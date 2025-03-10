@@ -80,12 +80,19 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "GET",
       }),
     }),
-
+    leadNotification: builder.query<void, {  workspaceId: any }>({
+      query: ({workspaceId }) => ({
+        url: `?action=getNotifications&workspaceId=${workspaceId}`,
+        method: "GET",
+      }),
+      providesTags: ['LeadNotification'],
+    }),
     deleteLead: builder.mutation<void, { id: string; userId: string }>({
       query: ({ id, userId }) => ({
         url: `${id}?userId=${userId}`,
         method: "DELETE",
       }),
+      invalidatesTags: ['LeadNotification'],
     }),
     bulkDeleteLeads: builder.mutation<void, { id: any; workspaceId: any }>({
       query: ({ id, workspaceId }) => ({
@@ -111,4 +118,5 @@ export const {
   useUpdateLeadDataMutation,
   useAssignRoleMutation,
   useBulkDeleteLeadsMutation,
+  useLeadNotificationQuery,
 } = leadsApis;
