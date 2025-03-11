@@ -150,7 +150,7 @@ const LeadManagement: React.FC = () => {
     isLoading,
   } = useGetWebhooksQuery({ id: workspaceId });
 
-  console.log(leadSources);
+  // console.log(leadSources);
 
   const { data: workspaceData, isLoading: isLoadingLeads }: any =
     useGetLeadsByWorkspaceQuery(
@@ -534,7 +534,6 @@ const LeadManagement: React.FC = () => {
   };
 
   // export csv
-  console.log(leads);
   const exportToCSV = () => {
     const formattedLeads = leads.map((lead) => {
       // Find the matching lead source based on sourceId
@@ -741,7 +740,7 @@ const LeadManagement: React.FC = () => {
     const { name, role } = JSON.parse(assign);
 
     try {
-      await assignRole({ id, data: { name, role } });
+      await assignRole({ id, data: { name, role },workspaceId: workspaceId });
 
       // Update the leads state with the new assignment
       setLeads((prevLeads) =>

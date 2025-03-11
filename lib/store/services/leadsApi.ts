@@ -20,6 +20,10 @@ export const leadsApis = leadsApi.injectEndpoints({
       query: ({ workspaceId }) => ({
         url: `?action=getLeadsByWorkspace&workspaceId=${workspaceId}`,
       }),
+      providesTags: () => {
+        return [{ type: 'Lead' as const, id: 'LIST' }];
+      },
+    
     }),
     getLeadById: builder.query<Lead, { id: string }>({
       query: ({ id }) => ({
@@ -35,6 +39,7 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ['Lead'],  
     }),
     createManyLead: builder.mutation<
       { message: string; data: Lead[] },
@@ -45,6 +50,7 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "POST",
         body,
       }),
+      invalidatesTags: ['Lead'],
     }),
     updateLead: builder.mutation<any, { id: any; leads: any }>({
       query: ({ id, leads }) => ({
@@ -52,10 +58,12 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "PUT",
         body: leads, // Pass the body with name and color
       }),
+      invalidatesTags: ['Lead'],  
+
     }),
-    assignRole: builder.mutation<any, { id: any; data: any }>({
-      query: ({ id, data }) => ({
-        url: `?action=assignRoleById&id=${id}`,
+    assignRole: builder.mutation<any, { id: any; data: any ,workspaceId: any}>({
+      query: ({ id, data,workspaceId }) => ({
+        url: `?action=assignRoleById&id=${id}&workspaceId=${workspaceId}`,
         method: "PUT",
         body: data, // Pass the body with name and color
       }),
@@ -66,7 +74,9 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "PUT",
         body: leads, // Pass the body with name and color
       }),
+      
     }),
+
     addNotes: builder.mutation<any, { id: any; Note: any }>({
       query: ({ id, Note }) => ({
         url: `?action=updateNotesById&id=${id}`,
@@ -80,12 +90,19 @@ export const leadsApis = leadsApi.injectEndpoints({
         method: "GET",
       }),
     }),
-
+    leadNotification: builder.query<void, {  workspaceId: any }>({
+      query: ({workspaceId }) => ({
+        url: `?action=getNotifications&workspaceId=${workspaceId}`,
+        method: "GET",
+      }),
+      providesTags: ['LeadNotification'],
+    }),
     deleteLead: builder.mutation<void, { id: string; userId: string }>({
       query: ({ id, userId }) => ({
         url: `${id}?userId=${userId}`,
         method: "DELETE",
       }),
+      invalidatesTags: ['LeadNotification'],
     }),
     bulkDeleteLeads: builder.mutation<void, { id: any; workspaceId: any }>({
       query: ({ id, workspaceId }) => ({
@@ -111,4 +128,5 @@ export const {
   useUpdateLeadDataMutation,
   useAssignRoleMutation,
   useBulkDeleteLeadsMutation,
+  useLeadNotificationQuery,
 } = leadsApis;
