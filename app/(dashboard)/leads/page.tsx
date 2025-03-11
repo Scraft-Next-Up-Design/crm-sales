@@ -740,7 +740,7 @@ const LeadManagement: React.FC = () => {
     const { name, role } = JSON.parse(assign);
 
     try {
-      await assignRole({ id, data: { name, role } });
+      await assignRole({ id, data: { name, role },workspaceId: workspaceId });
 
       // Update the leads state with the new assignment
       setLeads((prevLeads) =>

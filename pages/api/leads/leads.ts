@@ -53,15 +53,15 @@ async function notifyLeadChange(
       console.error("Failed to create notification:", error.message);
     }
 
-    // const { data: members, error: membersError } = await supabase
-    //   .from("workspace_members")
-    //   .select("user_id")
-    //   .eq("workspace_id", workspaceId);
+    const { data: members, error: membersError } = await supabase
+      .from("workspace_members")
+      .select("user_id")
+      .eq("workspace_id", workspaceId);
 
-    // if (membersError) {
-    //   console.error("Failed to fetch workspace members:", membersError.message);
-    //   return;
-    // }
+    if (membersError) {
+      console.error("Failed to fetch workspace members:", membersError.message);
+      return;
+    }
     
     return data || undefined;
   } catch (err) {
@@ -167,7 +167,7 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-            console.log(data);
+            
           await notifyLeadChange(
             data[0].id,
             "created",
@@ -293,7 +293,7 @@ export default async function handler(
             console.error("Supabase Update Error:", error.message);
             return res.status(400).json({ error: error.message });
           }
-            
+            console.log(data)
           await notifyLeadChange(
             id as string,
             "notes_updated",
@@ -370,6 +370,7 @@ export default async function handler(
               };
             }
           });
+          console.log("data", data);
           
           await notifyLeadChange(
             id as string,
@@ -388,7 +389,7 @@ export default async function handler(
         }
 
         case "assignRoleById": {
-          const { id } = query;
+          const { id,workspaceId } = query;
           const body = req.body;
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -425,12 +426,12 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          
+          console.log(workspaceId);
           await notifyLeadChange(
             id as string,
             "assigned",
             user.id,
-            req.query.workspaceId as string,
+            workspaceId as string,
             { 
               lead_id: id,
               lead_name: currentLead.name,
@@ -497,7 +498,7 @@ export default async function handler(
             id as string,
             "data_updated",
             user.id,
-            req.query.workspaceId as string,
+            currentLead?.work_id,
             { 
               lead_id: id,
               lead_name: currentLead.name,

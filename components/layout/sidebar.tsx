@@ -133,7 +133,7 @@ export function Sidebar({
   } = useGetActiveWorkspaceQuery();
   const { data: workspaceData }: any = useGetLeadsByWorkspaceQuery(
     { workspaceId: selectedWorkspace?.id },
-    { skip: !selectedWorkspace?.id, pollingInterval: 2000 }
+    { skip: !selectedWorkspace?.id }
   );
 
   // ✅ Ensure activeWorkspace is available before calling status query

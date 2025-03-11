@@ -27,14 +27,12 @@ export default function useLeadNotifications() {
   const [userId, setUserId] = useState<string | null>(null);
   
   useEffect(() => {
-    // Get current user
     const getCurrentUser = async () => {
       const { data } = await supabase.auth.getUser();
       if (data?.user) {
         setUserId(data.user.id);
       }
-    };
-    
+    };    
     getCurrentUser();
   }, []);
 
@@ -46,7 +44,6 @@ export default function useLeadNotifications() {
     pollingInterval: 30000, 
   });
 
-  // Update state when data changes
   useEffect(() => {
     if (data?.data) {
       setNotifications(data.data);
@@ -65,7 +62,7 @@ export default function useLeadNotifications() {
       .on(
         "postgres_changes",
         {
-          event: "INSERT",
+          event: "*",
           schema: "public",
           table: "notifications",
           filter: `workspace_id=eq.${workspaceId}`,
@@ -73,8 +70,6 @@ export default function useLeadNotifications() {
         (payload) => {
           console.log("Received new notification:", payload);
           const newNotification = payload.new as LeadNotification;
-          
-          // Add notification to the state and show toast
           setNotifications((prev) => [newNotification, ...prev]);
           
           // Only increment unread count if it's for the current user
