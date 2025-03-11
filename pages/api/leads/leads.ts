@@ -30,20 +30,100 @@ async function notifyLeadChange(
   details: NotificationDetails = {}
 ): Promise<Notification[] | undefined> {
   try {
+    // Fetch user information from workspace_members for this specific workspace
+    const { data: workspaceMemberData, error: workspaceMemberError } = await supabase
+      .from("workspace_members")
+      .select("name")
+      .eq("user_id", userId)
+      .eq("workspace_id", workspaceId) // Add this to get only the relevant workspace membership
+      .single();
+    
+    let userDisplayName = "Unknown user";
+    
+    if (workspaceMemberError) {
+      console.error("Failed to fetch workspace member data:", workspaceMemberError.message);
+      
+      // Fallback: try to get the name from other sources if available
+      // For example, you might have a separate users or profiles table
+    } else if (workspaceMemberData) {
+      userDisplayName = workspaceMemberData.name;
+    }
+    
+    // Enrich the details with names for various user IDs
+    const enrichedDetails = { ...details };
+    enrichedDetails.actor_name = userDisplayName;
+    
+    // For updated_by
+    if (details.updated_by) {
+      const { data: updaterData, error: updaterError } = await supabase
+        .from("workspace_members")
+        .select("name")
+        .eq("user_id", details.updated_by)
+        .eq("workspace_id", workspaceId)
+        .single();
+        
+      if (!updaterError && updaterData) {
+        enrichedDetails.updated_by_name = updaterData.name;
+      }
+    }
+    
+    // For deleted_by
+    if (details.deleted_by) {
+      const { data: deleterData, error: deleterError } = await supabase
+        .from("workspace_members")
+        .select("name")
+        .eq("user_id", details.deleted_by)
+        .eq("workspace_id", workspaceId)
+        .single();
+        
+      if (!deleterError && deleterData) {
+        enrichedDetails.deleted_by_name = deleterData.name;
+      }
+    }
+    
+    // For new_assignee (if present)
+    if (details.new_assignee) {
+      const { data: assigneeData, error: assigneeError } = await supabase
+        .from("workspace_members")
+        .select("name")
+        .eq("user_id", details.new_assignee)
+        .eq("workspace_id", workspaceId)
+        .single();
+        
+      if (!assigneeError && assigneeData) {
+        enrichedDetails.new_assignee_name = assigneeData.name;
+      }
+    }
+    
+    // For previous_assignee (if present)
+    if (details.previous_assignee) {
+      const { data: prevAssigneeData, error: prevAssigneeError } = await supabase
+        .from("workspace_members")
+        .select("name")
+        .eq("user_id", details.previous_assignee)
+        .eq("workspace_id", workspaceId)
+        .single();
+        
+      if (!prevAssigneeError && prevAssigneeData) {
+        enrichedDetails.previous_assignee_name = prevAssigneeData.name;
+      }
+    }
+    
     console.log({
       leadId,
       action,
       userId,
       workspaceId,
-      details,
-    })
+      details: enrichedDetails,
+    });
+    
     const { data, error } = await supabase.from("notifications").insert([
       {
         lead_id: leadId,
-        action_type: action, // e.g., "created", "updated", "assigned", "deleted"
+        action_type: action,
         user_id: userId,
         workspace_id: workspaceId,
-        details: details,
+        details: enrichedDetails,
         read: false,
         created_at: new Date().toISOString(),
       },
@@ -139,8 +219,7 @@ export default async function handler(
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
           console.log(isValidEmail, isValidPhone);
-
-          // Step 3: Insert new lead
+         
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
@@ -162,14 +241,14 @@ export default async function handler(
               is_phone_valid: isValidPhone,
               created_at: new Date().toISOString(),
             },
-          ]);
+          ])
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
             
           await notifyLeadChange(
-            data[0].id,
+            body.name,
             "created",
             user.id,
             req.query.workspaceId as string,
@@ -388,7 +467,7 @@ export default async function handler(
           return res.status(200).json({ data });
         }
 
-        case "assignRoleById": {
+        case "  ": {
           const { id,workspaceId } = query;
           const body = req.body;
           if (!id) {
