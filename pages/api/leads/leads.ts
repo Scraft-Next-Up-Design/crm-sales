@@ -52,8 +52,7 @@ async function notifyLeadChange(
     // Enrich the details with names for various user IDs
     const enrichedDetails = { ...details };
     enrichedDetails.actor_name = userDisplayName;
-    
-    // For updated_by
+
     if (details.updated_by) {
       const { data: updaterData, error: updaterError } = await supabase
         .from("workspace_members")
@@ -117,7 +116,7 @@ async function notifyLeadChange(
       details: enrichedDetails,
     });
     
-    const { data, error } = await supabase.from("notifications").insert([
+    const { data:notification, error } = await supabase.from("notifications").insert([
       {
         lead_id: leadId,
         action_type: action,
@@ -127,7 +126,7 @@ async function notifyLeadChange(
         read: false,
         created_at: new Date().toISOString(),
       },
-    ]);
+    ]).select("*");
 
     if (error) {
       console.error("Failed to create notification:", error.message);
@@ -141,9 +140,19 @@ async function notifyLeadChange(
     if (membersError) {
       console.error("Failed to fetch workspace members:", membersError.message);
       return;
-    }
-    
-    return data || undefined;
+    } 
+    console.log(notification)
+    const { error: readStatusError } = await supabase
+    .from("notification_read_status")
+    .insert([
+      {
+        notification_id: notification[0].id,
+        user_id: userId,
+        read: false,
+        read_at: new Date().toISOString(),
+      },
+    ]);
+    return notification || undefined;
   } catch (err) {
     console.error("Notification error:", err);
   }
@@ -743,7 +752,6 @@ export default async function handler(
           .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(20);
-          console.log(data);
           if (error) {
             return res.status(400).json({ error: error.message });
           }

@@ -77,6 +77,7 @@ import { skipToken } from "@reduxjs/toolkit/query";
 import { RootState } from "@/lib/store/store";
 import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
+import useLeadNotifications from "@/hooks/useLeadNotifications";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -106,6 +107,8 @@ export function Sidebar({
     (state: RootState) => state.sidebar.isCollapsed
   );
   const pathname = usePathname();
+  const {unreadCount}=useLeadNotifications();
+  console.log(unreadCount)
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const {
@@ -213,7 +216,8 @@ export function Sidebar({
     {
       label:'Notifications',
       icon:Bell ,
-      href:'/notifications'
+      href:'/notifications',
+      badge:unreadCount
     }
     // {
     //   label: "Integration",
