@@ -109,6 +109,8 @@ export function Sidebar({
   const pathname = usePathname();
   const {unreadCount}=useLeadNotifications();
   console.log(unreadCount)
+  const unreadBadge = unreadCount?unreadCount:'NA'
+  console.log(unreadBadge)  
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const {
@@ -217,7 +219,7 @@ export function Sidebar({
       label:'Notifications',
       icon:Bell ,
       href:'/notifications',
-      badge:unreadCount
+      badge:unreadBadge
     }
     // {
     //   label: "Integration",

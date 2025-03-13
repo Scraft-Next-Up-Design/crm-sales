@@ -40,7 +40,7 @@ interface NotificationCenterProps {
 }
 
 export default function NotificationCenter({ workspaceId, userId }: NotificationCenterProps) {
-  const { notifications, markAsRead, markAsUnread } = useLeadNotifications();
+  const { notifications, markAsRead } = useLeadNotifications();
   const [filter, setFilter] = useState<string>('all');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [page, setPage] = useState<number>(1);
