@@ -749,7 +749,6 @@ export default async function handler(
           .from("notifications")
           .select("*")
           .eq("workspace_id", workspaceId)
-          .eq("user_id", user.id)
           .order("created_at", { ascending: false })
           .limit(20);
           if (error) {

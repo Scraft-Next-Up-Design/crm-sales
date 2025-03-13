@@ -117,7 +117,7 @@ export default function useLeadNotifications() {
         },
         (payload) => {
           console.log("Received new notification:", payload);
-          
+          refetch()
           // For new notifications
           if (payload.eventType === 'INSERT') {
             const newNotification = payload.new as LeadNotification;
