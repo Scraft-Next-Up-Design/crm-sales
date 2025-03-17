@@ -1,16 +1,17 @@
-name: Weekly K6 Load Test
+name: K6 Load Test on Load-Test Branch
 
 on:
-  schedule:
-    - cron: "0 3 * * 1"
-  workflow_dispatch:
+  push:
+    branches:
+      - load-test
+  workflow_dispatch:     
 
 jobs:
   load-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4  
 
       - name: Install K6
         run: |
@@ -28,37 +29,30 @@ jobs:
             --out json=k6-results/raw.json \
             --summary-export=k6-results/summary.json
 
-      - name: Generate Weekly Report
+      - name: Generate HTML Report
         if: always()
         run: |
           echo "<!DOCTYPE html>
           <html>
-          <head>
-            <title>Weekly K6 Load Test Results</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
-            </style>
-          </head>
+          <head><title>K6 Load Test Results</title></head>
           <body>
-            <h1>Weekly K6 Load Test Results</h1>
-            <h2>Test Run: $(date)</h2>
-            <pre>$(cat k6-results/summary.json)</pre>
+          <h1>K6 Load Test Results</h1>
+          <pre>$(cat k6-results/summary.json)</pre>
           </body>
-          </html>" > k6-results/weekly-report.html
+          </html>" > k6-results/report.html
 
       - name: Upload K6 Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  
         with:
-          name: k6-weekly-results
+          name: k6-test-results
           path: k6-results/
-          retention-days: 90
+          retention-days: 30
 
       - name: Check Test Status
         if: always()
         run: |
           if grep -q '"failed":true' k6-results/summary.json; then
-            echo "Weekly load test failed - Check results for details"
+            echo "Load test failed - Check results for details"
             exit 1
           fi

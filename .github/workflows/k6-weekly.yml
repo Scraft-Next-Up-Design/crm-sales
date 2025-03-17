@@ -1,17 +1,16 @@
-name: K6 Load Test on Load-Test Branch
+name: Weekly K6 Load Test
 
 on:
-  push:
-    branches:
-      - load-test
-  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * 1"  
+  workflow_dispatch:      
 
 jobs:
   load-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4 
 
       - name: Install K6
         run: |
@@ -29,30 +28,37 @@ jobs:
             --out json=k6-results/raw.json \
             --summary-export=k6-results/summary.json
 
-      - name: Generate HTML Report
+      - name: Generate Weekly Report
         if: always()
         run: |
           echo "<!DOCTYPE html>
           <html>
-          <head><title>K6 Load Test Results</title></head>
+          <head>
+            <title>Weekly K6 Load Test Results</title>
+            <style>
+              body { font-family: Arial, sans-serif; padding: 20px; }
+              pre { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+            </style>
+          </head>
           <body>
-          <h1>K6 Load Test Results</h1>
-          <pre>$(cat k6-results/summary.json)</pre>
+            <h1>Weekly K6 Load Test Results</h1>
+            <h2>Test Run: $(date)</h2>
+            <pre>$(cat k6-results/summary.json)</pre>
           </body>
-          </html>" > k6-results/report.html
+          </html>" > k6-results/weekly-report.html
 
       - name: Upload K6 Results
         if: always()
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4  
         with:
-          name: k6-test-results
+          name: k6-weekly-results
           path: k6-results/
-          retention-days: 30
+          retention-days: 90
 
       - name: Check Test Status
         if: always()
         run: |
           if grep -q '"failed":true' k6-results/summary.json; then
-            echo "Load test failed - Check results for details"
+            echo "Weekly load test failed - Check results for details"
             exit 1
           fi

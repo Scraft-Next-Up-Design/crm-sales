@@ -11,7 +11,7 @@ export const options = {
     { duration: "1m", target: 10 }, 
     { duration: "3m", target: 50 }, 
     { duration: "5m", target: 50 }, 
-    { duration: "1m", target: 0 },
+    { duration: "1m", target: 0 }, 
   ],
   thresholds: {
     http_req_duration: ["p(95)<500"], 
@@ -24,7 +24,7 @@ export default function () {
   const BASE_URL = __ENV.NEXT_PUBLIC_BASE_URL || "https://breaktheice.in/api";
 
   group("API Health Check", function () {
-    const res = http.get(`${BASE_URL}/health`); 
+    const res = http.get(`${BASE_URL}/health`);
     check(res, { "Status is 200": (r) => r.status === 200 }) ||
       errorRate.add(1);
     successfulRequests.add(1);
