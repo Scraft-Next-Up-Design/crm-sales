@@ -8,15 +8,15 @@ const requestTime = new Trend("request_time");
 
 export const options = {
   stages: [
-    { duration: "1m", target: 10 }, 
-    { duration: "3m", target: 50 }, 
-    { duration: "5m", target: 50 }, 
-    { duration: "1m", target: 0 }, 
+    { duration: "1m", target: 10 },
+    { duration: "3m", target: 50 },
+    { duration: "5m", target: 50 },
+    { duration: "1m", target: 0 },
   ],
   thresholds: {
-    http_req_duration: ["p(95)<500"], 
+    http_req_duration: ["p(95)<500"],
     errors: ["rate<0.05"],
-    successful_requests: ["count>50"], 
+    successful_requests: ["count>50"],
   },
 };
 
