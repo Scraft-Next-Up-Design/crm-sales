@@ -1,5 +1,6 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../lib/supabaseServer";
+import { NextApiRequest, NextApiResponse } from "next";
+import { PostgrestError } from "@supabase/supabase-js";
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,45 +11,46 @@ export default async function handler(
   }
 
   try {
-    console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
-    console.log(
-      "Supabase Key (partial):",
-      process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY?.slice(0, 10)
-    );
+    console.log("Fetching from Supabase...");
+    const startTime = process.hrtime();
     const { data, error } = await supabase
       .from("workspaces")
       .select("count")
       .limit(1);
+    const duration =
+      process.hrtime(startTime)[0] * 1000 +
+      process.hrtime(startTime)[1] / 1000000; // ms
 
     if (error) {
       console.error("Supabase Error:", error);
+      const supabaseError = error as PostgrestError;
       return res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
         supabase: {
           status: "down",
-          error: error.message,
+          error: supabaseError.message || "Unknown Supabase error",
         },
       });
     }
 
+    console.log("Supabase Success, Duration:", duration, "ms");
     return res.status(200).json({
       status: "healthy",
       timestamp: new Date().toISOString(),
       supabase: {
         status: "up",
-        latency: process.hrtime()[0],
+        latency: duration,
       },
       uptime: process.uptime(),
     });
-  } catch (error: unknown) {
+  } catch (error) {
     console.error("Caught Error:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Internal server error";
+    const caughtError = error as Error;
     return res.status(500).json({
       status: "error",
       timestamp: new Date().toISOString(),
-      error: errorMessage,
+      error: caughtError.message || "Internal server error",
     });
   }
 }
