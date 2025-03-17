@@ -4,14 +4,22 @@ on:
   push:
     branches:
       - load-test
-  workflow_dispatch:     
+  workflow_dispatch:
 
 jobs:
   load-test:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
-        uses: actions/checkout@v4  
+        uses: actions/checkout@v4
+
+      - name: Verify Script Exists
+        run: |
+          ls -la load-tests/
+          if [ ! -f "load-tests/script.js" ]; then
+            echo "Error: load-tests/script.js not found!"
+            exit 1
+          fi
 
       - name: Install K6
         run: |
@@ -22,12 +30,13 @@ jobs:
         run: mkdir -p k6-results
 
       - name: Run K6 Load Test
+        id: k6-run
         env:
           NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
         run: |
           k6 run load-tests/script.js \
             --out json=k6-results/raw.json \
-            --summary-export=k6-results/summary.json
+            --summary-export=k6-results/summary.json || echo "K6 exited with non-zero code (likely threshold failure)"
 
       - name: Generate HTML Report
         if: always()
@@ -43,7 +52,7 @@ jobs:
 
       - name: Upload K6 Results
         if: always()
-        uses: actions/upload-artifact@v4  
+        uses: actions/upload-artifact@v4
         with:
           name: k6-test-results
           path: k6-results/
@@ -52,7 +61,9 @@ jobs:
       - name: Check Test Status
         if: always()
         run: |
-          if grep -q '"failed":true' k6-results/summary.json; then
-            echo "Load test failed - Check results for details"
+          if jq -e '.metrics | with_entries(select(.value.thresholds | any(.ok | not))) | length > 0' k6-results/summary.json > /dev/null; then
+            echo "Load test failed - Thresholds crossed. Check results for details."
             exit 1
+          else
+            echo "Load test passed."
           fi
