@@ -1,0 +1,58 @@
+name: K6 Load Test on Load-Test Branch
+
+on:
+  push:
+    branches:
+      - load-test
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Install K6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v0.52.0/k6-v0.52.0-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v0.52.0-linux-amd64/k6 /usr/local/bin/
+
+      - name: Create Results Directory
+        run: mkdir -p k6-results
+
+      - name: Run K6 Load Test
+        env:
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+        run: |
+          k6 run load-tests/script.js \
+            --out json=k6-results/raw.json \
+            --summary-export=k6-results/summary.json
+
+      - name: Generate HTML Report
+        if: always()
+        run: |
+          echo "<!DOCTYPE html>
+          <html>
+          <head><title>K6 Load Test Results</title></head>
+          <body>
+          <h1>K6 Load Test Results</h1>
+          <pre>$(cat k6-results/summary.json)</pre>
+          </body>
+          </html>" > k6-results/report.html
+
+      - name: Upload K6 Results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: k6-test-results
+          path: k6-results/
+          retention-days: 30
+
+      - name: Check Test Status
+        if: always()
+        run: |
+          if grep -q '"failed":true' k6-results/summary.json; then
+            echo "Load test failed - Check results for details"
+            exit 1
+          fi
