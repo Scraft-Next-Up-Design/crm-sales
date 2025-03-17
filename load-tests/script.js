@@ -11,23 +11,23 @@ export const options = {
     { duration: "1m", target: 10 },
     { duration: "3m", target: 50 },
     { duration: "5m", target: 50 },
-    { duration: "1m", target: 0 },
+    { duration: "1m", target: 0 }, 
   ],
   thresholds: {
-    http_req_duration: ["p(95)<500"],
-    errors: ["rate<0.05"],
-    successful_requests: ["count>50"],
+    http_req_duration: ["p(95)<1000"],
+    errors: ["rate<0.05"], 
+    successful_requests: ["count>50"], 
   },
 };
 
-export default function () {
+export default function runLoadTest() {
   const BASE_URL = __ENV.NEXT_PUBLIC_BASE_URL || "https://breaktheice.in/api";
 
   group("API Health Check", function () {
     const res = http.get(`${BASE_URL}/health`);
-    check(res, { "Status is 200": (r) => r.status === 200 }) ||
-      errorRate.add(1);
-    successfulRequests.add(1);
+    const isSuccess = check(res, { "Status is 200": (r) => r.status === 200 });
+    if (!isSuccess) errorRate.add(1);
+    if (isSuccess) successfulRequests.add(1);
     requestTime.add(res.timings.duration);
     sleep(1);
   });

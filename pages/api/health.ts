@@ -1,5 +1,5 @@
-import { supabase } from "@/lib/supabaseServer";
 import { NextApiRequest, NextApiResponse } from "next";
+import { supabase } from "../../lib/supabaseServer";
 
 export default async function handler(
   req: NextApiRequest,
@@ -10,12 +10,18 @@ export default async function handler(
   }
 
   try {
+    console.log("Supabase URL:", process.env.NEXT_PUBLIC_SUPABASE_URL);
+    console.log(
+      "Supabase Key (partial):",
+      process.env.NEXT_PUBLIC_SUPABASE_SERVICE_ROLE_KEY?.slice(0, 10)
+    );
     const { data, error } = await supabase
       .from("workspaces")
       .select("count")
       .limit(1);
 
     if (error) {
+      console.error("Supabase Error:", error);
       return res.status(503).json({
         status: "unhealthy",
         timestamp: new Date().toISOString(),
@@ -35,11 +41,14 @@ export default async function handler(
       },
       uptime: process.uptime(),
     });
-  } catch (error) {
+  } catch (error: unknown) {
+    console.error("Caught Error:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Internal server error";
     return res.status(500).json({
       status: "error",
       timestamp: new Date().toISOString(),
-      error: "Internal server error",
+      error: errorMessage,
     });
   }
 }
