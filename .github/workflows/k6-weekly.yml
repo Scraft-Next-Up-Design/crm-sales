@@ -39,13 +39,23 @@ jobs:
         if: always()
         run: |
           echo "Processing test results..."
-          jq -r '.metrics | to_entries | .[] | select(.value.thresholds) | "\(.key): \(.value.values.rate)"' k6-results/summary.json > k6-results/metrics.txt
-          echo "Performance Summary:" >> k6-results/metrics.txt
-          jq -r '.metrics.http_req_duration.values | "Avg Response Time: \(.avg)ms\nP95: \(."p(95)")ms\nP99: \(."p(99)")ms"' k6-results/summary.json >> k6-results/metrics.txt
+          if [ -f k6-results/summary.json ]; then
+            jq -r '.metrics | to_entries | .[] | select(.value.thresholds) | "\(.key): \(.value.values.rate)"' k6-results/summary.json > k6-results/metrics.txt || echo "Error processing metrics"
+            echo "Performance Summary:" >> k6-results/metrics.txt
+            jq -r '.metrics.http_req_duration.values | "Avg Response Time: \(.avg)ms\nP95: \(."p(95)")ms\nP99: \(."p(99)")ms"' k6-results/summary.json >> k6-results/metrics.txt || echo "Error processing duration metrics"
+          else
+            echo "No test results found" > k6-results/metrics.txt
+          fi
 
       - name: Generate Enhanced HTML Report
         if: always()
         run: |
+          if [ ! -f k6-results/metrics.txt ]; then
+            echo "No metrics data available" > k6-results/metrics.txt
+          fi
+          if [ ! -f k6-results/summary.json ]; then
+            echo "{\"error\": \"No test results available\"}" > k6-results/summary.json
+          fi
           cat << EOF > k6-results/weekly-report.html
           <!DOCTYPE html>
           <html>
@@ -85,11 +95,16 @@ jobs:
       - name: Analyze Test Results
         if: always()
         run: |
-          FAILED_THRESHOLDS=$(jq -r '.metrics | to_entries | .[] | select(.value.thresholds | any(.ok | not)) | .key' k6-results/summary.json)
-          if [ ! -z "$FAILED_THRESHOLDS" ]; then
-            echo "❌ Weekly load test failed - Thresholds crossed for:"
-            echo "$FAILED_THRESHOLDS"
-            exit 1
+          if [ -f k6-results/summary.json ]; then
+            FAILED_THRESHOLDS=$(jq -r '.metrics | to_entries | .[] | select(.value.thresholds | any(.ok | not)) | .key' k6-results/summary.json || echo "")
+            if [ ! -z "$FAILED_THRESHOLDS" ]; then
+              echo "❌ Weekly load test failed - Thresholds crossed for:"
+              echo "$FAILED_THRESHOLDS"
+              exit 1
+            else
+              echo "✅ Weekly load test passed - All thresholds met"
+            fi
           else
-            echo "✅ Weekly load test passed - All thresholds met"
+            echo "⚠️ No test results available for analysis"
+            exit 1
           fi
