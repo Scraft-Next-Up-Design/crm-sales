@@ -2,7 +2,7 @@ name: Weekly K6 Load Test
 
 on:
   schedule:
-    - cron: "30 21 * * 0"  
+    - cron: "30 21 * * 0"
   workflow_dispatch:
 
 jobs:
@@ -35,10 +35,44 @@ jobs:
             --out json=k6-results/raw.json \
             --summary-export=k6-results/summary.json || echo "K6 exited with non-zero code"
 
-      - name: Generate Weekly Report
+      - name: Process Test Results
         if: always()
         run: |
-          echo "<!DOCTYPE html><html><head><title>Weekly K6 Load Test Results</title><style>body { font-family: Arial; padding: 20px; } pre { background: #f5f5f5; padding: 15px; }</style></head><body><h1>Weekly K6 Load Test Results</h1><h2>Test Run: $(date)</h2><pre>$(cat k6-results/summary.json)</pre></body></html>" > k6-results/weekly-report.html
+          echo "Processing test results..."
+          jq -r '.metrics | to_entries | .[] | select(.value.thresholds) | "\(.key): \(.value.values.rate)"' k6-results/summary.json > k6-results/metrics.txt
+          echo "Performance Summary:" >> k6-results/metrics.txt
+          jq -r '.metrics.http_req_duration.values | "Avg Response Time: \(.avg)ms\nP95: \(."p(95)")ms\nP99: \(."p(99)")ms"' k6-results/summary.json >> k6-results/metrics.txt
+
+      - name: Generate Enhanced HTML Report
+        if: always()
+        run: |
+          cat << EOF > k6-results/weekly-report.html
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <title>Weekly K6 Load Test Results</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 20px; }
+              .metrics { background: #f5f5f5; padding: 15px; border-radius: 5px; }
+              .threshold { margin: 10px 0; padding: 10px; border-left: 4px solid #4CAF50; }
+              .threshold.failed { border-left-color: #f44336; }
+              .performance { margin-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <h1>Weekly K6 Load Test Results</h1>
+            <h2>Test Run: $(date)</h2>
+            <div class="metrics">
+              <h2>Test Metrics</h2>
+              <pre>$(cat k6-results/metrics.txt)</pre>
+            </div>
+            <div class="performance">
+              <h2>Raw Test Data</h2>
+              <pre>$(cat k6-results/summary.json)</pre>
+            </div>
+          </body>
+          </html>
+          EOF
 
       - name: Upload K6 Results
         if: always()
@@ -48,12 +82,14 @@ jobs:
           path: k6-results/
           retention-days: 90
 
-      - name: Check Test Status
+      - name: Analyze Test Results
         if: always()
         run: |
-          if jq -e '.metrics | with_entries(select(.value.thresholds | any(.ok | not))) | length > 0' k6-results/summary.json > /dev/null; then
-            echo "Weekly load test failed - Thresholds crossed."
+          FAILED_THRESHOLDS=$(jq -r '.metrics | to_entries | .[] | select(.value.thresholds | any(.ok | not)) | .key' k6-results/summary.json)
+          if [ ! -z "$FAILED_THRESHOLDS" ]; then
+            echo "❌ Weekly load test failed - Thresholds crossed for:"
+            echo "$FAILED_THRESHOLDS"
             exit 1
           else
-            echo "Weekly load test passed."
+            echo "✅ Weekly load test passed - All thresholds met"
           fi
