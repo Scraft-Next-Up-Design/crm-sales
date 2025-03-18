@@ -1,0 +1,59 @@
+name: Weekly K6 Load Test
+
+on:
+  schedule:
+    - cron: "30 21 * * 0"  
+  workflow_dispatch:
+
+jobs:
+  load-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Verify Script Exists
+        run: |
+          test -f load-tests/script.js || {
+            echo "Error: load-tests/script.js not found!"
+            exit 1
+          }
+
+      - name: Install K6
+        run: |
+          curl -L https://github.com/grafana/k6/releases/download/v0.52.0/k6-v0.52.0-linux-amd64.tar.gz | tar xz
+          sudo mv k6-v0.52.0-linux-amd64/k6 /usr/local/bin/
+
+      - name: Create Results Directory
+        run: mkdir -p k6-results
+
+      - name: Run K6 Load Test
+        env:
+          NEXT_PUBLIC_BASE_URL: ${{ secrets.NEXT_PUBLIC_BASE_URL }}
+        run: |
+          k6 run load-tests/script.js \
+            --out json=k6-results/raw.json \
+            --summary-export=k6-results/summary.json || echo "K6 exited with non-zero code"
+
+      - name: Generate Weekly Report
+        if: always()
+        run: |
+          echo "<!DOCTYPE html><html><head><title>Weekly K6 Load Test Results</title><style>body { font-family: Arial; padding: 20px; } pre { background: #f5f5f5; padding: 15px; }</style></head><body><h1>Weekly K6 Load Test Results</h1><h2>Test Run: $(date)</h2><pre>$(cat k6-results/summary.json)</pre></body></html>" > k6-results/weekly-report.html
+
+      - name: Upload K6 Results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: k6-weekly-results
+          path: k6-results/
+          retention-days: 90
+
+      - name: Check Test Status
+        if: always()
+        run: |
+          if jq -e '.metrics | with_entries(select(.value.thresholds | any(.ok | not))) | length > 0' k6-results/summary.json > /dev/null; then
+            echo "Weekly load test failed - Thresholds crossed."
+            exit 1
+          else
+            echo "Weekly load test passed."
+          fi
