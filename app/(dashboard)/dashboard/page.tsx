@@ -1,16 +1,8 @@
 "use client";
 
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
+import { DashboardSkeleton } from "@/components/ui/loading-skeleton";
+import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import {
   useGetActiveWorkspaceQuery,
   useGetCountByWorkspaceQuery,
@@ -18,10 +10,17 @@ import {
   useGetRevenueByWorkspaceQuery,
   useGetROCByWorkspaceQuery,
 } from "@/lib/store/services/workspace";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import { UserPlus } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
+import { Award, IndianRupee, TrendingUp, UserPlus, Users } from "lucide-react";
+import { useSelector } from "react-redux";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface Workspace {
   id: string;
@@ -60,7 +59,7 @@ const SalesDashboard = () => {
     useGetWebhooksBySourceIdQuery(
       {
         workspaceId: activeWorkspace?.data?.id,
-        id: ROC?.top_source_id, // Using the top source ID from ROC data
+        id: ROC?.top_source_id,
       },
       {
         skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
@@ -117,11 +116,7 @@ const SalesDashboard = () => {
     isQualifiedCountLoading ||
     isWebhooksLoading
   ) {
-    return (
-      <div className="w-full h-screen flex items-center justify-center">
-        <Loader2 className="w-8 h-8 animate-spin text-primary" />
-      </div>
-    );
+    return <DashboardSkeleton />;
   }
 
   return (
@@ -130,7 +125,6 @@ const SalesDashboard = () => {
       ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"}
       overflow-hidden `}
     >
-        
       <div className="grid grid-cols-2  md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto ">
         {dashboardStats.map((stat, index) => (
           <Card

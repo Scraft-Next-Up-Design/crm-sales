@@ -1,24 +1,21 @@
 "use client";
+
+import { Button } from "@/components/ui/button";
 import {
-  Filter,
-  Loader2,
-  UserIcon,
-  ListFilter,
-  SquareCode,
-} from "lucide-react";
-import FilterComponent from "./filter";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import Papa from "papaparse";
-import React, { useState, useMemo, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -29,7 +26,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -45,52 +41,138 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  FileDown,
-  FileUp,
-  Phone,
-  MessageCircle,
-  Send,
-  Eye,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import * as XLSX from "xlsx";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
 import {
-  useGetLeadsByWorkspaceQuery,
-  useUpdateLeadMutation,
-  useUpdateLeadDataMutation,
   useAssignRoleMutation,
   useBulkDeleteLeadsMutation,
   useCreateLeadMutation,
   useCreateManyLeadMutation,
-  // useGetLeadsSourceQuery,
+  useGetLeadsByWorkspaceQuery,
+  useUpdateLeadDataMutation,
+  useUpdateLeadMutation,
 } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import {
   useGetActiveWorkspaceQuery,
   useGetWorkspaceMembersQuery,
 } from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
-import { CardDescription } from "@/components/ui/card";
-import { calculateDaysAgo } from "@/utils/diffinFunc";
-import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
-import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-import { X } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { formatDate } from "@/utils/date";
-import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
-import { skipToken } from "@reduxjs/toolkit/query";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  FileDown,
+  FileUp,
+  Filter,
+  ListFilter,
+  Loader2,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Plus,
+  Send,
+  SquareCode,
+  Trash2,
+  UserIcon,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import Papa from "papaparse";
+import React, { useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
+import { useDebounce } from "use-debounce";
+import * as XLSX from "xlsx";
+import * as z from "zod";
+import FilterComponent from "./filter";
+
+// Skeleton Components
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  count?: number;
+}
+
+export function LoadingSkeleton({
+  className,
+  count = 1,
+  ...props
+}: SkeletonProps) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "h-12 w-full animate-pulse rounded-lg bg-muted",
+            className
+          )}
+          {...props}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function LeadsTableSkeleton({ count = 10 }: { count?: number }) {
+  return (
+    <div className="space-y-2">
+      <div className="hidden md:flex space-x-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="h-8 w-24 animate-pulse rounded-md bg-muted" />
+        ))}
+      </div>
+      <LoadingSkeleton count={count} className="h-14" />
+    </div>
+  );
+}
+
+export function LeadManagementSkeleton() {
+  return (
+    <div className="md:px-4 md:py-6 py-2 px-2 md:ml-[80px] w-auto overflow-hidden">
+      <div className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden border bg-card">
+        <div className="grid grid-cols-6 items-center grid-rows-3 md:flex md:flex-row md:justify-between p-3 md:p-0 border-b-2 border-gray-200 md:border-none">
+          <div className="md:bg-white dark:md:bg-gray-900 bg-gray-100 dark:bg-gray-800 flex items-center justify-between col-start-1 col-end-7 p-3 md:p-0">
+            <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+            <div className="md:hidden h-10 w-32 animate-pulse rounded-md bg-muted" />
+          </div>
+          <div className="relative w-full md:w-64 row-start-2 row-end-3 px-4 md:px-0 col-start-1 col-end-6">
+            <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+          </div>
+          <div className="hidden md:flex space-x-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-32 animate-pulse rounded-md bg-muted"
+              />
+            ))}
+          </div>
+          <div className="md:hidden grid grid-cols-6 gap-2 row-start-3 row-end-4">
+            <div className="col-start-6 col-end-7 h-10 w-10 animate-pulse rounded-md bg-muted" />
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-full animate-pulse rounded-md bg-muted col-span-2"
+              />
+            ))}
+          </div>
+        </div>
+        <div className="p-6">
+          <div className="mb-4 flex space-x-2">
+            <div className="h-10 w-40 animate-pulse rounded-md bg-muted" />
+            <div className="h-10 w-32 animate-pulse rounded-md bg-muted" />
+          </div>
+          <LeadsTableSkeleton count={10} />
+        </div>
+      </div>
+    </div>
+  );
+}
 
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -116,6 +198,9 @@ const initialFilters: any = {
   showDuplicates: false,
 };
 
+// Memoized FilterComponent to prevent unnecessary re-renders
+const MemoizedFilterComponent = React.memo(FilterComponent);
+
 const LeadManagement: React.FC = () => {
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed
@@ -132,6 +217,7 @@ const LeadManagement: React.FC = () => {
   ] = useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearchQuery] = useDebounce(searchQuery, 300);
   const [assignRole, { isLoading: isAssignLoading, error: roleAssignError }] =
     useAssignRoleMutation();
   const [expandedRow, setExpandedRow] = useState(null);
@@ -143,23 +229,20 @@ const LeadManagement: React.FC = () => {
     useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
 
-  // Fetch lead sources
   const {
     data: leadSources,
     error,
     isLoading,
   } = useGetWebhooksQuery({ id: workspaceId });
 
-  // console.log(leadSources);
-
   const { data: workspaceData, isLoading: isLoadingLeads }: any =
     useGetLeadsByWorkspaceQuery(
       workspaceId
-        ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
-        : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
+        ? { workspaceId: workspaceId.toString() }
+        : ({} as { workspaceId: string }),
       {
-        skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
-        pollingInterval: 60000, // Poll every 2 seconds (2000 ms)
+        skip: !workspaceId || isLoadingWorkspace,
+        pollingInterval: 60000,
       }
     );
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
@@ -168,74 +251,65 @@ const LeadManagement: React.FC = () => {
   const { data: statusData, isLoading: isLoadingStatus }: any =
     useGetStatusQuery(workspaceId);
 
+  const [leads, setLeads] = useState<any[]>([]);
+
   useEffect(() => {
-    const fetchLeads = () => {
-      if (!isLoadingLeads && workspaceData?.data) {
-        let fetchedLeads = workspaceData?.data.map(
-          (lead: any, index: number) => ({
-            id: lead.id || index + 1,
-            Name: lead.name || "",
-            email: lead.email || "",
-            phone: lead.phone || "",
-            company: lead.company || "",
-            position: lead.position || "",
-            contact_method: lead.contact_method,
-            owner: lead.owner || "Unknown",
-            status: lead.status || "New",
-            revenue: lead.revenue || 0,
-            assign_to: lead.assign_to || "Not Assigned",
-            createdAt: lead.created_at
-              ? new Date(lead.created_at).toISOString()
-              : new Date().toISOString(),
-            isDuplicate: false, // Ensure valid date format
-            is_email_valid: lead.is_email_valid,
-            is_phone_valid: lead.is_phone_valid,
-            sourceId: lead.lead_source_id || null, // Assuming sourceId is part of the lead
-          })
+    if (!isLoadingLeads && workspaceData?.data) {
+      const newLeads = workspaceData.data.map((lead: any, index: number) => ({
+        id: lead.id || index + 1,
+        Name: lead.name || "",
+        email: lead.email || "",
+        phone: lead.phone || "",
+        company: lead.company || "",
+        position: lead.position || "",
+        contact_method: lead.contact_method,
+        owner: lead.owner || "Unknown",
+        status: lead.status || "New",
+        revenue: lead.revenue || 0,
+        assign_to: lead.assign_to || "Not Assigned",
+        createdAt: lead.created_at
+          ? new Date(lead.created_at).toISOString()
+          : new Date().toISOString(),
+        isDuplicate: false,
+        is_email_valid: lead.is_email_valid,
+        is_phone_valid: lead.is_phone_valid,
+        sourceId: lead.lead_source_id || null,
+      }));
+
+      const duplicates = new Set();
+      newLeads.forEach((lead: any) => {
+        const duplicate = newLeads.find(
+          (l: any) =>
+            l.id !== lead.id &&
+            (l.email === lead.email || l.phone === lead.phone)
         );
+        if (duplicate) {
+          duplicates.add(lead.id);
+          duplicates.add(duplicate.id);
+        }
+      });
 
-        const duplicates = new Set();
-        fetchedLeads.forEach((lead: any) => {
-          const duplicate = fetchedLeads.find(
-            (l: any) =>
-              l.id !== lead.id &&
-              (l.email === lead.email || l.phone === lead.phone)
-          );
-          if (duplicate) {
-            duplicates.add(lead.id);
-            duplicates.add(duplicate.id);
-          }
-        });
+      const updatedLeads = newLeads.map((lead: any) => ({
+        ...lead,
+        isDuplicate: duplicates.has(lead.id),
+      }));
 
-        // Mark duplicates
-        const updatedLeads = fetchedLeads.map((lead: any) => ({
-          ...lead,
-          isDuplicate: duplicates.has(lead.id),
-        }));
-
-        // Sort by most recent
-        setLeads(
-          updatedLeads.sort(
-            (a: any, b: any) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
+      setLeads((prevLeads) => {
+        const sortedLeads = updatedLeads.sort(
+          (a: any, b: any) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
-      }
-    };
-    // Initial fetch
-    fetchLeads();
-
-    return () => {
-      // No manual intervals to clear
-    };
-    // Cleanup
+        if (JSON.stringify(prevLeads) !== JSON.stringify(sortedLeads)) {
+          return sortedLeads;
+        }
+        return prevLeads;
+      });
+    }
   }, [workspaceData, isLoadingLeads]);
 
   const router = useRouter();
   const [showFilters, setShowFilters] = useState(false);
-
   const [filters, setFilters] = useState<any>(initialFilters);
-  const [leads, setLeads] = useState<any[]>([]);
 
   const handleFilterReset = () => {
     setFilters(initialFilters);
@@ -244,8 +318,8 @@ const LeadManagement: React.FC = () => {
 
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      if (searchQuery) {
-        const searchText = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const searchText = debouncedSearchQuery.toLowerCase();
         const searchableFields = [
           lead.Name,
           lead.email,
@@ -263,28 +337,23 @@ const LeadManagement: React.FC = () => {
 
         if (!matchesSearch) return false;
       }
-      // Owner filter
       if (filters.owner && !lead.assign_to.name?.includes(filters.owner))
         return false;
 
-      // Step 1: Find the leadSourceId
       let leadSourceId = leadSources?.data.find(
         (source: any) => source?.name === filters?.leadsSource
       )?.id;
 
-      // Step 2: Find the webhook_url in workspaceData based on leadSourceId
       let webhook_url = leadSources?.data.find(
         (entry: any) => entry?.id === leadSourceId
       )?.webhook_url;
 
-      // Step 3: Extract sourceId from webhook_url
       let sourceId: string | null = null;
       if (webhook_url) {
         const urlParams = new URLSearchParams(webhook_url.split("?")[1]);
         leadSourceId = urlParams.get("sourceId");
       }
 
-      // Apply leadSource filter if needed
       if (
         filters.leadsSource &&
         filters.leadsSource !== "all" &&
@@ -292,24 +361,17 @@ const LeadManagement: React.FC = () => {
       ) {
         if (lead.sourceId !== leadSourceId) return false;
       }
-      // Status filter (Fixing the bug where old data persists)
       if (filters.status && lead.status?.name !== filters.status) return false;
-
-      // Contact Method filter
       if (
         filters.contact_method &&
         lead.contact_method !== filters.contact_method
       )
         return false;
-
-      // Contact Type filter (Ensure it checks correct field)
       if (filters.contactType) {
         if (filters.contactType === "phone" && !lead.phone) return false;
         if (filters.contactType === "email" && !lead.email) return false;
         if (filters.contactType === "id" && !lead.id) return false;
       }
-
-      // Date range filter
       if (
         filters.startDate &&
         new Date(lead.createdAt) < new Date(filters.startDate)
@@ -320,18 +382,15 @@ const LeadManagement: React.FC = () => {
         new Date(lead.createdAt) > new Date(filters.endDate)
       )
         return false;
-
-      // Duplicate check
       if (filters.showDuplicates) {
         const duplicates = leads.filter(
           (l) => l.email === lead.email || l.phone === lead.phone
         );
         if (duplicates.length <= 1) return false;
       }
-
       return true;
     });
-  }, [leads, filters, searchQuery, leadSources]);
+  }, [leads, filters, debouncedSearchQuery, leadSources]);
 
   const handleFilterChange = (newFilters: any) => {
     setFilters(newFilters);
@@ -344,18 +403,11 @@ const LeadManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [editingLead, setEditingLead] = useState<any>(null);
 
-  // Pagination
   const leadsPerPage = 10;
   const totalPages = Math.ceil(leads.length / leadsPerPage);
 
-  // Paginated leads
-  // const paginatedLeads = useMemo(() => {
-  //   const startIndex = (currentPage - 1) * leadsPerPage;
-  //   return leads.slice(startIndex, startIndex + leadsPerPage);
-  // }, [leads, currentPage]);
-
   const paginatedLeads = leads;
-  // Form setup
+
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
     defaultValues: {
@@ -369,7 +421,6 @@ const LeadManagement: React.FC = () => {
     },
   });
 
-  // Reset dialog state
   const resetDialog = () => {
     form.reset({
       name: "",
@@ -384,13 +435,11 @@ const LeadManagement: React.FC = () => {
     setDialogMode(null);
   };
 
-  // Open create dialog
   const openCreateDialog = () => {
     resetDialog();
     setDialogMode("create");
   };
 
-  // Open edit dialog
   const openEditDialog = (lead: any) => {
     form.reset({
       name: lead.Name,
@@ -405,7 +454,6 @@ const LeadManagement: React.FC = () => {
     setDialogMode("edit");
   };
 
-  // Handle form submission
   const onSubmit = async (data: z.infer<typeof leadSchema>) => {
     if (dialogMode === "create") {
       try {
@@ -452,19 +500,18 @@ const LeadManagement: React.FC = () => {
         toast.error("An error occurred while creating the lead.");
       }
     } else if (dialogMode === "edit" && editingLead) {
-      // Update existing lead
       try {
         updateLeadData({ id: editingLead.id, leads: data });
         setLeads((prevLeads) =>
           prevLeads.map((lead) =>
             lead.id === editingLead.id
               ? {
-                ...lead,
-                ...data,
-                company: data.company || "",
-                position: data.position || "",
-                revenue: data.revenue || 0,
-              }
+                  ...lead,
+                  ...data,
+                  company: data.company || "",
+                  position: data.position || "",
+                  revenue: data.revenue || 0,
+                }
               : lead
           )
         );
@@ -478,34 +525,28 @@ const LeadManagement: React.FC = () => {
     resetDialog();
   };
 
-  // Delete selected leads
   const handleDelete = async () => {
     try {
       const response = await deleteLeadsData({
         id: selectedLeads,
         workspaceId: workspaceId,
-      }).unwrap(); // Add .unwrap() for RTK Query
+      }).unwrap();
 
       setLeads(leads.filter((lead) => !selectedLeads.includes(lead.id)));
       setSelectedLeads([]);
       setDialogMode(null);
       toast.success("Selected leads deleted successfully");
     } catch (error: any) {
-      // Log the error to see its structure
       console.error("Delete error:", error);
-
-      // RTK Query specific error handling
       const errorMessage =
         error.data?.message ||
         error.data?.error ||
         error.error ||
         "Failed to delete leads";
-
       toast.error(errorMessage);
     }
   };
 
-  // Toggle lead selection
   const toggleLeadSelection = (leadId: number) => {
     setSelectedLeads((prev) =>
       prev.includes(leadId)
@@ -514,12 +555,10 @@ const LeadManagement: React.FC = () => {
     );
   };
 
-  // Deselect all leads
   const deselectAll = () => {
     setSelectedLeads([]);
   };
 
-  // Select all leads on current page
   const toggleSelectAllOnPage = () => {
     const currentPageLeadIds = paginatedLeads.map((lead) => lead.id);
     const allSelected = currentPageLeadIds.every((id) =>
@@ -533,25 +572,23 @@ const LeadManagement: React.FC = () => {
     );
   };
 
-  // export csv
   const exportToCSV = () => {
     const formattedLeads = leads.map((lead) => {
-      // Find the matching lead source based on sourceId
       const matchedSource = leadSources?.data.find((source: any) =>
         source.webhook_url.includes(lead.sourceId)
       );
 
       const formattedSourceDate = matchedSource
         ? new Date(matchedSource.created_at)
-          .toLocaleString("en-GB", {
-            day: "2-digit",
-            month: "2-digit",
-            year: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            hour12: false, // 24-hour format
-          })
-          .replace(",", "")
+            .toLocaleString("en-GB", {
+              day: "2-digit",
+              month: "2-digit",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+              hour12: false,
+            })
+            .replace(",", "")
         : "";
 
       return {
@@ -565,7 +602,6 @@ const LeadManagement: React.FC = () => {
         status: lead.status ? String(lead?.status?.name) : "Unknown",
         revenue: lead.revenue,
         assign_to: lead.assign_to,
-
         createdAt: new Date(lead.createdAt)
           .toLocaleString("en-GB", {
             day: "2-digit",
@@ -573,15 +609,12 @@ const LeadManagement: React.FC = () => {
             year: "numeric",
             hour: "2-digit",
             minute: "2-digit",
-            hour12: false, // 24-hour format
+            hour12: false,
           })
           .replace(",", ""),
-
         isDuplicate: lead.isDuplicate,
         is_email_valid: lead.is_email_valid,
         is_phone_valid: lead.is_phone_valid,
-
-        // Use the lead source name if found, otherwise set "No Source"
         source: matchedSource
           ? `${matchedSource.name}-${formattedSourceDate}`
           : "No Source",
@@ -593,7 +626,6 @@ const LeadManagement: React.FC = () => {
     XLSX.writeFile(workbook, "leads_export.csv");
   };
 
-  // Export to JSON
   const exportToJSON = () => {
     const dataStr = JSON.stringify(leads, null, 2);
     const dataUri =
@@ -605,8 +637,6 @@ const LeadManagement: React.FC = () => {
     linkElement.setAttribute("download", exportFileDefaultName);
     linkElement.click();
   };
-
-  // Import leads
 
   const handleImportCSV = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -624,7 +654,6 @@ const LeadManagement: React.FC = () => {
             const normalizedData = result.data.map((lead: any) => ({
               id: lead.id,
               name: lead.Name?.trim() || "",
-
               email: lead.email,
               phone: String(lead.phone)
                 .replace(/[^\d+]/g, "")
@@ -640,14 +669,12 @@ const LeadManagement: React.FC = () => {
               createdAt: lead.createdAt
                 ? new Date(lead.createdAt).toISOString()
                 : new Date().toISOString(),
-
               isDuplicate: lead.isDuplicate === "TRUE",
               is_email_valid: lead.is_email_valid === "TRUE",
               is_phone_valid: lead.is_phone_valid === "TRUE",
               sourceId: lead.sourceId,
             }));
 
-            // Validate data using Zod schema
             const validLeads = normalizedData.filter((lead: any) => {
               try {
                 leadSchema.parse(lead);
@@ -666,17 +693,14 @@ const LeadManagement: React.FC = () => {
             try {
               const response = await createManyLead({
                 workspaceId,
-                body: validLeads, // Ensure this is an array
+                body: validLeads,
               });
-
-              // console.log("API Response:", response);
 
               setLeads((prev) => [...prev, ...validLeads]);
               toast.success("Leads created successfully");
             } catch (error) {
               toast.error("Error adding leads to database");
             }
-            // Reset input value to allow re-uploading the same file
             event.target.value = "";
           },
         });
@@ -704,6 +728,7 @@ const LeadManagement: React.FC = () => {
       default:
     }
   };
+
   const handleView = (id: number) => {
     router.push(`/leads/${id}`);
   };
@@ -714,17 +739,16 @@ const LeadManagement: React.FC = () => {
     try {
       await updateLead({ id, leads: { status: { name, color } } });
 
-      // Update the leads state with the new status
       setLeads((prevLeads) =>
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-              ...lead,
-              status: {
-                name,
-                color,
-              },
-            }
+                ...lead,
+                status: {
+                  name,
+                  color,
+                },
+              }
             : lead
         )
       );
@@ -740,19 +764,18 @@ const LeadManagement: React.FC = () => {
     const { name, role } = JSON.parse(assign);
 
     try {
-      await assignRole({ id, data: { name, role },workspaceId: workspaceId });
+      await assignRole({ id, data: { name, role }, workspaceId: workspaceId });
 
-      // Update the leads state with the new assignment
       setLeads((prevLeads) =>
         prevLeads.map((lead) =>
           lead.id === id
             ? {
-              ...lead,
-              assign_to: {
-                name,
-                role,
-              },
-            }
+                ...lead,
+                assign_to: {
+                  name,
+                  role,
+                },
+              }
             : lead
         )
       );
@@ -763,9 +786,15 @@ const LeadManagement: React.FC = () => {
       toast.error("Failed to assign lead");
     }
   };
+
   const handleGoBack = () => {
     router.push("/dashboard");
   };
+
+  if (isLoadingStatus || isLoadingLeads || isLoadingMembers) {
+    return <LeadManagementSkeleton />;
+  }
+
   if (workspaceData?.data.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -773,7 +802,6 @@ const LeadManagement: React.FC = () => {
           <CardTitle className="text-2xl font-semibold text-center text-gray-800">
             No Leads Found in this Workspace
           </CardTitle>
-
           <CardDescription className="mt-2 text-lg text-gray-600 text-center">
             It seems there are no leads available in this workspace at the
             moment.
@@ -788,21 +816,16 @@ const LeadManagement: React.FC = () => {
       </div>
     );
   }
-  if (isLoadingStatus || isLoadingLeads || isLoadingMembers)
-    return (
-      <div className="flex items-center justify-center min-h-screen overflow-hidden">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+
   return (
     <div
-      className={`transition-all duration-500 ease-in-out md:px-4 md:py-6 py-2 px-2 ${isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
-        } w-auto overflow-hidden`}
+      className={`transition-all duration-500 ease-in-out md:px-4 md:py-6 py-2 px-2 ${
+        isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
+      } w-auto overflow-hidden`}
     >
-      {" "}
       <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden">
         {showFilters && (
-          <FilterComponent
+          <MemoizedFilterComponent
             values={filters}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
@@ -813,7 +836,6 @@ const LeadManagement: React.FC = () => {
         )}
 
         <CardHeader className="grid grid-cols-6 items-center grid-rows-3 md:gap-4 md:flex md:flex-row md:justify-between p-0 md:p-3 border-b-2 border-gray-200 md:border-none">
-          {/* Title */}
           <div className="md:bg-white dark:md:bg-gray-900 bg-gray-100 dark:bg-gray-800 flex items-center justify-between col-start-1 col-end-7 p-3 md:p-0">
             <div className="flex gap-2">
               <div className="md:hidden lg:hidden">
@@ -823,8 +845,6 @@ const LeadManagement: React.FC = () => {
                 Lead Management
               </CardTitle>
             </div>
-
-            {/* Mobile "Add Lead" Button */}
             <Button
               onClick={openCreateDialog}
               className="md:hidden lg:hidden bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200"
@@ -832,9 +852,7 @@ const LeadManagement: React.FC = () => {
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
-
-          {/* Search Input */}
-          <div className="relative w-full md:w-64 row-start-2 row-end-3 px-4 md:px-0  col-start-1 col-end-6">
+          <div className="relative w-full md:w-64 row-start-2 row-end-3 px-4 md:px-0 col-start-1 col-end-6">
             <Input
               type="text"
               placeholder="Search leads..."
@@ -843,10 +861,7 @@ const LeadManagement: React.FC = () => {
               className="w-full"
             />
           </div>
-
-          {/* Buttons Container (Grid Instead of Flex) */}
-          {/* <div className=" md:flex grid grid-cols-6 col-start-1 col-end-7 row-start-3 row-end-4 gap-2"> */}
-          <div className=" hidden md:flex">
+          <div className="hidden md:flex">
             <Button
               variant="outline"
               onClick={() => setShowFilters(!showFilters)}
@@ -855,8 +870,6 @@ const LeadManagement: React.FC = () => {
               <Filter className="mr-2 h-4 w-4 " />
               {showFilters ? "Hide Filters" : "Show Filters"}
             </Button>
-
-            {/* Export CSV */}
             <Button
               variant="outline"
               onClick={exportToCSV}
@@ -881,46 +894,39 @@ const LeadManagement: React.FC = () => {
             <Button
               variant="outline"
               onClick={() => document.getElementById("import-leads")?.click()}
-              className=" mr-2"
+              className="mr-2"
             >
               <FileUp className="mr-2 h-4 w-4" /> Import
             </Button>
-            <Button onClick={openCreateDialog} className=" col-span-2">
+            <Button onClick={openCreateDialog} className="col-span-2">
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
-
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="row-start-2 row-end-3 col-start-6 col-end-7 p-1 flex md:hidden border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 items-center rounded-md justify-center"
           >
             <ListFilter className="mr-2 h-4 w-4 " />
           </button>
-          {/* Export CSV */}
           <Button
             variant="outline"
             onClick={exportToCSV}
             className="col-start-1 col-end-3 mx-2 md:hidden lg:hidden"
           >
-            {/* <FileDown className="mr-2 h-4 w-4" /> */}
             Export CSV
           </Button>
-
-          {/* Export JSON */}
           <Button
             variant="outline"
             onClick={exportToJSON}
             className="col-start-3 col-end-5 mx-2 md:hidden lg:hidden px-1 py-1"
           >
-            {/* <FileDown className="mr-2 h-4 w-4" />  */}
             Export JSON
           </Button>
-
           <input
             type="file"
             id="import-leads"
             accept=".csv"
-            className="hidden "
+            className="hidden"
             onChange={handleImportCSV}
           />
           <Button
@@ -929,20 +935,10 @@ const LeadManagement: React.FC = () => {
             className="md:hidden lg:hidden mx-2 col-start-5 col-end-7"
           >
             Import CSV
-            {/* <FileUp className="mr-2 h-4 w-4" /> Import */}
           </Button>
-
-          {/* Add Lead Button (Only for Desktop) */}
-          {/* <Button
-            onClick={openCreateDialog}
-            className="md:hidden  col-span-2"
-          >
-            <Plus className="mr-2 h-4 w-4" /> Add Lead
-          </Button> */}
         </CardHeader>
 
         <CardContent>
-          {/* Delete Selected Button */}
           {selectedLeads.length > 0 && (
             <div className="mb-4 flex space-x-2">
               <Button
@@ -974,10 +970,8 @@ const LeadManagement: React.FC = () => {
                       onCheckedChange={toggleSelectAllOnPage}
                     />
                   </TableHead>
-
                   <TableHead className="px-2 py-1">Name</TableHead>
                   <TableHead className="px-2 py-1">Email</TableHead>
-
                   <TableHead className="px-2 py-1">Phone</TableHead>
                   <TableHead className="px-2 py-1">Generated At</TableHead>
                   <TableHead className="px-2 py-1">Actions</TableHead>
@@ -986,7 +980,6 @@ const LeadManagement: React.FC = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Mobile Veiw */}
                 {filteredLeads.map((lead) => (
                   <>
                     <TableRow
@@ -1007,13 +1000,12 @@ const LeadManagement: React.FC = () => {
                             {lead.isDuplicate && (
                               <span
                                 style={{ color: "red", fontSize: "0.7em" }}
-                                className=" hidden md:block"
+                                className="hidden md:block"
                               >
                                 Duplicate Lead
                               </span>
                             )}
                           </div>
-
                           <div className="p-1 md:p-3 col-start-2 col-end-6">
                             <div className="flex items-center md:space-x-2">
                               {lead.is_email_valid ? (
@@ -1025,10 +1017,11 @@ const LeadManagement: React.FC = () => {
                                 <span
                                   className={`
                                   font-medium tracking-tight 
-                                  ${lead.is_email_valid
+                                  ${
+                                    lead.is_email_valid
                                       ? "text-emerald-800"
                                       : "text-red-800"
-                                    }`}
+                                  }`}
                                 >
                                   {lead.email}
                                 </span>
@@ -1070,8 +1063,12 @@ const LeadManagement: React.FC = () => {
                             <div>
                               <span
                                 className={`
-        font-medium tracking-tight 
-        ${lead.is_phone_valid ? "text-emerald-800" : "text-red-800"}`}
+                                font-medium tracking-tight 
+                                ${
+                                  lead.is_phone_valid
+                                    ? "text-emerald-800"
+                                    : "text-red-800"
+                                }`}
                               >
                                 {lead.phone}
                               </span>
@@ -1083,15 +1080,15 @@ const LeadManagement: React.FC = () => {
                             </div>
                           </div>
                         </div>
-                        <div className=" p-3 grid grid-cols-2 items-center">
-                          <span className="text-gray-600">Genrated At</span>
+                        <div className="p-3 grid grid-cols-2 items-center">
+                          <span className="text-gray-600">Generated At</span>
                           <div className="px-2 py-1">
                             {formatDate(lead.createdAt)}
                           </div>
                         </div>
-                        <div className="p-3 grid grid-cols-2 items-center ">
+                        <div className="p-3 grid grid-cols-2 items-center">
                           <span className="text-gray-600">Action</span>
-                          <div className="flex  space-x-1">
+                          <div className="flex space-x-1">
                             <Button
                               variant="outline"
                               size="icon"
@@ -1140,7 +1137,7 @@ const LeadManagement: React.FC = () => {
                               handleStatusChange(lead.id, value)
                             }
                           >
-                            <SelectTrigger className="group relative  overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
+                            <SelectTrigger className="group relative overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                               <div className="flex items-center gap-3">
                                 <div className="relative">
                                   <div
@@ -1161,7 +1158,6 @@ const LeadManagement: React.FC = () => {
                                 </span>
                               </div>
                             </SelectTrigger>
-
                             <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                               {statusData?.data.map(
                                 (status: { name: string; color: string }) => (
@@ -1175,14 +1171,12 @@ const LeadManagement: React.FC = () => {
                                   >
                                     <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                       <div className="relative">
-                                        {/* Glow effect */}
                                         <div
                                           className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
                                           style={{
                                             backgroundColor: status?.color,
                                           }}
                                         />
-                                        {/* Main dot */}
                                         <div
                                           className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
                                           style={{
@@ -1200,8 +1194,7 @@ const LeadManagement: React.FC = () => {
                             </SelectContent>
                           </Select>
                         </div>
-
-                        <div className="px-3  py-1 grid grid-cols-2 items-center ">
+                        <div className="px-3 py-1 grid grid-cols-2 items-center">
                           <span className="text-gray-600">Assign</span>
                           <Select
                             defaultValue={JSON.stringify({
@@ -1210,7 +1203,7 @@ const LeadManagement: React.FC = () => {
                             })}
                             onValueChange={(value) =>
                               handleAssignChange(lead?.id, value)
-                            } // Uncomment and use for status change handler
+                            }
                           >
                             <SelectTrigger className="group relative overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                               <div className="flex items-center gap-3">
@@ -1225,7 +1218,6 @@ const LeadManagement: React.FC = () => {
                                 </span>
                               </div>
                             </SelectTrigger>
-
                             <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                               <SelectItem
                                 key="unassigned"
@@ -1271,8 +1263,7 @@ const LeadManagement: React.FC = () => {
                     )}
                   </>
                 ))}
-
-                {/* Desktop View  */}
+                FUNCTIONALITY IS HERE
                 {filteredLeads.map((lead) => (
                   <TableRow
                     key={`${lead.id}-desktop`}
@@ -1290,13 +1281,12 @@ const LeadManagement: React.FC = () => {
                       {lead.isDuplicate && (
                         <span
                           style={{ color: "red", fontSize: "0.7em" }}
-                          className=" hidden md:block"
+                          className="hidden md:block"
                         >
                           Duplicate Lead
                         </span>
                       )}
                     </TableCell>
-
                     <TableCell className="p-3 col-start-2 col-end-6">
                       <div className="flex items-center space-x-2">
                         {lead.is_email_valid ? (
@@ -1307,11 +1297,12 @@ const LeadManagement: React.FC = () => {
                         <div>
                           <span
                             className={`
-                                  font-medium tracking-tight 
-                                  ${lead.is_email_valid
+                            font-medium tracking-tight 
+                            ${
+                              lead.is_email_valid
                                 ? "text-emerald-800"
                                 : "text-red-800"
-                              }`}
+                            }`}
                           >
                             {lead.email}
                           </span>
@@ -1323,8 +1314,7 @@ const LeadManagement: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-
-                    <TableCell className="p-3 hidden md:table-cell ">
+                    <TableCell className="p-3 hidden md:table-cell">
                       <div className="flex items-center space-x-2">
                         {lead.is_phone_valid ? (
                           <Check className="w-5 h-5 text-emerald-600 stroke-[3]" />
@@ -1334,8 +1324,12 @@ const LeadManagement: React.FC = () => {
                         <div>
                           <span
                             className={`
-        font-medium tracking-tight 
-        ${lead.is_phone_valid ? "text-emerald-800" : "text-red-800"}`}
+                            font-medium tracking-tight 
+                            ${
+                              lead.is_phone_valid
+                                ? "text-emerald-800"
+                                : "text-red-800"
+                            }`}
                           >
                             {lead.phone}
                           </span>
@@ -1347,10 +1341,10 @@ const LeadManagement: React.FC = () => {
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell className="px-2 py-1 hidden md:table-cell ">
+                    <TableCell className="px-2 py-1 hidden md:table-cell">
                       {formatDate(lead.createdAt)}
                     </TableCell>
-                    <TableCell className="px-2 py-1 hidden md:table-cell ">
+                    <TableCell className="px-2 py-1 hidden md:table-cell">
                       <div className="flex space-x-1">
                         <Button
                           variant="outline"
@@ -1389,7 +1383,7 @@ const LeadManagement: React.FC = () => {
                         </Button>
                       </div>
                     </TableCell>
-                    <TableCell className="border-none hidden md:table-cell ">
+                    <TableCell className="border-none hidden md:table-cell">
                       <Select
                         defaultValue={JSON.stringify({
                           name: lead.status?.name || "Pending",
@@ -1420,7 +1414,6 @@ const LeadManagement: React.FC = () => {
                             </span>
                           </div>
                         </SelectTrigger>
-
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                           {statusData?.data.map(
                             (status: { name: string; color: string }) => (
@@ -1434,14 +1427,12 @@ const LeadManagement: React.FC = () => {
                               >
                                 <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                   <div className="relative">
-                                    {/* Glow effect */}
                                     <div
                                       className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
                                       style={{
                                         backgroundColor: status?.color,
                                       }}
                                     />
-                                    {/* Main dot */}
                                     <div
                                       className="relative h-3 w-3 rounded-lg transition-transform duration-200 group-hover:scale-110"
                                       style={{
@@ -1459,8 +1450,7 @@ const LeadManagement: React.FC = () => {
                         </SelectContent>
                       </Select>
                     </TableCell>
-
-                    <TableCell className="border-none hidden md:table-cell ">
+                    <TableCell className="border-none hidden md:table-cell">
                       <Select
                         defaultValue={JSON.stringify({
                           name: lead?.assign_to?.name || "Not Assigned",
@@ -1468,7 +1458,7 @@ const LeadManagement: React.FC = () => {
                         })}
                         onValueChange={(value) =>
                           handleAssignChange(lead?.id, value)
-                        } // Uncomment and use for status change handler
+                        }
                       >
                         <SelectTrigger className="group relative w-[200px] overflow-hidden rounded-xl border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800">
                           <div className="flex items-center gap-3">
@@ -1483,7 +1473,6 @@ const LeadManagement: React.FC = () => {
                             </span>
                           </div>
                         </SelectTrigger>
-
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                           <SelectItem
                             key="unassigned"
@@ -1528,29 +1517,6 @@ const LeadManagement: React.FC = () => {
               </TableBody>
             </Table>
           </div>
-
-          {/* Pagination */}
-          {/* <div className="flex justify-between items-center mt-4">
-            <Button
-              variant="outline"
-              onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
-              disabled={currentPage === 1}
-            >
-              Previous
-            </Button>
-            <span>
-              Page {currentPage} of {totalPages}
-            </span>
-            <Button
-              variant="outline"
-              onClick={() =>
-                setCurrentPage((prev) => Math.min(totalPages, prev + 1))
-              }
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
-          </div> */}
         </CardContent>
       </Card>
       <Dialog
@@ -1579,19 +1545,6 @@ const LeadManagement: React.FC = () => {
                     </FormItem>
                   )}
                 />
-                {/* <FormField
-                  control={form.control}
-                  name="lastName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Last Name</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Enter last name" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                /> */}
               </div>
               <FormField
                 control={form.control}
@@ -1701,7 +1654,6 @@ const LeadManagement: React.FC = () => {
                   </FormItem>
                 )}
               />
-
               <DialogFooter>
                 <DialogClose asChild>
                   <Button type="button" variant="outline">
@@ -1724,7 +1676,6 @@ const LeadManagement: React.FC = () => {
           </Form>
         </DialogContent>
       </Dialog>
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={dialogMode === "delete"}
         onOpenChange={() => setDialogMode(null)}

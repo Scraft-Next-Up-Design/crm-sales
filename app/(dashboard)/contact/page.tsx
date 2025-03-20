@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -16,63 +18,127 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Mail,
-  Phone,
-  User,
-  UserPlus,
-  MoreVertical,
-  Loader2,
-  MessageCircle,
-  Send,
-  Plus,
-  MessageSquare,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useGetTagsQuery } from "@/lib/store/services/tags";
-import {
   useGetLeadsByWorkspaceQuery,
   useUpdateLeadMutation,
 } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import { useGetTagsQuery } from "@/lib/store/services/tags";
 import {
   useGetActiveWorkspaceQuery,
   useGetWorkspaceMembersQuery,
 } from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
-
-import { Label } from "@/components/ui/label";
-import WebhookStatus from "@/components/ui/WebhookStatus";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  Send,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { Resizable } from "react-resizable";
+import "react-resizable/css/styles.css";
+import { toast } from "sonner";
 import { CardTitle } from "@/components/ui/card";
-import { ResizableHandle } from "@/components/ui/resizable";
-// import { useRouter } from "next/router";
-// import { Loader2} from "@/components/ui";
+import WebhookStatus from "@/components/ui/WebhookStatus";
+import { RootState } from "@/lib/store/store";
+import { useSelector } from "react-redux";
+import { cn } from "@/lib/utils";
 
-// Mock data for contacts
+// Skeleton Components
+interface SkeletonProps extends React.HTMLAttributes<HTMLDivElement> {
+  className?: string;
+  count?: number;
+}
+
+export function LoadingSkeleton({
+  className,
+  count = 1,
+  ...props
+}: SkeletonProps) {
+  return (
+    <div className="space-y-4">
+      {Array.from({ length: count }).map((_, i) => (
+        <div
+          key={i}
+          className={cn(
+            "h-12 w-full animate-pulse rounded-lg bg-muted",
+            className
+          )}
+          {...props}
+        />
+      ))}
+    </div>
+  );
+}
+
+export function ContactTableSkeleton({ count = 10 }: { count?: number }) {
+  return (
+    <div className="space-y-2">
+      {/* Table Header Skeleton */}
+      <div className="hidden md:flex space-x-2">
+        {Array.from({ length: 7 }).map((_, i) => (
+          <div key={i} className="h-8 w-24 animate-pulse rounded-md bg-muted" />
+        ))}
+      </div>
+      {/* Table Rows Skeleton */}
+      <LoadingSkeleton count={count} className="h-14" />
+    </div>
+  );
+}
+
+export function ContactPageSkeleton() {
+  return (
+    <div className="transition-all duration-500 ease-in-out px-4 py-6 md:ml-[80px] w-auto overflow-hidden">
+      <div className="w-full rounded-[16px] md:rounded-[4px] border bg-card">
+        {/* Header Skeleton */}
+        <div className="md:bg-white dark:md:bg-gray-900 bg-gray-100 dark:bg-gray-800 flex items-center justify-between p-3 md:p-0">
+          <div className="flex gap-2">
+            <div className="md:hidden lg:hidden h-6 w-6 animate-pulse rounded-md bg-muted" />
+            <div className="h-8 w-48 animate-pulse rounded-md bg-muted" />
+          </div>
+        </div>
+
+        {/* Filters Skeleton */}
+        <div className="flex flex-col md:flex-row gap-4 items-center mt-4">
+          <div className="md:flex-1 relative w-full">
+            <div className="h-10 w-full animate-pulse rounded-md bg-muted" />
+          </div>
+          <div className="h-10 w-full md:w-44 animate-pulse rounded-md bg-muted" />
+        </div>
+
+        {/* Table Skeleton */}
+        <div className="border rounded-lg mt-4 p-4">
+          <ContactTableSkeleton count={10} />
+        </div>
+
+        {/* Pagination Skeleton */}
+        <div className="flex items-center justify-between mt-4">
+          <div className="flex items-center gap-2">
+            <div className="h-10 w-32 animate-pulse rounded-md bg-muted" />
+            <div className="h-6 w-48 animate-pulse rounded-md bg-muted" />
+          </div>
+          <div className="flex gap-2">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div
+                key={i}
+                className="h-10 w-10 animate-pulse rounded-md bg-muted"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Mock data and interfaces remain unchanged
 const mockContacts = Array.from({ length: 50 }, (_, i) => ({
   id: i + 1,
   name: `Contact ${i + 1}`,
@@ -107,8 +173,7 @@ export default function ContactPage() {
   const [editInfoId, setEditInfoId] = useState(null);
   const [editEmailValidationId, setEditEmailValidationId] = useState(null);
   const [emailValidation, setEmailValidation] = useState(false);
-
-  const [businessInfo, setBusinessInfo] = useState(""); // Single field for input
+  const [businessInfo, setBusinessInfo] = useState("");
   const [tags, setTags] = useState<Tags[]>([]);
   const [selectedTags, setSelectedTags] = useState<Record<string, string[]>>(
     {}
@@ -132,18 +197,18 @@ export default function ContactPage() {
     status: "Active",
   });
 
-  // fetching leads
+  // Fetching data
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
     useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
   const { data: workspaceData, isLoading: isLoadingLeads }: any =
     useGetLeadsByWorkspaceQuery(
       workspaceId
-        ? ({ workspaceId: workspaceId.toString() } as { workspaceId: string }) // Provide workspaceId if it exists
-        : ({} as { workspaceId: string }), // Fallback empty object if workspaceId is undefined
+        ? { workspaceId: workspaceId.toString() }
+        : ({} as { workspaceId: string }),
       {
-        skip: !workspaceId || isLoadingWorkspace, // Skip fetching if workspaceId is missing or loading
-        pollingInterval: 60000, // Poll every 2 seconds (2000 ms)
+        skip: !workspaceId || isLoadingWorkspace,
+        pollingInterval: 60000,
       }
     );
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
@@ -155,7 +220,6 @@ export default function ContactPage() {
   const { data: statusData, isLoading: isLoadingStatus }: any =
     useGetStatusQuery(workspaceId);
 
-  // **Filter Leads into Contacts**
   const contactStatuses = new Set(
     Array.isArray(statusData?.data)
       ? statusData.data
@@ -210,13 +274,11 @@ export default function ContactPage() {
           }
         });
 
-        // Mark duplicates
         const updatedLeads = fetchedLeads.map((lead: any) => ({
           ...lead,
           isDuplicate: duplicates.has(lead.id),
         }));
 
-        // Sort by most recent
         const sortedLeads = updatedLeads.sort(
           (a: any, b: any) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -232,19 +294,10 @@ export default function ContactPage() {
       }
     };
 
-    // Initial fetch
     fetchLeads();
-
-    // Set up polling
     const pollInterval = setInterval(fetchLeads, POLLING_INTERVAL);
-
-    // Cleanup
     return () => clearInterval(pollInterval);
   }, [workspaceData, isLoadingLeads]);
-
-  // useEffect(() => {
-  //   console.log("contact", contacts);
-  // }, [contacts]);
 
   useEffect(() => {
     if (editInfoId) {
@@ -266,14 +319,13 @@ export default function ContactPage() {
     }
   }, [tagsData]);
 
-  // Filter contacts based on search and status
   const filteredContacts = Array.isArray(contacts)
     ? contacts.filter((contact) => {
         const searchLower = search.toLowerCase();
         const statusLower = statusFilter.toLowerCase();
 
         const matchesSearch =
-          contact?.name?.toLowerCase().includes(searchLower) || // Fix: contact.Name -> contact.name
+          contact?.Name?.toLowerCase().includes(searchLower) || // Adjusted to match 'Name'
           contact?.email?.toLowerCase().includes(searchLower) ||
           contact?.phone?.includes(search);
 
@@ -285,10 +337,8 @@ export default function ContactPage() {
       })
     : [];
 
-  // contact
   const initiateDirectContact = (lead: any, method: string) => {
     const sanitizedPhone = lead.phone.replace(/\D/g, "");
-
     switch (method) {
       case "WhatsApp":
         window.open(`https://wa.me/${sanitizedPhone}`, "_blank");
@@ -303,15 +353,6 @@ export default function ContactPage() {
     }
   };
 
-  //update
-
-  // const tags = [
-  //   { name: "Facebook", color: "#1877F2" }, // Blue
-  //   { name: "SEO", color: "#22C55E" }, // Green
-  //   { name: "Google Ads", color: "#FACC15" }, // Yellow
-  //   { name: "LinkedIn", color: "#0A66C2" }, // Dark Blue
-  // ];
-
   const handleUpdate = async (
     id: string | number,
     updatedData: Partial<{
@@ -324,10 +365,8 @@ export default function ContactPage() {
       is_email_valid: boolean;
     }>
   ) => {
-    // console.log("dataa", updatedData);
-
     if (
-      !updatedData.businessInfo === undefined &&
+      updatedData.businessInfo === undefined &&
       (!updatedData.tags || updatedData.tags.length === 0) &&
       !updatedData.address?.trim() &&
       !updatedData.email?.trim() &&
@@ -335,63 +374,37 @@ export default function ContactPage() {
       updatedData.is_email_valid === undefined &&
       !updatedData.name?.trim()
     ) {
-      return; // Prevent empty updates
+      return;
     }
 
     try {
-      await updateLead({
-        id,
-        leads: updatedData,
-      }).unwrap();
+      await updateLead({ id, leads: updatedData }).unwrap();
+      toast.success("Update successful");
     } catch (error) {
       toast.error("Update failed");
     }
-
-    toast.success("Update successfully");
   };
 
   const handleTagChange = (id: string, value: string) => {
     setSelectedTags((prev) => {
       const currentTags = prev?.[id] ?? [];
-
       const updatedTags = currentTags.includes(value)
-        ? currentTags.filter((tag) => tag !== value) // Remove tag if already selected
+        ? currentTags.filter((tag) => tag !== value)
         : [...currentTags, value];
-
-      handleUpdate?.(id, { tags: updatedTags });
-
+      handleUpdate(id, { tags: updatedTags });
       return { ...prev, [id]: updatedTags };
     });
   };
-  useEffect(() => {}, [selectedTags]);
-
-  // useEffect(() => {
-  //   if (contacts.length > 0) {
-  //     const initialTags = contacts.reduce((acc, contact) => {
-  //       acc[contact.id] = JSON.parse(contact.tag || "[]"); // Ensure it's an array
-  //       return acc;
-  //     }, {} as Record<string, string[]>);
-
-  //     setSelectedTags(initialTags);
-  //   }
-  // }, [contacts]); // Make sure to update when `contacts` change
 
   const handleRemoveTag = async (contactId: string, tagToRemove: string) => {
     setSelectedTags((prev) => {
       if (!prev || !prev[contactId]) return prev;
-
       const updatedTags = prev[contactId].filter((tag) => tag !== tagToRemove);
-
       handleUpdate(contactId, { tags: updatedTags.length ? updatedTags : [] });
-
-      return {
-        ...prev,
-        [contactId]: updatedTags.length ? updatedTags : [],
-      };
+      return { ...prev, [contactId]: updatedTags.length ? updatedTags : [] };
     });
   };
 
-  // Daynamic Table/////////////
   const tableHeaders = [
     "Name",
     "Email",
@@ -417,29 +430,21 @@ export default function ContactPage() {
     country: "",
     zipCode: "",
   });
-  const defaultHeaders = [
-    "Name",
-    "Email",
-    "Phone",
-    "Email Validation",
-    "Platform",
-    "Bussiness Info",
-    "Tag",
-  ];
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [dropdownOpenRemove, setDropdownOpenRemove] = useState<string | null>(
+    null
+  );
 
-  const [newColumn, setNewColumn] = useState("");
+  const toggleDropdown = (header: string) => {
+    setDropdownOpenRemove((prev) => (prev === header ? null : header));
+  };
 
   const addColumn = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const selectedColumn = event.target.value;
     if (selectedColumn && !selectedHeaders.includes(selectedColumn)) {
       const updatedHeaders = [...selectedHeaders];
-
-      // Find the correct index in the original tableHeaders
       const insertIndex = tableHeaders.indexOf(selectedColumn);
-
-      // Find the correct position in selectedHeaders based on tableHeaders order
       for (let i = 0; i < selectedHeaders.length; i++) {
         if (tableHeaders.indexOf(selectedHeaders[i]) > insertIndex) {
           updatedHeaders.splice(i, 0, selectedColumn);
@@ -447,32 +452,18 @@ export default function ContactPage() {
           return;
         }
       }
-
-      // If it's the last item, push normally
       updatedHeaders.push(selectedColumn);
       setSelectedHeaders(updatedHeaders);
     }
   };
 
-  // const [dropdownOpen, setDropdownOpen] = useState<string | null>(null);
-  const [dropdownOpenRemove, setDropdownOpenRemove] = useState<string | null>(
-    null
-  );
-
-  // Toggle dropdown for headers
-  const toggleDropdown = (header: string) => {
-    setDropdownOpenRemove((prev) => (prev === header ? null : header));
-  };
-
-  // };
   const removeColumn = (header: string) => {
     setSelectedHeaders((prevHeaders) =>
       prevHeaders.filter((h) => h !== header)
     );
-    setDropdownOpenRemove(null); // Close dropdown after removing
+    setDropdownOpenRemove(null);
   };
 
-  // Calculate pagination
   const totalPages = Math.ceil(filteredContacts.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage;
   const paginatedContacts = filteredContacts.slice(
@@ -480,22 +471,17 @@ export default function ContactPage() {
     startIndex + itemsPerPage
   );
 
-  // Rezieable columns
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>(
-    Object.fromEntries(tableHeaders.map((header) => [header, 150])) // Default width for each column
+    Object.fromEntries(tableHeaders.map((header) => [header, 150]))
   );
 
-  // Correctly type 'size' as ResizeCallbackData
-  type ResizeCallbackData = {
-    size: { width: number; height: number };
-  };
-
+  type ResizeCallbackData = { size: { width: number; height: number } };
   const handleResize =
     (header: string) =>
     (event: React.SyntheticEvent, { size }: ResizeCallbackData) => {
       setColumnWidths((prevWidths) => ({
         ...prevWidths,
-        [header]: size.width, // Update width dynamically
+        [header]: size.width,
       }));
     };
 
@@ -510,24 +496,17 @@ export default function ContactPage() {
         lastContact: new Date().toLocaleDateString(),
       },
     ]);
-    setNewContact({
-      name: "",
-      email: "",
-      phone: "",
-      status: "Active",
-    });
+    setNewContact({ name: "", email: "", phone: "", status: "Active" });
   };
 
-  if (isLoadingWorkspace || isLoadingLeads || isLoadingMembers)
-    return (
-      <div className="flex items-center justify-center min-h-screen overflow-hidden">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+  // Replace Loader2 with Skeleton
+  if (isLoadingWorkspace || isLoadingLeads || isLoadingMembers) {
+    return <ContactPageSkeleton />;
+  }
 
   return (
     <div
-      className={`transition-all duration-500 ease-in-out px-4 py-6  ${
+      className={`transition-all duration-500 ease-in-out px-4 py-6 ${
         isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
       } w-auto overflow-hidden`}
     >
@@ -543,86 +522,7 @@ export default function ContactPage() {
           </div>
         </div>
 
-        {/* <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Contacts</h1>
-          <Dialog>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <UserPlus className="h-4 w-4" />
-                Add Contact
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Add New Contact</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddContact} className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    value={newContact.name}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, name: e.target.value })
-                    }
-                    placeholder="Enter name"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={newContact.email}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, email: e.target.value })
-                    }
-                    placeholder="Enter email"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone</Label>
-                  <Input
-                    id="phone"
-                    value={newContact.phone}
-                    onChange={(e) =>
-                      setNewContact({ ...newContact, phone: e.target.value })
-                    }
-                    placeholder="Enter phone number"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="status">Status</Label>
-                  <Select
-                    value={newContact.status}
-                    onValueChange={(value) =>
-                      setNewContact({ ...newContact, status: value })
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Proposal Sent">Proposal Sent</SelectItem>
-                      <SelectItem value="Inactive">Inactive</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <Button type="submit" className="w-full">
-                  Add Contact
-                </Button>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div> */}
-
-        {/* Filters */}
-        <div className="flex flex-col md:flex-row  gap-4 items-center">
-          {/* Search Input */}
+        <div className="flex flex-col md:flex-row gap-4 items-center">
           <div className="md:flex-1 relative w-full mt-4 md:mt-0">
             <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
             <Input
@@ -632,18 +532,12 @@ export default function ContactPage() {
               className="pl-8"
             />
           </div>
-
-          {/* Status Filter Dropdown */}
-
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="md:w-[180px] w-full">
               <SelectValue placeholder="Filter by status" />
             </SelectTrigger>
             <SelectContent>
-              {/* Default "All Status" option */}
               <SelectItem value="all">All Status</SelectItem>
-
-              {/* Convert Set to Array and map over it */}
               {Array.from(contactStatuses).map((statusName) => (
                 <SelectItem
                   key={statusName as string}
@@ -656,7 +550,6 @@ export default function ContactPage() {
           </Select>
         </div>
 
-        {/* Contacts Table */}
         <div className="border rounded-lg mt-4">
           <div className="w-full overflow-x-auto">
             <Table className="min-w-full border-collapse table-auto">
@@ -666,28 +559,25 @@ export default function ContactPage() {
                     <TableHead
                       key={header}
                       className="relative text-center font-semibold"
-                      style={{ width: columnWidths[header] }} // Apply dynamic width
+                      style={{ width: columnWidths[header] }}
                     >
                       <Resizable
                         width={columnWidths[header]}
                         height={30}
                         axis="x"
-                        resizeHandles={["e"]} // Enables resizing from the right edge
+                        resizeHandles={["e"]}
                         onResize={handleResize(header)}
                       >
                         <div
                           className="flex justify-center items-center cursor-pointer"
-                          style={{ width: "100%" }} // Ensure div stretches fully
+                          style={{ width: "100%" }}
                         >
                           <span onClick={() => toggleDropdown(header)}>
                             {header}
                           </span>
-                          {/* Resize Handle */}
                           <span className="w-2 h-full cursor-ew-resize bg-gray-300"></span>
                         </div>
                       </Resizable>
-
-                      {/* Dropdown menu for removing column */}
                       {dropdownOpenRemove === header && (
                         <div className="absolute right-0 mt-2 bg-white border shadow-lg rounded-md p-2 w-40 z-50">
                           <button
@@ -734,18 +624,16 @@ export default function ContactPage() {
               </TableHeader>
 
               <TableBody>
-                {/* Mobile veiw */}
                 {filteredContacts.map((contact) => (
                   <>
                     <TableRow
                       key={contact.id}
                       className="md:hidden lg:hidden flex items-center p-3 justify-between gap-8"
                     >
-                      <div className="flex flex-col gap-2 ">
+                      <div className="flex flex-col gap-2">
                         {selectedHeaders?.includes("Name") && (
-                          <div className=" left-0 bg-white dark:bg-gray-900 z-10 font-medium text-[1rem]  text-start  cursor-pointer">
+                          <div className="left-0 bg-white dark:bg-gray-900 z-10 font-medium text-[1rem] text-start cursor-pointer">
                             {editNameId === contact.id ? (
-                              // Editing mode: Show input field
                               <input
                                 type="text"
                                 placeholder="Enter Name..."
@@ -757,21 +645,20 @@ export default function ContactPage() {
                                     handleUpdate(contact.id, {
                                       name: nameInfo,
                                     });
-                                    setEditNameId(null); // Exit edit mode after updating
+                                    setEditNameId(null);
                                   } else if (e.key === "Escape") {
                                     setEditNameId(null);
-                                    setNameInfo(contact.Name || ""); // Reset on cancel
+                                    setNameInfo(contact.Name || "");
                                   }
                                 }}
                                 autoFocus
                               />
                             ) : (
-                              // Normal display mode
                               <span
                                 className="text-gray-900 dark:text-gray-300"
                                 onDoubleClick={() => {
                                   setEditNameId(contact.id);
-                                  setNameInfo(contact.Name || ""); // Pre-fill existing name
+                                  setNameInfo(contact.Name || "");
                                 }}
                               >
                                 {contact.Name || (
@@ -783,9 +670,8 @@ export default function ContactPage() {
                             )}
                           </div>
                         )}
-
                         {selectedHeaders.includes("Email") && (
-                          <div className=" text-center cursor-pointer">
+                          <div className="text-center cursor-pointer">
                             {editEmailId === contact.id ? (
                               <input
                                 type="email"
@@ -801,7 +687,7 @@ export default function ContactPage() {
                                     setEditEmailId(null);
                                   } else if (e.key === "Escape") {
                                     setEditEmailId(null);
-                                    setEmailInfo(contact.email || ""); // Reset on cancel
+                                    setEmailInfo(contact.email || "");
                                   }
                                 }}
                                 autoFocus
@@ -811,7 +697,7 @@ export default function ContactPage() {
                                 className="cursor-pointer group-hover:underline text-gray-600"
                                 onDoubleClick={() => {
                                   setEditEmailId(contact.id);
-                                  setEmailInfo(contact?.email || ""); // Pre-fill existing email
+                                  setEmailInfo(contact?.email || "");
                                 }}
                               >
                                 {contact.email || (
@@ -842,10 +728,9 @@ export default function ContactPage() {
                     {expandedRow === contact.id && (
                       <TableRow className="md:hidden lg:hidden">
                         {selectedHeaders.includes("Phone") && (
-                          <div className="p-3 grid grid-cols-2 relative  cursor-pointer">
+                          <div className="p-3 grid grid-cols-2 relative cursor-pointer">
                             <span className="text-gray-600">Phone</span>
                             {editPhoneId === contact.id ? (
-                              // Editing mode: Show input field
                               <input
                                 type="text"
                                 placeholder="Enter Phone..."
@@ -857,22 +742,21 @@ export default function ContactPage() {
                                     handleUpdate(contact.id, {
                                       phone: phoneInfo,
                                     });
-                                    setEditPhoneId(null); // Exit edit mode after updating
+                                    setEditPhoneId(null);
                                   } else if (e.key === "Escape") {
                                     setEditPhoneId(null);
-                                    setPhoneInfo(contact.phone || ""); // Reset on cancel
+                                    setPhoneInfo(contact.phone || "");
                                   }
                                 }}
                                 autoFocus
                               />
                             ) : (
                               <div className="inline-block group relative">
-                                {/* Phone Number */}
                                 <span
                                   className="cursor-pointer group-hover:underline"
                                   onDoubleClick={() => {
                                     setEditPhoneId(contact.id);
-                                    setPhoneInfo(contact.phone || ""); // Pre-fill existing phone number
+                                    setPhoneInfo(contact.phone || "");
                                   }}
                                 >
                                   {contact.phone || (
@@ -881,17 +765,14 @@ export default function ContactPage() {
                                     </span>
                                   )}
                                 </span>
-
-                                {/* Hover Menu - Appears Below */}
                                 <div
                                   className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50"
                                   style={{
-                                    bottom: "calc(100% + 2px)", // Ensures no gap
+                                    bottom: "calc(100% + 2px)",
                                     transform: "translateX(-50%)",
-                                    pointerEvents: "auto", // Ensures interaction
+                                    pointerEvents: "auto",
                                   }}
                                 >
-                                  {/* WhatsApp */}
                                   <button
                                     onClick={() =>
                                       window.open(
@@ -904,8 +785,6 @@ export default function ContactPage() {
                                     <Send className="h-4 w-4 text-green-500" />
                                     WhatsApp
                                   </button>
-
-                                  {/* Call */}
                                   <button
                                     onClick={() =>
                                       (window.location.href = `tel:${contact.phone}`)
@@ -920,24 +799,22 @@ export default function ContactPage() {
                             )}
                           </div>
                         )}
-
                         {selectedHeaders.includes("Email Validation") && (
-                          <div className=" p-3 grid grid-cols-2  cursor-pointer">
+                          <div className="p-3 grid grid-cols-2 cursor-pointer">
                             <span className="text-gray-600">
                               Email Validation
                             </span>
                             {editEmailValidationId === contact.id ? (
-                              // Editing mode: Show <select> dropdown
                               <select
                                 className="px-2 py-1 border rounded-md"
                                 value={emailValidation ? "true" : "false"}
                                 onChange={async (e) => {
-                                  const newValue = e.target.value === "true"; // Convert to boolean
+                                  const newValue = e.target.value === "true";
                                   setEmailValidation(newValue);
                                   await handleUpdate(contact.id, {
                                     is_email_valid: newValue,
                                   });
-                                  setEditEmailValidationId(null); // Exit edit mode after update
+                                  setEditEmailValidationId(null);
                                 }}
                                 autoFocus
                               >
@@ -955,7 +832,6 @@ export default function ContactPage() {
                                 </option>
                               </select>
                             ) : (
-                              // Normal mode: Show colored text
                               <div>
                                 <span
                                   onDoubleClick={() => {
@@ -975,7 +851,7 @@ export default function ContactPage() {
                           </div>
                         )}
                         {selectedHeaders.includes("Platform") && (
-                          <div className=" grid grid-cols-2 w-auto ">
+                          <div className="grid grid-cols-2 w-auto">
                             <span className="px-3 py-1 text-gray-600">
                               Platform
                             </span>
@@ -989,20 +865,18 @@ export default function ContactPage() {
                             )}
                           </div>
                         )}
-
                         {selectedHeaders.includes("Bussiness Info") && (
                           <div
-                            className="p-3 grid grid-cols-2  cursor-pointer"
+                            className="p-3 grid grid-cols-2 cursor-pointer"
                             onDoubleClick={() => {
                               setEditInfoId(contact.id);
-                              setBusinessInfo(contact.businessInfo || ""); // Pre-fill existing info
+                              setBusinessInfo(contact.businessInfo || "");
                             }}
                           >
                             <span className="text-gray-600">
                               Bussiness Info
                             </span>
                             {editInfoId === contact.id ? (
-                              // Editing mode: Show input field
                               <input
                                 type="text"
                                 placeholder="Enter Business Info..."
@@ -1018,14 +892,13 @@ export default function ContactPage() {
                                   } else if (e.key === "Escape") {
                                     setEditInfoId(null);
                                     setBusinessInfo(
-                                      contact?.bussinessInfo || ""
-                                    ); // Clear input on cancel
+                                      contact?.businessInfo || ""
+                                    );
                                   }
                                 }}
                                 autoFocus
                               />
                             ) : (
-                              // Normal display mode
                               <span className="text-gray-700 dark:text-gray-300">
                                 {contact.businessInfo || (
                                   <span className="text-gray-400 italic">
@@ -1038,25 +911,24 @@ export default function ContactPage() {
                         )}
                         {selectedHeaders.includes("Tag") && (
                           <div
-                            className=" p-3 grid grid-cols-2 border-none cursor-pointer mb-4"
+                            className="p-3 grid grid-cols-2 border-none cursor-pointer mb-4"
                             onDoubleClick={() => {
-                              setOpenDropdownId(contact.id); // Open dropdown on double-click
+                              setOpenDropdownId(contact.id);
                             }}
                           >
                             <span className="text-gray-600">Tag</span>
-                            <div className="flex flex-row ">
+                            <div className="flex flex-row">
                               <div className="flex flex-row flex-wrap items-center">
                                 {(() => {
                                   const parsedTags =
                                     typeof contact?.tag === "string"
                                       ? JSON.parse(contact.tag)
                                       : contact?.tag || [];
-
                                   return Array.isArray(parsedTags) ? (
                                     parsedTags.map((tag: string) => (
                                       <div
                                         key={tag}
-                                        className="flex items-center gap-2  bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md"
+                                        className="flex items-center gap-2 bg-gray-100 dark:bg-gray-700 px-3 py-1 rounded-md"
                                       >
                                         <div
                                           className="h-3 w-3 rounded-lg"
@@ -1086,12 +958,10 @@ export default function ContactPage() {
                                   );
                                 })()}
                               </div>
-
-                              {/* Select Dropdown (Now opens on double-click) */}
                               <Select
-                                open={openDropdownId === contact.id} // Control dropdown visibility
+                                open={openDropdownId === contact.id}
                                 onOpenChange={(isOpen) => {
-                                  if (!isOpen) setOpenDropdownId(null); // Close when user clicks outside
+                                  if (!isOpen) setOpenDropdownId(null);
                                 }}
                                 onValueChange={(value) =>
                                   handleTagChange(contact.id, value)
@@ -1104,7 +974,6 @@ export default function ContactPage() {
                                     </span>
                                   </SelectTrigger>
                                 )}
-
                                 <SelectContent className="hidden md:flex w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                                   <div className="flex flex-col gap-2">
                                     {tags.map((tag) => (
@@ -1147,7 +1016,6 @@ export default function ContactPage() {
                             </div>
                           </div>
                         )}
-
                         {selectedHeaders.includes("Address") && (
                           <div
                             className="p-3 flex gap-16 text-center cursor-pointer relative"
@@ -1171,7 +1039,7 @@ export default function ContactPage() {
                           >
                             <span className="text-gray-600">Address</span>
                             {openAddress === contact.id ? (
-                              <div className="absolute left-1/2 -translate-x-1/2  bg-white border shadow-lg rounded-md p-4 w-[450px] z-50">
+                              <div className="absolute left-1/2 -translate-x-1/2 bg-white border shadow-lg rounded-md p-4 w-[450px] z-50">
                                 <div className="flex flex-row items-center mb-4">
                                   <label className="block text-sm font-semibold min-w-[80px]">
                                     Address 1
@@ -1187,7 +1055,6 @@ export default function ContactPage() {
                                       })
                                     }
                                   />
-
                                   <label className="block text-sm font-semibold m-w-[90px]">
                                     Address 2
                                   </label>
@@ -1203,7 +1070,6 @@ export default function ContactPage() {
                                     }
                                   />
                                 </div>
-
                                 <div className="flex flex-row">
                                   <label className="block text-sm font-semibold mt-2">
                                     Country
@@ -1219,7 +1085,6 @@ export default function ContactPage() {
                                       })
                                     }
                                   />
-
                                   <label className="block text-sm font-semibold mt-2 min-w-[80px]">
                                     ZIP Code
                                   </label>
@@ -1282,13 +1147,11 @@ export default function ContactPage() {
                     )}
                   </>
                 ))}
-                {/* Desktop Veiw */}
                 {filteredContacts.map((contact) => (
                   <TableRow key={contact.id} className="hidden md:table-row">
                     {selectedHeaders?.includes("Name") && (
                       <TableCell className="block md:table-cell left-0 bg-white dark:bg-gray-900 z-10 font-medium text-center cursor-pointer">
                         {editNameId === contact.id ? (
-                          // Editing mode: Show input field
                           <input
                             type="text"
                             placeholder="Enter Name..."
@@ -1298,21 +1161,20 @@ export default function ContactPage() {
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 handleUpdate(contact.id, { name: nameInfo });
-                                setEditNameId(null); // Exit edit mode after updating
+                                setEditNameId(null);
                               } else if (e.key === "Escape") {
                                 setEditNameId(null);
-                                setNameInfo(contact.Name || ""); // Reset on cancel
+                                setNameInfo(contact.Name || "");
                               }
                             }}
                             autoFocus
                           />
                         ) : (
-                          // Normal display mode
                           <span
                             className="text-gray-700 dark:text-gray-300"
                             onDoubleClick={() => {
                               setEditNameId(contact.id);
-                              setNameInfo(contact.Name || ""); // Pre-fill existing name
+                              setNameInfo(contact.Name || "");
                             }}
                           >
                             {contact.Name || (
@@ -1324,7 +1186,6 @@ export default function ContactPage() {
                         )}
                       </TableCell>
                     )}
-
                     {selectedHeaders.includes("Email") && (
                       <TableCell className="relative text-center cursor-pointer">
                         {editEmailId === contact.id ? (
@@ -1340,19 +1201,18 @@ export default function ContactPage() {
                                 setEditEmailId(null);
                               } else if (e.key === "Escape") {
                                 setEditEmailId(null);
-                                setEmailInfo(contact.email || ""); // Reset on cancel
+                                setEmailInfo(contact.email || "");
                               }
                             }}
                             autoFocus
                           />
                         ) : (
                           <div className="relative inline-block group">
-                            {/* Email Text */}
                             <span
                               className="cursor-pointer group-hover:underline"
                               onDoubleClick={() => {
                                 setEditEmailId(contact.id);
-                                setEmailInfo(contact?.email || ""); // Pre-fill existing email
+                                setEmailInfo(contact?.email || "");
                               }}
                             >
                               {contact.email || (
@@ -1361,18 +1221,15 @@ export default function ContactPage() {
                                 </span>
                               )}
                             </span>
-
-                            {/* Hover Menu - Ensures it appears properly */}
                             {contact.email && (
                               <div
                                 className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50"
                                 style={{
-                                  bottom: "calc(100% )", // Ensures no gap
+                                  bottom: "calc(100%)",
                                   transform: "translateX(-50%)",
-                                  pointerEvents: "auto", // Ensures interaction
+                                  pointerEvents: "auto",
                                 }}
                               >
-                                {/* Send Email */}
                                 <button
                                   onClick={() =>
                                     (window.location.href = `mailto:${contact.email}`)
@@ -1382,8 +1239,6 @@ export default function ContactPage() {
                                   <Send className="h-4 w-4 text-blue-500" />
                                   Send Email
                                 </button>
-
-                                {/* Open in Gmail */}
                                 <button
                                   onClick={() =>
                                     window.open(
@@ -1402,11 +1257,9 @@ export default function ContactPage() {
                         )}
                       </TableCell>
                     )}
-
                     {selectedHeaders.includes("Phone") && (
-                      <TableCell className=" relative text-center cursor-pointer">
+                      <TableCell className="relative text-center cursor-pointer">
                         {editPhoneId === contact.id ? (
-                          // Editing mode: Show input field
                           <input
                             type="text"
                             placeholder="Enter Phone..."
@@ -1416,22 +1269,21 @@ export default function ContactPage() {
                             onKeyDown={(e) => {
                               if (e.key === "Enter") {
                                 handleUpdate(contact.id, { phone: phoneInfo });
-                                setEditPhoneId(null); // Exit edit mode after updating
+                                setEditPhoneId(null);
                               } else if (e.key === "Escape") {
                                 setEditPhoneId(null);
-                                setPhoneInfo(contact.phone || ""); // Reset on cancel
+                                setPhoneInfo(contact.phone || "");
                               }
                             }}
                             autoFocus
                           />
                         ) : (
                           <div className="inline-block group relative">
-                            {/* Phone Number */}
                             <span
                               className="cursor-pointer group-hover:underline"
                               onDoubleClick={() => {
                                 setEditPhoneId(contact.id);
-                                setPhoneInfo(contact.phone || ""); // Pre-fill existing phone number
+                                setPhoneInfo(contact.phone || "");
                               }}
                             >
                               {contact.phone || (
@@ -1440,17 +1292,14 @@ export default function ContactPage() {
                                 </span>
                               )}
                             </span>
-
-                            {/* Hover Menu - Appears Below */}
                             <div
                               className="absolute left-1/2 -translate-x-1/2 hidden group-hover:flex flex-col bg-white shadow-md rounded-md p-2 w-[140px] border border-gray-200 z-50"
                               style={{
-                                bottom: "calc(100% + 2px)", // Ensures no gap
+                                bottom: "calc(100% + 2px)",
                                 transform: "translateX(-50%)",
-                                pointerEvents: "auto", // Ensures interaction
+                                pointerEvents: "auto",
                               }}
                             >
-                              {/* WhatsApp */}
                               <button
                                 onClick={() =>
                                   window.open(
@@ -1463,8 +1312,6 @@ export default function ContactPage() {
                                 <Send className="h-4 w-4 text-green-500" />
                                 WhatsApp
                               </button>
-
-                              {/* Call */}
                               <button
                                 onClick={() =>
                                   (window.location.href = `tel:${contact.phone}`)
@@ -1479,21 +1326,19 @@ export default function ContactPage() {
                         )}
                       </TableCell>
                     )}
-
                     {selectedHeaders.includes("Email Validation") && (
-                      <TableCell className=" text-center cursor-pointer">
+                      <TableCell className="text-center cursor-pointer">
                         {editEmailValidationId === contact.id ? (
-                          // Editing mode: Show <select> dropdown
                           <select
                             className="px-2 py-1 border rounded-md"
                             value={emailValidation ? "true" : "false"}
                             onChange={async (e) => {
-                              const newValue = e.target.value === "true"; // Convert to boolean
+                              const newValue = e.target.value === "true";
                               setEmailValidation(newValue);
                               await handleUpdate(contact.id, {
                                 is_email_valid: newValue,
                               });
-                              setEditEmailValidationId(null); // Exit edit mode after update
+                              setEditEmailValidationId(null);
                             }}
                             autoFocus
                           >
@@ -1511,7 +1356,6 @@ export default function ContactPage() {
                             </option>
                           </select>
                         ) : (
-                          // Normal mode: Show colored text
                           <span
                             onDoubleClick={() => {
                               setEditEmailValidationId(contact.id);
@@ -1529,7 +1373,7 @@ export default function ContactPage() {
                       </TableCell>
                     )}
                     {selectedHeaders.includes("Platform") && (
-                      <TableCell className=" w-[170px] text-center">
+                      <TableCell className="w-[170px] text-center">
                         {contact.sourceId ? (
                           <WebhookStatus
                             sourceId={contact.sourceId}
@@ -1540,17 +1384,15 @@ export default function ContactPage() {
                         )}
                       </TableCell>
                     )}
-
                     {selectedHeaders.includes("Bussiness Info") && (
                       <TableCell
-                        className=" text-center cursor-pointer"
+                        className="text-center cursor-pointer"
                         onDoubleClick={() => {
                           setEditInfoId(contact.id);
-                          setBusinessInfo(contact.businessInfo || ""); // Pre-fill existing info
+                          setBusinessInfo(contact.businessInfo || "");
                         }}
                       >
                         {editInfoId === contact.id ? (
-                          // Editing mode: Show input field
                           <input
                             type="text"
                             placeholder="Enter Business Info..."
@@ -1563,13 +1405,12 @@ export default function ContactPage() {
                                 setEditInfoId(null);
                               } else if (e.key === "Escape") {
                                 setEditInfoId(null);
-                                setBusinessInfo(contact?.bussinessInfo || ""); // Clear input on cancel
+                                setBusinessInfo(contact?.businessInfo || "");
                               }
                             }}
                             autoFocus
                           />
                         ) : (
-                          // Normal display mode
                           <span className="text-gray-700 dark:text-gray-300">
                             {contact.businessInfo || (
                               <span className="text-gray-400 italic">
@@ -1582,9 +1423,9 @@ export default function ContactPage() {
                     )}
                     {selectedHeaders.includes("Tag") && (
                       <TableCell
-                        className=" border-none cursor-pointer"
+                        className="border-none cursor-pointer"
                         onDoubleClick={() => {
-                          setOpenDropdownId(contact.id); // Open dropdown on double-click
+                          setOpenDropdownId(contact.id);
                         }}
                       >
                         <div className="flex flex-col gap-2 items-center">
@@ -1594,7 +1435,6 @@ export default function ContactPage() {
                                 typeof contact?.tag === "string"
                                   ? JSON.parse(contact.tag)
                                   : contact?.tag || [];
-
                               return Array.isArray(parsedTags) ? (
                                 parsedTags.map((tag: string) => (
                                   <div
@@ -1629,12 +1469,10 @@ export default function ContactPage() {
                               );
                             })()}
                           </div>
-
-                          {/* Select Dropdown (Now opens on double-click) */}
                           <Select
-                            open={openDropdownId === contact.id} // Control dropdown visibility
+                            open={openDropdownId === contact.id}
                             onOpenChange={(isOpen) => {
-                              if (!isOpen) setOpenDropdownId(null); // Close when user clicks outside
+                              if (!isOpen) setOpenDropdownId(null);
                             }}
                             onValueChange={(value) =>
                               handleTagChange(contact.id, value)
@@ -1647,12 +1485,11 @@ export default function ContactPage() {
                                 </span>
                               </SelectTrigger>
                             )}
-
-                            <SelectContent className="hidden md:flex   w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
+                            <SelectContent className="hidden md:flex w-[200px] overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
                               <div className="hidden md:flex flex-col gap-2">
                                 {tags.map((tag) => (
                                   <SelectItem key={tag.name} value={tag.name}>
-                                    <div className="hidden group md:flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                    <div className="group flex items-center gap-3 rounded-lg p-2 transition-all hover:bg-gray-50 dark:hover:bg-gray-700/50">
                                       <div className="relative">
                                         <div
                                           className="absolute -inset-1 rounded-lg opacity-20 blur-sm transition-all duration-200 group-hover:opacity-40"
@@ -1683,10 +1520,9 @@ export default function ContactPage() {
                         </div>
                       </TableCell>
                     )}
-
                     {selectedHeaders.includes("Address") && (
                       <TableCell
-                        className=" text-center cursor-pointer relative"
+                        className="text-center cursor-pointer relative"
                         onDoubleClick={() => {
                           setopenAddress(contact.id);
                           setAddressData({
@@ -1706,7 +1542,7 @@ export default function ContactPage() {
                         }}
                       >
                         {openAddress === contact.id ? (
-                          <div className="absolute left-1/4 -translate-x-[65%]  bg-white border shadow-lg rounded-md p-4 w-[450px] z-50">
+                          <div className="absolute left-1/4 -translate-x-[65%] bg-white border shadow-lg rounded-md p-4 w-[450px] z-50">
                             <div className="flex flex-row items-center mb-4">
                               <label className="block text-sm font-semibold min-w-[80px]">
                                 Address 1
@@ -1722,7 +1558,6 @@ export default function ContactPage() {
                                   })
                                 }
                               />
-
                               <label className="block text-sm font-semibold m-w-[90px]">
                                 Address 2
                               </label>
@@ -1738,7 +1573,6 @@ export default function ContactPage() {
                                 }
                               />
                             </div>
-
                             <div className="flex flex-row">
                               <label className="block text-sm font-semibold mt-2">
                                 Country
@@ -1754,7 +1588,6 @@ export default function ContactPage() {
                                   })
                                 }
                               />
-
                               <label className="block text-sm font-semibold mt-2 min-w-[80px]">
                                 ZIP Code
                               </label>
@@ -1817,107 +1650,82 @@ export default function ContactPage() {
                 ))}
               </TableBody>
             </Table>
-            {/* {dropdownOpen && (
-            <div className="absolute left-0 mt-2 bg-white border shadow-lg rounded-md p-2 w-40 z-50">
-              <select
-                className="border p-2 rounded"
-                value={newColumn}
-                onChange={(e) => setNewColumn(e.target.value)}
-              >
-                <option value="">Select Column</option>
-                {tableHeaders
-                  .filter((header) => !selectedHeaders.includes(header))
-                  .map((header) => (
-                    <option key={header} value={header}>
-                      {header}
-                    </option>
-                  ))}
-              </select>
-              <button
-                onClick={addColumn}
-                className="bg-green-500 text-white px-3 py-2 rounded ml-2 hover:bg-green-600"
-              >
-                Add
-              </button>
-            </div>
-          )} */}
           </div>
         </div>
-      </div>
 
-      {/* Pagination */}
-      {contacts.length > 10 && (
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Select
-              value={String(itemsPerPage)}
-              onValueChange={(value) => {
-                setItemsPerPage(Number(value));
-                setCurrentPage(1);
-              }}
-            >
-              <SelectTrigger className="w-[120px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="5">5 per page</SelectItem>
-                <SelectItem value="10">10 per page</SelectItem>
-                <SelectItem value="20">20 per page</SelectItem>
-                <SelectItem value="50">50 per page</SelectItem>
-              </SelectContent>
-            </Select>
-            <span className="text-sm text-gray-500">
-              Showing {startIndex + 1} to{" "}
-              {Math.min(startIndex + itemsPerPage, filteredContacts.length)} of{" "}
-              {filteredContacts.length} entries
-            </span>
-          </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            {Array.from({ length: totalPages }, (_, i) => i + 1)
-              .filter((page) => {
-                const distance = Math.abs(page - currentPage);
-                return (
-                  distance === 0 ||
-                  distance === 1 ||
-                  page === 1 ||
-                  page === totalPages
-                );
-              })
-              .map((page, i, arr) => (
-                <React.Fragment key={page}>
-                  {i > 0 && arr[i - 1] !== page - 1 && (
-                    <Button variant="outline" size="icon" disabled>
-                      ...
+        {contacts.length > 10 && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Select
+                value={String(itemsPerPage)}
+                onValueChange={(value) => {
+                  setItemsPerPage(Number(value));
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger className="w-[120px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="5">5 per page</SelectItem>
+                  <SelectItem value="10">10 per page</SelectItem>
+                  <SelectItem value="20">20 per page</SelectItem>
+                  <SelectItem value="50">50 per page</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-gray-500">
+                Showing {startIndex + 1} to{" "}
+                {Math.min(startIndex + itemsPerPage, filteredContacts.length)}{" "}
+                of {filteredContacts.length} entries
+              </span>
+            </div>
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(currentPage - 1)}
+                disabled={currentPage === 1}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              {Array.from({ length: totalPages }, (_, i) => i + 1)
+                .filter((page) => {
+                  const distance = Math.abs(page - currentPage);
+                  return (
+                    distance === 0 ||
+                    distance === 1 ||
+                    page === 1 ||
+                    page === totalPages
+                  );
+                })
+                .map((page, i, arr) => (
+                  <React.Fragment key={page}>
+                    {i > 0 && arr[i - 1] !== page - 1 && (
+                      <Button variant="outline" size="icon" disabled>
+                        ...
+                      </Button>
+                    )}
+                    <Button
+                      variant={currentPage === page ? "default" : "outline"}
+                      size="icon"
+                      onClick={() => setCurrentPage(page)}
+                    >
+                      {page}
                     </Button>
-                  )}
-                  <Button
-                    variant={currentPage === page ? "default" : "outline"}
-                    size="icon"
-                    onClick={() => setCurrentPage(page)}
-                  >
-                    {page}
-                  </Button>
-                </React.Fragment>
-              ))}
-            <Button
-              variant="outline"
-              size="icon"
-              onClick={() => setCurrentPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+                  </React.Fragment>
+                ))}
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCurrentPage(currentPage + 1)}
+                disabled={currentPage === totalPages}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
