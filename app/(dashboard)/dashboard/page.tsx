@@ -46,6 +46,7 @@ const StatCard = memo(({ stat, isLast }: any) => (
 ));
 StatCard.displayName = "StatCard";
 
+
 const SalesChart = memo(({ salesData }: any) => (
   <Card className="w-full">
     <CardHeader className="p-4 sm:p-6">
@@ -133,6 +134,7 @@ const SalesDashboard = () => {
         title: "Revenue",
         value: workspaceRevenue?.totalRevenue.toFixed(2) || "0",
         change: workspaceRevenue?.change || "+0%",
+
       },
       {
         icon: <UserPlus className="text-orange-500" />,
@@ -190,6 +192,7 @@ const SalesDashboard = () => {
         isCollapsed ? "md:ml-[80px]" : "md:ml-[250px]"
       )}
     >
+
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto">
         {dashboardStats.map((stat, index) => (
           <StatCard

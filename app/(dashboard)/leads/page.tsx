@@ -89,6 +89,7 @@ import * as XLSX from "xlsx";
 import * as z from "zod";
 import FilterComponent from "./filter";
 
+
 // Zod schema for lead validation
 const leadSchema = z.object({
   name: z.string().min(2, { message: "First name is required" }),
@@ -113,6 +114,9 @@ const initialFilters = {
   endDate: "",
   showDuplicates: false,
 };
+
+// Memoized FilterComponent to prevent unnecessary re-renders
+const MemoizedFilterComponent = React.memo(FilterComponent);
 
 const LeadManagement: React.FC = () => {
   const isCollapsed = useSelector(
@@ -231,8 +235,8 @@ const LeadManagement: React.FC = () => {
   // Filter leads
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
-      if (searchQuery) {
-        const searchText = searchQuery.toLowerCase();
+      if (debouncedSearchQuery) {
+        const searchText = debouncedSearchQuery.toLowerCase();
         const searchableFields = [
           lead.Name,
           lead.email,
@@ -270,13 +274,11 @@ const LeadManagement: React.FC = () => {
         lead.contact_method !== filters.contact_method
       )
         return false;
-
       if (filters.contactType) {
         if (filters.contactType === "phone" && !lead.phone) return false;
         if (filters.contactType === "email" && !lead.email) return false;
         if (filters.contactType === "id" && !lead.id) return false;
       }
-
       if (
         filters.startDate &&
         new Date(lead.createdAt) < new Date(filters.startDate)
@@ -287,17 +289,15 @@ const LeadManagement: React.FC = () => {
         new Date(lead.createdAt) > new Date(filters.endDate)
       )
         return false;
-
       if (filters.showDuplicates) {
         const duplicates = leads.filter(
           (l) => l.email === lead.email || l.phone === lead.phone
         );
         if (duplicates.length <= 1) return false;
       }
-
       return true;
     });
-  }, [leads, filters, searchQuery, leadSources]);
+  }, [leads, filters, debouncedSearchQuery, leadSources]);
 
   // Helper functions
   const toggleRow = (id: number) =>
@@ -605,7 +605,7 @@ const LeadManagement: React.FC = () => {
     >
       <Card className="w-full rounded-[16px] md:rounded-[4px] overflow-hidden">
         {showFilters && (
-          <FilterComponent
+          <MemoizedFilterComponent
             values={filters}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
@@ -632,7 +632,6 @@ const LeadManagement: React.FC = () => {
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
-
           <div className="relative w-full md:w-64 row-start-2 row-end-3 px-4 md:px-0 col-start-1 col-end-6">
             <Input
               type="text"
@@ -674,7 +673,6 @@ const LeadManagement: React.FC = () => {
               <Plus className="mr-2 h-4 w-4" /> Add Lead
             </Button>
           </div>
-
           <button
             onClick={() => setShowFilters(!showFilters)}
             className="row-start-2 row-end-3 col-start-6 col-end-7 p-1 flex md:hidden border border-input bg-background hover:bg-accent hover:text-accent-foreground h-10 w-10 items-center rounded-md justify-center"
@@ -783,6 +781,7 @@ const LeadManagement: React.FC = () => {
                               <div>
                                 <span
                                   className={`font-medium tracking-tight ${
+
                                     lead.is_email_valid
                                       ? "text-emerald-800"
                                       : "text-red-800"
@@ -828,6 +827,7 @@ const LeadManagement: React.FC = () => {
                             <div>
                               <span
                                 className={`font-medium tracking-tight ${
+
                                   lead.is_phone_valid
                                     ? "text-emerald-800"
                                     : "text-red-800"
@@ -1438,8 +1438,6 @@ const LeadManagement: React.FC = () => {
           </Form>
         </DialogContent>
       </Dialog>
-
-      {/* Delete Confirmation Dialog */}
       <Dialog
         open={dialogMode === "delete"}
         onOpenChange={() => setDialogMode(null)}
