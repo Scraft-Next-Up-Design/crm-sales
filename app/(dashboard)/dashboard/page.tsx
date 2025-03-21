@@ -22,7 +22,6 @@ import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
 
-// Skeleton Component
 const SkeletonCard = memo(() => (
   <Card className="animate-pulse">
     <CardContent className="p-4 sm:p-6 flex items-center justify-between space-x-4 sm:space-x-6">
@@ -46,6 +45,30 @@ const SkeletonChart = memo(() => (
   </Card>
 ));
 
+const StatCard = memo(({ stat, index, totalStats }: any) => (
+  <Card
+    className={`hover:shadow-md transition-shadow ${
+      index === totalStats - 1 ? "col-span-full sm:col-auto" : ""
+    }`}
+  >
+    <CardContent className="p-4 sm:p-6 flex items-center justify-between space-x-4 sm:space-x-6">
+      <div className="shrink-0">{stat.icon}</div>
+      <div className="min-w-0 md:flex-grow">
+        <p className="text-xs sm:text-sm text-muted-foreground truncate mb-1">
+          {stat.title}
+        </p>
+        <p
+          className="text-lg sm:text-xl font-semibold truncate cursor-pointer"
+          onClick={() => console.log("clicked")}
+        >
+          {stat.value}
+        </p>
+      </div>
+    </CardContent>
+  </Card>
+));
+StatCard.displayName = "StatCard";
+
 interface Workspace {
   id: string;
   name: string;
@@ -59,47 +82,39 @@ const SalesDashboard = memo(() => {
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed
   );
+
   const { data: activeWorkspace, isLoading: isWorkspaceLoading } =
     useGetActiveWorkspaceQuery();
+  const workspaceId = activeWorkspace?.data?.id;
+
   const { data: workspaceRevenue, isLoading: isRevenueLoading } =
-    useGetRevenueByWorkspaceQuery(activeWorkspace?.data?.id, {
-      skip: !activeWorkspace?.data?.id,
-    });
+    useGetRevenueByWorkspaceQuery(workspaceId, { skip: !workspaceId });
   const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
-    activeWorkspace?.data?.id,
-    {
-      skip: !activeWorkspace?.data?.id,
-    }
+    workspaceId,
+    { skip: !workspaceId }
   );
   const { data: qualifiedCount, isLoading: isQualifiedCountLoading } =
-    useGetQualifiedCountQuery(activeWorkspace?.data?.id, {
-      skip: !activeWorkspace?.data?.id,
-    });
+    useGetQualifiedCountQuery(workspaceId, { skip: !workspaceId });
   const { data: workspaceCount, isLoading: isCountLoading } =
-    useGetCountByWorkspaceQuery(activeWorkspace?.data?.id, {
-      skip: !activeWorkspace?.data?.id,
-    });
+    useGetCountByWorkspaceQuery(workspaceId, { skip: !workspaceId });
   const { data: webhooks, isLoading: isWebhooksLoading } =
     useGetWebhooksBySourceIdQuery(
-      {
-        workspaceId: activeWorkspace?.data?.id,
-        id: ROC?.top_source_id,
-      },
-      {
-        skip: !activeWorkspace?.data?.id || !ROC?.top_source_id,
-      }
+      { workspaceId, id: ROC?.top_source_id },
+      { skip: !workspaceId || !ROC?.top_source_id }
     );
 
   const isLoading = useMemo(
     () =>
       isWorkspaceLoading ||
-      isRevenueLoading ||
-      isRocLoading ||
-      isCountLoading ||
-      isQualifiedCountLoading ||
-      isWebhooksLoading,
+      (workspaceId && 
+        (isRevenueLoading ||
+          isRocLoading ||
+          isCountLoading ||
+          isQualifiedCountLoading ||
+          isWebhooksLoading)),
     [
       isWorkspaceLoading,
+      workspaceId,
       isRevenueLoading,
       isRocLoading,
       isCountLoading,
@@ -145,12 +160,10 @@ const SalesDashboard = memo(() => {
 
   const salesData = useMemo(
     () =>
-      (ROC?.monthly_stats || []).map(
-        (stat: { month: string; convertedLeads: number }) => ({
-          month: stat.month,
-          sales: stat.convertedLeads,
-        })
-      ),
+      (ROC?.monthly_stats || []).map(({ month, convertedLeads }: any) => ({
+        month,
+        sales: convertedLeads,
+      })),
     [ROC]
   );
 
@@ -166,11 +179,9 @@ const SalesDashboard = memo(() => {
     return (
       <div className={containerClassName}>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto">
-          {Array(5)
-            .fill(0)
-            .map((_, index) => (
-              <SkeletonCard key={index} />
-            ))}
+          {Array.from({ length: 5 }, (_, index) => (
+            <SkeletonCard key={index} />
+          ))}
         </div>
         <SkeletonChart />
       </div>
@@ -181,29 +192,12 @@ const SalesDashboard = memo(() => {
     <div className={containerClassName}>
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto">
         {dashboardStats.map((stat, index) => (
-          <Card
-            key={index}
-            className={`hover:shadow-md transition-shadow ${
-              index === dashboardStats.length - 1
-                ? "col-span-full sm:col-auto"
-                : ""
-            }`}
-          >
-            <CardContent className="p-4 sm:p-6 flex items-center justify-between space-x-4 sm:space-x-6">
-              <div className="shrink-0">{stat.icon}</div>
-              <div className="min-w-0 md:flex-grow">
-                <p className="text-xs sm:text-sm text-muted-foreground truncate mb-1">
-                  {stat.title}
-                </p>
-                <p
-                  className="text-lg sm:text-xl font-semibold truncate cursor-pointer"
-                  onClick={() => console.log("clicked")}
-                >
-                  {stat.value}
-                </p>
-              </div>
-            </CardContent>
-          </Card>
+          <StatCard
+            key={stat.title} // Use title as a stable key
+            stat={stat}
+            index={index}
+            totalStats={dashboardStats.length}
+          />
         ))}
       </div>
 
@@ -232,5 +226,7 @@ const SalesDashboard = memo(() => {
     </div>
   );
 });
+
+SalesDashboard.displayName = "SalesDashboard";
 
 export default SalesDashboard;
