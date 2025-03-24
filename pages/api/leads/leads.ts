@@ -3,7 +3,6 @@ import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "../../../lib/supabaseServer";
 import { validateEmail, validatePhoneNumber } from "../leads";
 
-// Notification interfaces
 interface NotificationDetails {
   [key: string]: any;
 }
@@ -30,12 +29,11 @@ async function notifyLeadChange(
   details: NotificationDetails = {}
 ): Promise<Notification[] | undefined> {
   try {
-    // Fetch user information from workspace_members for this specific workspace
     const { data: workspaceMemberData, error: workspaceMemberError } = await supabase
       .from("workspace_members")
       .select("name")
       .eq("user_id", userId)
-      .eq("workspace_id", workspaceId) // Add this to get only the relevant workspace membership
+      .eq("workspace_id", workspaceId) 
       .single();
     
     let userDisplayName = "Unknown user";
@@ -49,7 +47,6 @@ async function notifyLeadChange(
       userDisplayName = workspaceMemberData.name;
     }
     
-    // Enrich the details with names for various user IDs
     const enrichedDetails = { ...details };
     enrichedDetails.actor_name = userDisplayName;
 
@@ -66,7 +63,6 @@ async function notifyLeadChange(
       }
     }
     
-    // For deleted_by
     if (details.deleted_by) {
       const { data: deleterData, error: deleterError } = await supabase
         .from("workspace_members")

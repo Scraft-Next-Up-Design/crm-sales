@@ -1,16 +1,16 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
+import { useLeadTrendsData } from "@/hooks/use-lead-trends-data";
 import {
-  LineChart,
+  CartesianGrid,
   Line,
+  LineChart,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
-import { useLeadTrendsData } from "@/hooks/use-lead-trends-data";
 
 export function LeadTrendsChart() {
   const data = useLeadTrendsData();

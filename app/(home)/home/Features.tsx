@@ -1,37 +1,47 @@
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, MessageSquare, Shield, Globe, Zap, LineChart } from "lucide-react";
+import {
+  Globe,
+  LineChart,
+  MessageSquare,
+  Shield,
+  Users,
+  Zap,
+} from "lucide-react";
 
 const features = [
   {
     icon: Users,
     title: "Team Collaboration",
-    description: "Work together seamlessly with your team to manage leads effectively."
+    description:
+      "Work together seamlessly with your team to manage leads effectively.",
   },
   {
     icon: MessageSquare,
     title: "Smart Communication",
-    description: "Stay in touch with leads through integrated communication tools."
+    description:
+      "Stay in touch with leads through integrated communication tools.",
   },
   {
     icon: Shield,
     title: "Data Security",
-    description: "Your data is protected with enterprise-grade security measures."
+    description:
+      "Your data is protected with enterprise-grade security measures.",
   },
   {
     icon: Globe,
     title: "Global Access",
-    description: "Access your leads and data from anywhere in the world."
+    description: "Access your leads and data from anywhere in the world.",
   },
   {
     icon: Zap,
     title: "Automation",
-    description: "Automate repetitive tasks and focus on what matters most."
+    description: "Automate repetitive tasks and focus on what matters most.",
   },
   {
     icon: LineChart,
     title: "Analytics",
-    description: "Get insights into your lead management performance."
-  }
+    description: "Get insights into your lead management performance.",
+  },
 ];
 
 export const Features = () => {
@@ -41,13 +51,14 @@ export const Features = () => {
         <div className="text-center mb-12 animate-fade-in">
           <h2 className="text-3xl font-bold mb-4">Powerful Features</h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Everything you need to manage your leads effectively and grow your business.
+            Everything you need to manage your leads effectively and grow your
+            business.
           </p>
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
           {features.map((feature, index) => (
-            <Card 
-              key={index} 
+            <Card
+              key={index}
               className="hover:shadow-lg transition-all duration-300 animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >

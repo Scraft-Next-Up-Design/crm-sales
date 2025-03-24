@@ -13,7 +13,6 @@ interface WebhookResponse {
 
 export const webhookApis = webhookApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Create a new webhook
     webhook: builder.mutation<WebhookRequest, WebhookResponse>({
       query: (credentials) => ({
         url: "?action=createWebhook",
@@ -22,7 +21,6 @@ export const webhookApis = webhookApi.injectEndpoints({
       }),
     }),
 
-    // Update an existing webhook
     updateWebhook: builder.mutation<WebhookRequest, { data: any; id: string }>({
       query: ({ data, id }) => ({
         url: `?action=updateWebhook&id=${id}`,
@@ -31,7 +29,6 @@ export const webhookApis = webhookApi.injectEndpoints({
       }),
     }),
 
-    // Delete an existing webhook
     deleteWebhook: builder.mutation<{ id: string }, { id: string }>({
       query: ({ id }) => ({
         url: `?action=deleteWebhook`,
@@ -40,10 +37,9 @@ export const webhookApis = webhookApi.injectEndpoints({
       }),
     }),
 
-    // Fetch webhooks
     getWebhooks: builder.query<any, { id: string }>({
       query: ({ id }) => ({
-        url: `?action=getWebhooks&id=${id}`, // Include the id as a query parameter
+        url: `?action=getWebhooks&id=${id}`, 
         method: "GET",
       }),
     }),
@@ -52,7 +48,7 @@ export const webhookApis = webhookApi.injectEndpoints({
       { id: string; workspaceId: string }
     >({
       query: ({ id, workspaceId }) => ({
-        url: `?action=getWebhooksBySourceId&sourceId=${id}&workspaceId=${workspaceId}`, // Include the id as a query parameter
+        url: `?action=getWebhooksBySourceId&sourceId=${id}&workspaceId=${workspaceId}`, 
         method: "GET",
       }),
     }),
@@ -69,7 +65,6 @@ export const webhookApis = webhookApi.injectEndpoints({
   }),
 });
 
-// Export hooks for the mutations and queries
 export const {
   useWebhookMutation,
   useUpdateWebhookMutation,

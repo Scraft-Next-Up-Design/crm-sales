@@ -1,15 +1,12 @@
 "use client";
 
-import { Navbar } from "@/components/layout/navbar";
 import { Sidebar } from "@/components/layout/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { useAppSelector } from "@/lib/store/hooks";
-import { X, Menu } from "lucide-react";
+import { Menu } from "lucide-react";
 import Link from "next/link";
 
-import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 export default function DashboardLayout({
   children,
@@ -17,18 +14,6 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  // const router = useRouter();
-  // const user = useAppSelector((state) => state.auth.user);
-
-  // useEffect(() => {
-  //   if (!user) {
-  //     router.push("/login");
-  //   }
-  // }, [user, router]);
-
-  // if (!user) {
-  //   return null;
-  // }
 
   return (
     <div className=" min-h-screen relative">

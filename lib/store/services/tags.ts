@@ -1,11 +1,10 @@
 import { TagsApi as BaseTagsApi } from "../base/tags";
 
-// Define types for the API
 interface Tags {
-  id: string; // or number, depending on your backend
+  id: string;
   name: string;
   description?: string;
-  workspaceId: string; // Include workspaceId if applicable
+  workspaceId: string;
 }
 
 interface NewTags {
@@ -17,10 +16,9 @@ interface NewTags {
 }
 
 interface UpdatedTags extends Partial<NewTags> {
-  id: string; // `id` is required for update
+  id: string;
 }
 
-// Define the RTK Query API
 export const TagsApi = BaseTagsApi.injectEndpoints({
   endpoints: (builder) => ({
     addTags: builder.mutation<Tags, { tagsData: NewTags; workspaceId: string }>(
