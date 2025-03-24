@@ -1,4 +1,3 @@
-// src/lib/store/slices/sidebarSlice.ts
 import { createSlice } from "@reduxjs/toolkit";
 
 interface SidebarState {

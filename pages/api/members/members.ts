@@ -1,7 +1,7 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
-import { supabase } from "../../../lib/supabaseServer";
 import { sendMail } from "@/lib/sendmail";
+import { NextApiRequest, NextApiResponse } from "next";
+import { supabase } from "../../../lib/supabaseServer";
 
 export default async function handler(
   req: NextApiRequest,
@@ -69,7 +69,7 @@ export default async function handler(
               email: email,
               status: status,
             })
-            .select('*')
+            .select("*")
             .single();
           await sendMail(
             email,
@@ -93,7 +93,7 @@ export default async function handler(
         }
         case "resendInvitation": {
           const { workspaceId, email: rawEmail, status }: any = query;
-          const email = rawEmail ? rawEmail.trim() : '';
+          const email = rawEmail ? rawEmail.trim() : "";
 
           if (!workspaceId || !email) {
             return res
@@ -150,7 +150,7 @@ export default async function handler(
               </form>
               `
           );
-          console.log(existingMember, "roka", existingError)
+          console.log(existingMember, "roka", existingError);
 
           return res.status(200).json({
             message: "Invitation email resent successfully",

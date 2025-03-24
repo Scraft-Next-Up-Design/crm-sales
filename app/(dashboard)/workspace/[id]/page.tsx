@@ -1,14 +1,31 @@
 "use client";
-import React, { useState, useRef } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { useParams } from "next/navigation";
-import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -20,41 +37,10 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Building,
-  Users,
-  Lock,
-  Mail,
-  Trash2,
-  Upload,
-  UserCircle,
-  Bell,
-  Tag,
-  Edit2,
-  Plus,
-  Loader2,
-  Tags,
-} from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Badge } from "@/components/ui/badge";
+  useAddMemberMutation,
+  useDeleteMemberMutation,
+  useResendInviteMutation,
+} from "@/lib/store/services/members";
 import {
   useAddStatusMutation,
   useDeleteStatusMutation,
@@ -72,17 +58,25 @@ import {
   useGetWorkspacesByIdQuery,
   useUpdateWorkspaceMutation,
 } from "@/lib/store/services/workspace";
-import { toast } from "sonner";
-import { useEffect } from "react";
-import MemberManagement from "../inviteMember";
-import {
-  useAddMemberMutation,
-  useDeleteMemberMutation,
-  useResendInviteMutation,
-} from "@/lib/store/services/members";
-import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
-import { useRouter } from "next/navigation";
+import { cn } from "@/lib/utils";
+import {
+  Bell,
+  Building,
+  Edit2,
+  Loader2,
+  Lock,
+  Plus,
+  Tag,
+  Tags,
+  Trash2,
+  Users,
+} from "lucide-react";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { toast } from "sonner";
+import MemberManagement from "../inviteMember";
 interface WorkspaceMember {
   id?: string;
   email: string;
@@ -126,7 +120,6 @@ interface WorkspaceSettings {
   };
 }
 
-// Status Form Component
 const StatusForm = ({ status, onSubmit }: any) => (
   <div className="grid gap-4">
     <div className="flex flex-col sm:flex-row gap-4">
@@ -262,7 +255,6 @@ export default function WorkspaceSettingsPage() {
     },
   });
 
-  // Tags Managmenent States
   const [newTags, setNewTags] = useState({
     name: "",
     color: "#0ea5e9",
@@ -275,7 +267,6 @@ export default function WorkspaceSettingsPage() {
   const [tagsToEdit, setTagsToEdit] = useState<Tags | null>(null);
   const [tagsToDelete, setTagsToDelete] = useState<any | null>(null);
 
-  // Status Management States
   const [newStatus, setNewStatus] = useState({
     name: "",
     color: "#0ea5e9",
@@ -290,16 +281,13 @@ export default function WorkspaceSettingsPage() {
   const [members, setMembers] = useState<WorkspaceMember[]>([]);
   const [statuses, setStatuses] = useState<Status[]>([]);
 
-  // handle previous tab clicked
   const handleTabClick = (id: string) => {
     setActiveTab(id);
-    localStorage.setItem("activeTab", id); // Store in localStorage
+    localStorage.setItem("activeTab", id); 
   };
-  // console.log(localStorage);
 
   const handleMemberAdd = async (newMember: WorkspaceMember) => {
     try {
-      // setMembers([...members, newMember]);
       const result = await addMember({ workspaceId, data: newMember });
 
       if ("error" in result) {
@@ -325,7 +313,6 @@ export default function WorkspaceSettingsPage() {
         return;
       }
 
-      // Update local state only after successful deletion
       setMembers((prevMembers) =>
         prevMembers.filter((member) => member.id !== memberId)
       );
@@ -368,7 +355,6 @@ export default function WorkspaceSettingsPage() {
     }
   };
   const handleMemberUpdate = (updatedMember: WorkspaceMember) => {
-    // console.log("deleted")
     setMembers(
       members.map((member) =>
         member.id === updatedMember.id ? updatedMember : member
@@ -410,7 +396,6 @@ export default function WorkspaceSettingsPage() {
         statusData: status,
         workspaceId,
       }).unwrap();
-      // If successful, update the local state
       setStatuses((prevStatuses) => [
         ...prevStatuses,
         {
@@ -452,7 +437,6 @@ export default function WorkspaceSettingsPage() {
         updatedStatus: statusToEdit,
       }).unwrap();
 
-      // Update local state only after successful API call
       setStatuses((prevStatuses) =>
         prevStatuses.map((status) =>
           status.id === statusToEdit.id ? statusToEdit : status
@@ -462,7 +446,6 @@ export default function WorkspaceSettingsPage() {
       setStatusToEdit(null);
       toast.success("Status updated successfully");
     } catch (error: any) {
-      // Handle specific API error
       const errorMessage = error.data?.error || "Failed to update status";
       toast.error(errorMessage);
     }
@@ -475,9 +458,8 @@ export default function WorkspaceSettingsPage() {
       const response = await deleteStatus({
         id: statusToDelete.id,
         workspace_id: workspaceId,
-      }).unwrap(); // Use unwrap() to properly handle RTK Query errors
+      }).unwrap(); 
 
-      // If successful, update local state
       setStatuses((prevStatuses) =>
         prevStatuses.filter((status) => status.id !== statusToDelete.id)
       );
@@ -485,7 +467,6 @@ export default function WorkspaceSettingsPage() {
       setStatusToDelete(null);
       toast.success("Status deleted successfully");
     } catch (error: any) {
-      // Handle different types of errors from Supabase/RTK Query
       let errorMessage = "Failed to delete status";
 
       if (error.status === 409) {
@@ -498,7 +479,6 @@ export default function WorkspaceSettingsPage() {
         errorMessage = error;
       }
 
-      // Log the full error for debugging
       console.error("Delete status error:", {
         status: error.status,
         data: error.data,
@@ -510,7 +490,6 @@ export default function WorkspaceSettingsPage() {
     }
   };
 
-  // Tags Handle functions
   const handleAddTags = async () => {
     if (!newTags.name) return;
     console.log(newTags);
@@ -520,13 +499,11 @@ export default function WorkspaceSettingsPage() {
       // countInStatistics: newStatus.count_statistics,
       // showInWorkspace: newStatus.showInWorkspace,
     };
-    // console.log(tags);
     try {
       const result = await addTags({
         tagsData: tags,
         workspaceId,
       }).unwrap();
-      // If successful, update the local state
       setTags((prevTags) => [
         ...prevTags,
         {
@@ -550,7 +527,7 @@ export default function WorkspaceSettingsPage() {
       toast.success("Tags added successfully");
       window.location.reload();
     } catch (error: any) {
-      console.error("Tag Creation Error:", error); // Log full error object
+      console.error("Tag Creation Error:", error); 
       const errorMessage =
         error.data?.error || error.message || "Failed to add tags";
       toast.error(errorMessage);
@@ -570,7 +547,6 @@ export default function WorkspaceSettingsPage() {
         updatedTags: tagsToEdit,
       }).unwrap();
 
-      // Update local state only after successful API call
       setTags((prevTags) =>
         prevTags.map((tags) => (tags.id === tagsToEdit.id ? tagsToEdit : tags))
       );
@@ -578,7 +554,6 @@ export default function WorkspaceSettingsPage() {
       setTagsToEdit(null);
       toast.success("Tags updated successfully");
     } catch (error: any) {
-      // Handle specific API error
       const errorMessage = error.data?.error || "Failed to update tags";
       toast.error(errorMessage);
     }
@@ -598,12 +573,12 @@ export default function WorkspaceSettingsPage() {
 
   const handleEditClick = () => {
     setIsEditMode(true);
-    setTempSettings({ ...settings }); // Store current settings for cancellation
+    setTempSettings({ ...settings }); 
   };
 
   const handleCancelEdit = () => {
     setIsEditMode(false);
-    setSettings(tempSettings!); // Restore original settings
+    setSettings(tempSettings!); 
   };
   const handleSave = async () => {
     try {
@@ -626,9 +601,8 @@ export default function WorkspaceSettingsPage() {
       const response = await deleteTags({
         id: tagsToDelete.id,
         workspace_id: workspaceId,
-      }).unwrap(); // Use unwrap() to properly handle RTK Query errors
+      }).unwrap(); 
 
-      // If successful, update local state
       setTags((prevTags) =>
         prevTags.filter((tags) => tags.id !== tagsToDelete.id)
       );
@@ -636,7 +610,6 @@ export default function WorkspaceSettingsPage() {
       setTagsToDelete(null);
       toast.success("Tags deleted successfully");
     } catch (error: any) {
-      // Handle different types of errors from Supabase/RTK Query
       let errorMessage = "Failed to delete tags";
 
       if (error.status === 409) {
@@ -649,7 +622,6 @@ export default function WorkspaceSettingsPage() {
         errorMessage = error;
       }
 
-      // Log the full error for debugging
       console.error("Delete tags error:", {
         status: error.status,
         data: error.data,
@@ -1314,7 +1286,7 @@ export default function WorkspaceSettingsPage() {
             <Button
               onClick={handleAddStatus}
               className="flex items-center gap-2"
-              disabled={isAddingStat} // Disable while loading
+              disabled={isAddingStat}
             >
               {isAddingStat ? (
                 <div className="flex items-center gap-2">

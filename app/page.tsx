@@ -1,14 +1,14 @@
 "use client";
 
-import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
-    router.push("/dashboard"); // Redirect to the dashboard unconditionally
+    router.push("/dashboard");
   }, []);
 
-  return null; // No UI needed since it always redirects
+  return null;
 }

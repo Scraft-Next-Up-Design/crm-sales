@@ -7,7 +7,7 @@ interface TagsRequest {
 }
 
 interface UpdatedTagsRequest extends Partial<TagsRequest> {
-  id: string; // ID is required for updates
+  id: string; 
 }
 
 export default async function handler(

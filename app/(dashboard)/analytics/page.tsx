@@ -1,33 +1,33 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend,
-  BarChart,
-  Bar,
-} from "recharts";
-import { Users, TrendingUp, IndianRupee } from "lucide-react";
-import { useSelector, shallowEqual } from "react-redux";
-import { RootState } from "@/lib/store/store";
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 import {
   useGetActiveWorkspaceQuery,
+  useGetCountByWorkspaceQuery,
   useGetRevenueByWorkspaceQuery,
   useGetROCByWorkspaceQuery,
-  useGetCountByWorkspaceQuery,
   useGetWorkspaceDetailsAnalyticsQuery,
 } from "@/lib/store/services/workspace";
-import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { RootState } from "@/lib/store/store";
+import { IndianRupee, TrendingUp, Users } from "lucide-react";
+import { memo, useMemo } from "react";
+import { shallowEqual, useSelector } from "react-redux";
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface LeadMetrics {
   total: number;
@@ -114,7 +114,7 @@ const AdvancedAnalyticsDashboard = memo(() => {
           }) => ({
             month: stat?.month?.split(" ")[0] ?? "Unknown",
             leads: stat?.totalLeads ?? 0,
-            revenue: analyticsDetails?.totalRevenue ?? 0, // Ensure revenue is included
+            revenue: analyticsDetails?.totalRevenue ?? 0,
             processedLeads: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
             conversionRate: parseFloat(
               stat?.conversionRate?.replace("%", "") ?? "0"
@@ -126,7 +126,7 @@ const AdvancedAnalyticsDashboard = memo(() => {
     return {
       leads: {
         total: ROC?.total_leads ?? 0,
-        monthlyGrowth: 12.5, 
+        monthlyGrowth: 12.5,
         byStatus: [
           { status: "Converted", count: ROC?.converted_leads ?? 0 },
           { status: "Arrived", count: arrivedLeadsCount },
@@ -145,7 +145,7 @@ const AdvancedAnalyticsDashboard = memo(() => {
       },
       revenue: {
         total: analyticsDetails?.totalRevenue ?? 0,
-        monthlyGrowth: 8.3, 
+        monthlyGrowth: 8.3,
       },
       chartData,
     };

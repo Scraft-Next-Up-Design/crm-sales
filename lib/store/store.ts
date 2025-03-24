@@ -1,14 +1,13 @@
 import { configureStore } from "@reduxjs/toolkit";
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { api } from "./base/authapi";
-import authReducer from "./slices/authSlice";
-import leadsReducer from "./slices/leadsSlice";
-import { webhookApi } from "./base/webhooks";
-import { workspaceApi } from "./base/workspace";
 import { leadsApi } from "./base/leadsapi";
+import { membersApi } from "./base/members";
 import { statusApi } from "./base/status";
 import { TagsApi } from "./base/tags";
-import { membersApi } from "./base/members";
+import { webhookApi } from "./base/webhooks";
+import { workspaceApi } from "./base/workspace";
+import authReducer from "./slices/authSlice";
 import sidebarReducer from "./slices/sideBar";
 export const store = configureStore({
   reducer: {

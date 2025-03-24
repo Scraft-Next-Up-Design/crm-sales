@@ -1,11 +1,10 @@
 import { statusApi } from "../base/status";
 
-// Define types for the API
 interface Status {
-  id: string; // or number, depending on your backend
+  id: string;
   name: string;
   description?: string;
-  workspaceId: string; // Include workspaceId if applicable
+  workspaceId: string;
 }
 
 interface NewStatus {
@@ -17,10 +16,9 @@ interface NewStatus {
 }
 
 interface UpdatedStatus extends Partial<NewStatus> {
-  id: string; // `id` is required for update
+  id: string;
 }
 
-// Define the RTK Query API
 export const statusApis = statusApi.injectEndpoints({
   endpoints: (builder) => ({
     addStatus: builder.mutation<
@@ -55,7 +53,6 @@ export const statusApis = statusApi.injectEndpoints({
   }),
 });
 
-// Export hooks for usage in components
 export const {
   useAddStatusMutation,
   useUpdateStatusMutation,

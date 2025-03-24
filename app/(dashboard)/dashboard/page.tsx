@@ -1,16 +1,7 @@
 "use client";
 
-import React, { memo, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Award, Users, TrendingUp, IndianRupee, UserPlus } from "lucide-react";
+import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import {
   useGetActiveWorkspaceQuery,
   useGetCountByWorkspaceQuery,
@@ -18,9 +9,18 @@ import {
   useGetRevenueByWorkspaceQuery,
   useGetROCByWorkspaceQuery,
 } from "@/lib/store/services/workspace";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import { useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
+import { Award, IndianRupee, TrendingUp, UserPlus, Users } from "lucide-react";
+import { memo, useMemo } from "react";
+import { useSelector } from "react-redux";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 const SkeletonCard = memo(() => (
   <Card className="animate-pulse">
@@ -33,6 +33,7 @@ const SkeletonCard = memo(() => (
     </CardContent>
   </Card>
 ));
+SkeletonCard.displayName = "SkeletonCard";
 
 const SkeletonChart = memo(() => (
   <Card className="w-full animate-pulse">
@@ -44,6 +45,7 @@ const SkeletonChart = memo(() => (
     </CardContent>
   </Card>
 ));
+SkeletonChart.displayName = "SkeletonChart";
 
 const StatCard = memo(({ stat, index, totalStats }: any) => (
   <Card
@@ -106,7 +108,7 @@ const SalesDashboard = memo(() => {
   const isLoading = useMemo(
     () =>
       isWorkspaceLoading ||
-      (workspaceId && 
+      (workspaceId &&
         (isRevenueLoading ||
           isRocLoading ||
           isCountLoading ||

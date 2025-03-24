@@ -1,7 +1,7 @@
 "use client";
 
-import { DashboardStats } from "./stats/dashboard-stats";
 import { LeadTrendsChart } from "./charts/lead-trends-chart";
+import { DashboardStats } from "./stats/dashboard-stats";
 
 export function DashboardPage() {
   return (

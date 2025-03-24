@@ -4,7 +4,7 @@ export interface Lead {
   email: string;
   phone: string;
   company: string;
-  status: 'new' | 'in_progress' | 'closed';
+  status: "new" | "in_progress" | "closed";
   createdAt: string;
 }
 
