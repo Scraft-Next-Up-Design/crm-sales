@@ -30,7 +30,6 @@ export const store = configureStore({
       .concat(workspaceApi.middleware)
       .concat(leadsApi.middleware)
       .concat(statusApi.middleware)
-      .concat(leadsApi.middleware)
       .concat(TagsApi.middleware)
       .concat(membersApi.middleware),
 });

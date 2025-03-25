@@ -55,11 +55,11 @@ export default function useLeadNotifications() {
   );
 
   useEffect(() => {
-    if (data?.data && userId) {
-      setNotifications(data.data);
+    if ((data as any)?.data && userId) {
+      setNotifications((data as any).data);
 
       const fetchReadStatuses = async () => {
-        const notificationIds = data.data.map((n: LeadNotification) => n.id);
+        const notificationIds = (data as any).data.map((n: any) => n.id);
 
         if (notificationIds.length === 0) {
           setUnreadCount(0);
@@ -78,16 +78,13 @@ export default function useLeadNotifications() {
         }
 
         const readStatusMap =
-          readStatuses?.reduce(
-            (map: Record<string, NotificationReadStatus>, status) => {
-              map[status.notification_id] = status;
-              return map;
-            },
-            {}
-          ) || {};
+          readStatuses?.reduce((map: Record<string, any>, status: any) => {
+            map[status.notification_id] = status;
+            return map;
+          }, {}) || {};
 
-        const updatedNotifications = data.data.map(
-          (notification: LeadNotification) => {
+        const updatedNotifications = (data as any).data.map(
+          (notification: any) => {
             const readStatus = readStatusMap[notification.id];
             return {
               ...notification,
@@ -97,9 +94,7 @@ export default function useLeadNotifications() {
         );
 
         setNotifications(updatedNotifications);
-        setUnreadCount(
-          updatedNotifications.filter((n: LeadNotification) => !n.read).length
-        );
+        setUnreadCount(updatedNotifications.filter((n: any) => !n.read).length);
       };
 
       fetchReadStatuses();
