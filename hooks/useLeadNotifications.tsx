@@ -103,7 +103,6 @@ export default function useLeadNotifications() {
   useEffect(() => {
     if (!workspaceId || !userId) return;
 
-    console.log("Subscribing to Supabase notifications for workspace:", workspaceId);
 
     const notificationsChannel = supabase
       .channel(`workspace-notifications-${workspaceId}`)
@@ -116,7 +115,6 @@ export default function useLeadNotifications() {
           filter: `workspace_id=eq.${workspaceId}`,
         },
         (payload) => {
-          console.log("Received new notification:", payload);
           refetch()
           // For new notifications
           if (payload.eventType === 'INSERT') {

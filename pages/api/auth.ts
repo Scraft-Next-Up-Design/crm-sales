@@ -206,7 +206,6 @@ export default async function handler(
             email,
             password,
           });
-          console.log(data);
           if (error) {
             return res.status(400).json({ error: error.message });
           }

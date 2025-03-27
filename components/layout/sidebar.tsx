@@ -108,9 +108,7 @@ export function Sidebar({
   );
   const pathname = usePathname();
   const {unreadCount}=useLeadNotifications();
-  console.log(unreadCount)
   const unreadBadge = unreadCount?unreadCount:'NA'
-  console.log(unreadBadge)  
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const {
@@ -277,7 +275,6 @@ export function Sidebar({
         name: newWorkspace.name,
         role: "Admin",
       };
-      console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
         await createWorkspace({
           name: newWorkspace.name,
@@ -372,7 +369,6 @@ export function Sidebar({
       toast.error("Failed to change workspace");
     }
   };
-  // console.log(user)
   return (
     <>
       {/* Mobile Menu Button */}

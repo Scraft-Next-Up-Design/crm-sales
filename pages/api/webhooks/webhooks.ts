@@ -115,7 +115,6 @@ export default async function handler(
         return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
       }
       const { id: workspace_id } = query;
-      console.log(query);
       const token = authHeader.split(" ")[1];
       switch (action) {
         case "getWebhooks": {
@@ -210,9 +209,7 @@ export default async function handler(
           if (!sourceId) {
             return res.status(400).json({ error: "Source ID is required" });
           }
-          console.log("sell", workspaceId, sourceId);
           const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/leads?action=getLeads&sourceId=${sourceId}&workspaceId=${workspaceId}`;
-          console.log(webhookUrl);
 
           // Query the webhooks table for matching webhook
           const { data, error } = await supabase
@@ -223,7 +220,6 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log("dat", data);  
           // If a matching webhook is found, return its name
           if (data && data.length > 0) {
             return res

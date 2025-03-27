@@ -108,13 +108,6 @@ async function notifyLeadChange(
       }
     }
     
-    console.log({
-      leadId,
-      action,
-      userId,
-      workspaceId,
-      details: enrichedDetails,
-    });
     
     const { data:notification, error } = await supabase.from("notifications").insert([
       {
@@ -141,7 +134,6 @@ async function notifyLeadChange(
       console.error("Failed to fetch workspace members:", membersError.message);
       return;
     } 
-    console.log(notification)
     const { error: readStatusError } = await supabase
     .from("notification_read_status")
     .insert([
@@ -227,7 +219,6 @@ export default async function handler(
           // Step 2: Validate email and phone
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
-          console.log(isValidEmail, isValidPhone);
          
           const { data, error } = await supabase.from("leads").insert([
             {
@@ -272,7 +263,6 @@ export default async function handler(
 
         case "createManyLead": {
           const body = req.body;
-          console.log(body);
 
           if (!Array.isArray(body) || body.length === 0) {
             return res
@@ -381,7 +371,6 @@ export default async function handler(
             console.error("Supabase Update Error:", error.message);
             return res.status(400).json({ error: error.message });
           }
-            console.log(data)
           await notifyLeadChange(
             id as string,
             "notes_updated",
@@ -404,7 +393,6 @@ export default async function handler(
         case "updateLeadById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id); // Debug to check received data
 
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -458,7 +446,6 @@ export default async function handler(
               };
             }
           });
-          console.log("data", data);
           
           await notifyLeadChange(
             id as string,
@@ -514,7 +501,6 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log(workspaceId);
           await notifyLeadChange(
             id as string,
             "assigned",
@@ -703,7 +689,6 @@ export default async function handler(
 
         case "getNotesById": {
           const id = query.id as string;
-          console.log(query);
 
           const {
             data: { user },

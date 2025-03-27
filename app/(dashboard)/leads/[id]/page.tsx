@@ -145,7 +145,6 @@ const IndividualLeadPage: React.FC = () => {
       </div>
     );
   }
-  console.log(notes);
   const handleAddNote = () => {
     if (newNote.trim()) {
       const author = user?.firstName || user?.name || "Unknown";
@@ -185,7 +184,6 @@ const IndividualLeadPage: React.FC = () => {
   const result = extractUserNameAndTimestamp(
     notes.map((note) => note?.message)
   );
-  console.log(result);
   // console.log(notes.map(note => note.message))
   const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
