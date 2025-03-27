@@ -61,7 +61,6 @@ const StatCard = memo(({ stat, index, totalStats }: any) => (
         </p>
         <p
           className="text-lg sm:text-xl font-semibold truncate cursor-pointer"
-          onClick={() => console.log("clicked")}
         >
           {stat.value}
         </p>

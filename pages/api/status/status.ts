@@ -165,7 +165,6 @@ export default async function handler(
           //     });
           //   }
           // }
-          // console.log(name);
           // If we reach here, user is either the owner or an admin
           const { data, error } = await supabase
             .from("status")

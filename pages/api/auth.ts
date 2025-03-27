@@ -67,7 +67,6 @@ export default async function handler(
         //     );
 
         //     if (matchingUsers.length > 0) {
-        //       console.log("Matching user(s) found:", matchingUsers);
 
         //       // Update workspace membership
         //       const { data: updateData, error: updateError } = await supabase

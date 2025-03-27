@@ -489,7 +489,6 @@ export default async function handler(
             const { user_id, workspace_id } = webhook;
 
             if (user_id === user.id) {
-              console.log("enter");
               const { data, error } = await supabase
                 .from("webhooks")
                 .update({ name, type, description })

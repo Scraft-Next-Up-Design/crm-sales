@@ -27,7 +27,6 @@ export default function runLoadTest() {
     const res = http.get(`${BASE_URL}/health`);
     const isSuccess = check(res, { "Status is 200": (r) => r.status === 200 });
     if (!isSuccess) {
-      console.log(`Failed request - Status: ${res.status}, Body: ${res.body}`);
       errorRate.add(1);
     }
     if (isSuccess) successfulRequests.add(1);

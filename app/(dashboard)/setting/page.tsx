@@ -73,7 +73,6 @@ export default function ProfileSettingsPage() {
   });
 
   const handleSaveProfile = () => {
-    console.log("Saving profile settings", profile);
   };
 
   const handleAvatarUpload = (event: React.ChangeEvent<HTMLInputElement>) => {

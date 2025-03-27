@@ -98,7 +98,6 @@ function EditProfileDialog({
       const {
         data: { publicUrl },
       } = supabase.storage.from("profiles").getPublicUrl(filePath);
-      console.log(publicUrl);
       setPreviewImage(publicUrl);
       setFormData((prev) => ({ ...prev, avatar: publicUrl }));
       toast.success("Image uploaded successfully");
@@ -147,7 +146,6 @@ function EditProfileDialog({
       setLoading(false);
     }
   };
-  console.log(previewImage);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

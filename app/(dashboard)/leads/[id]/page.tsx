@@ -177,7 +177,6 @@ const IndividualLeadPage: React.FC = () => {
   const result = extractUserNameAndTimestamp(
     notes.map((note) => note?.message)
   );
-  // console.log(notes.map(note => note.message))
   const sanitizedPhone = currentLead?.phone.replace(/\D/g, "");
   return (
     <div

@@ -11,7 +11,6 @@ export default async function handler(
   }
 
   try {
-    console.log("Fetching from Supabase...");
     const startTime = process.hrtime();
     const { data, error } = await supabase
       .from("workspaces")
@@ -34,7 +33,6 @@ export default async function handler(
       });
     }
 
-    console.log("Supabase Success, Duration:", duration, "ms");
     return res.status(200).json({
       status: "healthy",
       timestamp: new Date().toISOString(),

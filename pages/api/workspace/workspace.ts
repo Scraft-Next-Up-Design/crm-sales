@@ -332,7 +332,6 @@ export default async function handler(
 
               return res.status(404).json({ error: "No workspaces found" });
             }
-            console.log(activeWorkspace);
 
             return res.status(200).json({
               data: {
@@ -342,7 +341,6 @@ export default async function handler(
               },
             });
           } catch (error) {
-            console.error("Error getting active workspace:", error);
             return res
               .status(500)
               .json({ error: "Failed to get active workspace" });
@@ -372,7 +370,6 @@ export default async function handler(
             const qualifiedStatusNames = qualifiedStatuses.map(
               (status) => status.name
             );
-            console.log(qualifiedStatusNames);
 
             const { data: leadsCount, error: leadsError } = await supabase
               .from("leads")
@@ -515,7 +512,6 @@ export default async function handler(
           }
 
           const workspaceIdBigInt = BigInt(workspaceId as string);
-          console.log(workspaceIdBigInt);
 
           try {
             const { data, error } = await supabase.rpc(
@@ -548,7 +544,6 @@ export default async function handler(
 
       switch (action) {
         case "updateWorkspaceStatus": {
-          console.log(body);
           const { id: workspace_id, status } = body;
           const {
             data: { user },
@@ -583,7 +578,6 @@ export default async function handler(
               `
               )
               .single();
-            console.log(activated);
             if (activateError) throw activateError;
 
             return res.status(200).json({

@@ -149,21 +149,6 @@ export default function MemberManagement({
     }
   };
 
-  /// it is working in future if someone want to allow some part on based of login user role
-
-  // const { data } = useGetMemberRoleQuery(workspaceId);
-  // const userRole = data?.data?.role ?? "No Role Found";
-
-  // useEffect(() => {
-  //   console.log(userRole);
-
-  //   if (userRole === "SuperAdmin") {
-  //     setIsAllowToEdit(true);
-  //   } else {
-  //     setIsAllowToEdit(false);
-  //   }
-  //   console.log(isAllowToEdit);
-  // }, [userRole, isAllowToEdit]);
 
   const openEditDialog = (member: { email: string }) => {
     setSelectedEmail(member.email || undefined);

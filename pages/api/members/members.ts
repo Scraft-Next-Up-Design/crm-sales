@@ -150,7 +150,6 @@ export default async function handler(
               </form>
               `
           );
-          console.log(existingMember, "roka", existingError);
 
           return res.status(200).json({
             message: "Invitation email resent successfully",
@@ -352,7 +351,6 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          console.log("user", user);
           const { data, error } = await supabase
             .from("workspace_members")
             .select("role")

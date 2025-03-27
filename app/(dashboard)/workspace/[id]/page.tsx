@@ -295,8 +295,6 @@ export default function WorkspaceSettingsPage() {
         toast.error(errorDetails.error);
         return;
       }
-      // console.log(result);
-      // console.log(newMember);
       setMembers([...members, result?.data?.data]);
     } catch (error) {
       console.error("Unexpected error:", error);
@@ -383,14 +381,12 @@ export default function WorkspaceSettingsPage() {
 
   const handleAddStatus = async () => {
     if (!newStatus.name) return;
-    console.log(newStatus);
     const status: any = {
       id: "",
       ...newStatus,
       countInStatistics: newStatus.count_statistics,
       showInWorkspace: newStatus.showInWorkspace,
     };
-    console.log(status);
     try {
       const result = await addStatus({
         statusData: status,
@@ -492,7 +488,6 @@ export default function WorkspaceSettingsPage() {
 
   const handleAddTags = async () => {
     if (!newTags.name) return;
-    console.log(newTags);
     const tags: any = {
       id: "",
       ...newTags,

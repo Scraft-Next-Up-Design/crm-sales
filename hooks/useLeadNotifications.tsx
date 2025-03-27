@@ -152,7 +152,6 @@ export default function useLeadNotifications() {
         }
       )
       .subscribe((status) => {
-        console.log("Notification subscription status:", status);
       });
 
     const readStatusChannel = supabase
@@ -166,7 +165,6 @@ export default function useLeadNotifications() {
           filter: `user_id=eq.${userId}`,
         },
         (payload) => {
-          console.log("Notification read status changed:", payload);
 
           if (
             payload.eventType === "INSERT" ||
@@ -190,11 +188,9 @@ export default function useLeadNotifications() {
         }
       )
       .subscribe((status) => {
-        console.log("Read status subscription status:", status);
       });
 
     return () => {
-      console.log("Unsubscribing from Supabase channels");
       supabase.removeChannel(notificationsChannel);
       supabase.removeChannel(readStatusChannel);
     };
