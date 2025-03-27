@@ -1,35 +1,34 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { Button } from "@/components/ui/button";
-import { ThemeToggle } from "@/components/theme-toggle";
 import { UserNav } from "@/components/layout/user-nav";
-import { Menu } from "lucide-react";
+import { ThemeToggle } from "@/components/theme-toggle";
+import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/lib/supabaseClient";
-import { useEffect, useState } from "react";
 import { User } from "@supabase/supabase-js";
+import { Menu } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 
 export function Navbar() {
   const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
-    // Get the initial session
     const fetchSession = async () => {
       const { data } = await supabase.auth.getSession();
       setUser(data.session?.user ?? null);
     };
-    
+
     fetchSession();
 
-    // Set up the auth state change listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
     });
 
-    // Proper cleanup to avoid memory leaks
     return () => {
       subscription.unsubscribe();
     };
@@ -104,7 +103,6 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Spacer to prevent content from going under fixed navbar */}
       <div className="h-16 md:h-0" />
     </>
   );

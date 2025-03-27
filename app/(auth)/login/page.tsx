@@ -1,5 +1,4 @@
 "use client";
-import React, { useState, useEffect, ChangeEvent, FormEvent } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -9,13 +8,14 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Eye, EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { supabase } from "@/lib/supabaseClient";
+import { Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { ChangeEvent, FormEvent, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/lib/supabaseClient";
 
 interface LoginFormState {
   email: string;
@@ -44,7 +44,6 @@ export default function LoginPage(): JSX.Element {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  // Form states
   const [loginForm, setLoginForm] = useState<LoginFormState>({
     email: "",
     password: "",
@@ -59,7 +58,6 @@ export default function LoginPage(): JSX.Element {
     confirmPassword: "",
   });
 
-  // Form errors
   const [errors, setErrors] = useState<FormErrors>({});
 
   const validateEmail = (email: string): boolean => {
@@ -70,7 +68,6 @@ export default function LoginPage(): JSX.Element {
     return password.length >= 6;
   };
 
-  // Handle login form submission
   const handleLogin = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: FormErrors = {};
@@ -103,7 +100,6 @@ export default function LoginPage(): JSX.Element {
     }
   };
 
-  // Handle password reset request
   const handleResetRequest = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: FormErrors = {};
@@ -136,7 +132,6 @@ export default function LoginPage(): JSX.Element {
     }
   };
 
-  // Handle new password submission
   const handleNewPasswordSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const newErrors: FormErrors = {};
@@ -163,7 +158,7 @@ export default function LoginPage(): JSX.Element {
 
       toast.success("Password updated successfully");
       router.push("/login");
-      window.location.reload(); // Redirect to login after successful password reset
+      window.location.reload();
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Failed to update password"
@@ -173,7 +168,6 @@ export default function LoginPage(): JSX.Element {
     }
   };
 
-  // Handle form input changes
   const handleLoginChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setLoginForm((prev) => ({
@@ -220,13 +214,11 @@ export default function LoginPage(): JSX.Element {
       const resetToken = params.get("reset");
       const accessToken = params.get("access_token");
 
-      // If we have reset token or access token, enter new password mode
       if (resetToken || accessToken) {
         setIsNewPasswordMode(true);
         return;
       }
 
-      // Only check session if not in reset mode
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -237,7 +229,6 @@ export default function LoginPage(): JSX.Element {
     checkUserAndToken();
   }, [router]);
 
-  // Render password reset request form
   if (isResetMode) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -283,7 +274,6 @@ export default function LoginPage(): JSX.Element {
     );
   }
 
-  // Render new password setup form
   if (isNewPasswordMode) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -336,7 +326,6 @@ export default function LoginPage(): JSX.Element {
     );
   }
 
-  // Render main login form
   return (
     <div className="min-h-screen flex items-center justify-center">
       <Card className="w-[400px]">
@@ -367,12 +356,12 @@ export default function LoginPage(): JSX.Element {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"} // Toggle type
+                  type={showPassword ? "text" : "password"} 
                   name="password"
                   value={loginForm.password}
                   onChange={handleLoginChange}
                   placeholder="••••••••"
-                  className="pr-10" // Add padding to avoid text overlap with the icon
+                  className="pr-10" 
                 />
                 <button
                   type="button"

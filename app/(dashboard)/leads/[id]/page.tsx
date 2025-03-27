@@ -1,43 +1,41 @@
 "use client";
-import { useState, useEffect } from "react";
-import { useParams } from "next/navigation";
-import React from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
+  CardDescription,
   CardHeader,
   CardTitle,
-  CardDescription,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Mail, Phone, Calendar, Database, Loader2 } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
 } from "@/components/ui/select";
-import { useRouter } from "next/navigation";
-import {
-  useGetLeadByIdQuery,
-  useAddNotesMutation,
-} from "@/lib/store/services/leadsApi";
-import { formatDate } from "@/utils/date";
+import { Table, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { supabase } from "@/lib/supabaseClient";
-import { useUpdateLeadMutation } from "@/lib/store/services/leadsApi";
-import { toast } from "sonner";
-import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import {
+  useAddNotesMutation,
+  useGetLeadByIdQuery,
+  useUpdateLeadMutation,
+} from "@/lib/store/services/leadsApi";
 import { useGetStatusQuery } from "@/lib/store/services/status";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { supabase } from "@/lib/supabaseClient";
+import { formatDate } from "@/utils/date";
+import { Calendar, Loader2, Mail, Phone } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
 
 import {
   Accordion,
@@ -45,10 +43,10 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from "@/components/ui/accordion";
+import { RootState } from "@/lib/store/store";
 import { extractUserNameAndTimestamp } from "@/utils/message";
 import { Player } from "@lottiefiles/react-lottie-player";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
+import { useSelector } from "react-redux";
 const IndividualLeadPage: React.FC = () => {
   const router = useRouter();
   const params = useParams();
@@ -68,7 +66,7 @@ const IndividualLeadPage: React.FC = () => {
   } = useGetLeadByIdQuery(
     { id: leadId },
     {
-      pollingInterval: 5000, // 2 seconds
+      pollingInterval: 5000,
     }
   );
   const currentLead = leadsData?.data?.[0];
@@ -78,12 +76,10 @@ const IndividualLeadPage: React.FC = () => {
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
     useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data.id;
-  // Type the notes state properly
   const { data: statusData, isLoading: isLoadingStatus }: any =
     useGetStatusQuery(workspaceId);
 
   useEffect(() => {
-    // Set initial notes when lead data loads
     if (currentLead?.text_area) {
       setNotes(currentLead.text_area);
     }
@@ -103,7 +99,6 @@ const IndividualLeadPage: React.FC = () => {
     router.push("/leads");
   };
 
-  // Show loading state
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -112,7 +107,6 @@ const IndividualLeadPage: React.FC = () => {
     );
   }
 
-  // Show error state
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -129,7 +123,6 @@ const IndividualLeadPage: React.FC = () => {
     );
   }
 
-  // Show not found state
   if (!currentLead) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -248,7 +241,7 @@ const IndividualLeadPage: React.FC = () => {
               })}
               onValueChange={(value) =>
                 handleStatusChange(currentLead.id, value)
-              } // Uncomment and use for status change handler
+              }
             >
               <SelectTrigger
                 className="group relative md:w-[200px]  overflow-hidden rounded-md border-0 bg-white px-4 py-3 shadow-lg transition-all duration-200 hover:-translate-y-0.5 hover:shadow-xl dark:bg-gray-800"

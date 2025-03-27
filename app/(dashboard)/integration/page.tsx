@@ -125,16 +125,13 @@ const PlatformIntegrations: React.FC = () => {
   const [filteredPlatforms, setFilteredPlatforms] = useState<PlatformIntegration[]>(platforms);
   const [activeFilter, setActiveFilter] = useState<"all" | "active" | "beta" | "coming-soon">("all");
 
-  // Toggle row expansion for mobile view
   const toggleRow = (id: string) => {
     setExpandedRow(expandedRow === id ? null : id);
   };
 
-  // Handle search and filtering
   useEffect(() => {
     let results = platforms;
     
-    // Apply search filter
     if (searchTerm) {
       results = results.filter(platform => 
         platform.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -143,7 +140,6 @@ const PlatformIntegrations: React.FC = () => {
       );
     }
     
-    // Apply status filter
     if (activeFilter !== "all") {
       results = results.filter(platform => platform.status === activeFilter);
     }
@@ -151,7 +147,6 @@ const PlatformIntegrations: React.FC = () => {
     setFilteredPlatforms(results);
   }, [searchTerm, platforms, activeFilter]);
 
-  // Status badge color mapping
   const getStatusBadgeColor = (status: string) => {
     switch (status) {
       case "active":
