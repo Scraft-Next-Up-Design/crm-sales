@@ -3,31 +3,13 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../../lib/supabaseServer";
 import { validateEmail, validatePhoneNumber } from "../leads";
 
-interface NotificationDetails {
-  [key: string]: any;
-}
-
-interface Notification {
-  lead_id: string;
-  action_type: string;
-  user_id: string;
-  workspace_id: string;
-  details: NotificationDetails;
-  read: boolean;
-  created_at: string;
-}
-
-interface WorkspaceMember {
-  user_id: string;
-}
-
 async function notifyLeadChange(
   leadId: string,
   action: string,
   userId: string,
   workspaceId: string,
-  details: NotificationDetails = {}
-): Promise<Notification[] | undefined> {
+  details: any = {}
+): Promise<any> {
   try {
     const { data: workspaceMemberData, error: workspaceMemberError } =
       await supabase
@@ -90,7 +72,6 @@ async function notifyLeadChange(
       }
     }
 
-    // For previous_assignee (if present)
     if (details.previous_assignee) {
       const { data: prevAssigneeData, error: prevAssigneeError } =
         await supabase
@@ -104,19 +85,21 @@ async function notifyLeadChange(
         enrichedDetails.previous_assignee_name = prevAssigneeData.name;
       }
     }
-    
-    
-    const { data:notification, error } = await supabase.from("notifications").insert([
-      {
-        lead_id: leadId,
-        action_type: action,
-        user_id: userId,
-        workspace_id: workspaceId,
-        details: enrichedDetails,
-        read: false,
-        created_at: new Date().toISOString(),
-      },
-    ]).select("*");
+
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          lead_id: leadId,
+          action_type: action,
+          user_id: userId,
+          workspace_id: workspaceId,
+          details: enrichedDetails,
+          read: false,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select("*");
 
     if (error) {
       console.error("Failed to create notification:", error.message);
@@ -130,17 +113,25 @@ async function notifyLeadChange(
     if (membersError) {
       console.error("Failed to fetch workspace members:", membersError.message);
       return;
-    } 
-    const { error: readStatusError } = await supabase
-      .from("notification_read_status")
-      .insert([
-        {
-          notification_id: notification[0].id,
-          user_id: userId,
-          read: false,
-          read_at: new Date().toISOString(),
-        },
-      ]);
+    }
+
+    // Fix: Check if notification exists before accessing [0].id
+    if (notification && notification.length > 0) {
+      const { error: readStatusError } = await supabase
+        .from("notification_read_status")
+        .insert([
+          {
+            notification_id: notification[0].id,
+            user_id: userId,
+            read: false,
+            read_at: new Date().toISOString(),
+          },
+        ]);
+      if (readStatusError) {
+        console.error("Failed to insert read status:", readStatusError.message);
+      }
+    }
+
     return notification || undefined;
   } catch (err) {
     console.error("Notification error:", err);
@@ -181,12 +172,15 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          const { data: existingLeads, error: fetchError } = await supabase
+          // Fix: Use .maybeSingle() correctly and handle as object, not array
+          const { data: existingLead, error: fetchError } = await supabase
             .from("leads")
-            .select("created_at")
+            .select("created_at, id")
             .eq("email", body.email)
+            .eq("work_id", query.workspaceId)
             .order("created_at", { ascending: false })
-            .limit(1);
+            .limit(1)
+            .maybeSingle();
 
           if (fetchError) {
             return res
@@ -194,8 +188,8 @@ export default async function handler(
               .json({ error: "Error checking existing leads" });
           }
 
-          if (existingLeads.length > 0) {
-            const existingLead = existingLeads[0];
+          // Fix: Check if existingLead exists, not its length
+          if (existingLead) {
             const createdAt = new Date(existingLead.created_at);
             const now = new Date();
 
@@ -212,10 +206,9 @@ export default async function handler(
             }
           }
 
-          // Step 2: Validate email and phone
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
-         
+
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
@@ -277,7 +270,7 @@ export default async function handler(
           }
 
           const validLeads = await Promise.all(
-            body.map(async (lead) => {
+            body.map(async (lead: any) => {
               if (!lead.name || !lead.email) return null;
 
               const isValidEmail = await validateEmail(lead.email);
@@ -311,7 +304,6 @@ export default async function handler(
             return res.status(400).json({ error: "No valid leads provided" });
           }
 
-          // Insert multiple leads into Supabase
           const { data, error } = await supabase
             .from("leads")
             .insert(filteredLeads);
@@ -328,8 +320,8 @@ export default async function handler(
             {
               count: filteredLeads.length,
               lead_names: filteredLeads
-                .filter((lead) => lead !== null)
-                .map((lead) => lead.name),
+                .filter((lead: any) => lead !== null)
+                .map((lead: any) => lead.name),
             }
           );
 
@@ -337,8 +329,8 @@ export default async function handler(
         }
 
         case "updateNotesById": {
-          const { id } = query; // Extract ID from query parameters
-          const body = req.body; // Extract body payload
+          const { id } = query;
+          const body = req.body;
 
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -349,7 +341,7 @@ export default async function handler(
               .status(400)
               .json({ error: "Update data is required in 'text_area' field" });
           }
-          // Authenticate the user using Supabase
+
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
@@ -358,17 +350,16 @@ export default async function handler(
             return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
           }
 
-          // Update the `leads` table
           const { data, error } = await supabase
             .from("leads")
-            .update({ text_area: body }) // Update the `text_area` field
-            .eq("id", id); // Match the ID
-          // .eq("user_id", user.id); // Ensure the user owns the record
+            .update({ text_area: body })
+            .eq("id", id);
 
           if (error) {
             console.error("Supabase Update Error:", error.message);
             return res.status(400).json({ error: error.message });
           }
+
           await notifyLeadChange(
             id as string,
             "notes_updated",
@@ -408,7 +399,6 @@ export default async function handler(
             return res.status(400).json({ error: "Update data is required" });
           }
 
-          // Get current lead data to determine changes
           const { data: currentLead, error: fetchError } = await supabase
             .from("leads")
             .select("*")
@@ -420,9 +410,9 @@ export default async function handler(
           }
 
           const updatedBody = {
-            ...body, // Spread other fields dynamically
+            ...body,
             status: body.status,
-            tags: body.tags ? JSON.stringify(body.tags) : undefined, // Convert only if tags exist
+            tags: body.tags ? JSON.stringify(body.tags) : undefined,
           };
 
           const { data, error } = await supabase
@@ -434,8 +424,7 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
 
-          // Determine what changed
-          const changes: Record<string, { old: any; new: any }> = {};
+          const changes: any = {};
           Object.keys(updatedBody).forEach((key) => {
             if (
               JSON.stringify(currentLead[key]) !==
@@ -448,7 +437,7 @@ export default async function handler(
               };
             }
           });
-          
+
           await notifyLeadChange(
             id as string,
             "updated",
@@ -484,7 +473,6 @@ export default async function handler(
             return res.status(400).json({ error: "Update data is required" });
           }
 
-          // Get current assignment for notification
           const { data: currentLead, error: fetchError } = await supabase
             .from("leads")
             .select("name, assign_to")
@@ -539,7 +527,6 @@ export default async function handler(
             return res.status(400).json({ error: "Update data is required" });
           }
 
-          // Get current lead data to determine changes
           const { data: currentLead, error: fetchError } = await supabase
             .from("leads")
             .select("*")
@@ -559,8 +546,7 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
 
-          // Determine what changed
-          const changes: Record<string, { old: any; new: any }> = {};
+          const changes: any = {};
           Object.keys(body).forEach((key) => {
             if (
               JSON.stringify(currentLead[key]) !== JSON.stringify(body[key])
@@ -659,8 +645,6 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          //send notification
-
           return res.status(200).json({ data });
         }
 
@@ -706,10 +690,9 @@ export default async function handler(
             return res.status(400).json({ error: "Lead ID is required" });
           }
 
-          // Fetching only the 'text_area' column from the 'leads' table
           const { data, error } = await supabase
             .from("leads")
-            .select("text_area") // Select only the 'text_area' field
+            .select("text_area")
             .eq("id", id);
 
           if (error) {
@@ -766,7 +749,6 @@ export default async function handler(
           return res.status(400).json({ error: "Workspace ID is required" });
         }
 
-        // Authenticate the user
         const {
           data: { user },
         } = await supabase.auth.getUser(token);
@@ -775,7 +757,6 @@ export default async function handler(
           return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
         }
 
-        // First check if user is workspace owner
         const { data: workspaceData, error: workspaceError } = await supabase
           .from("workspaces")
           .select("owner_id")
@@ -789,7 +770,6 @@ export default async function handler(
 
         const isWorkspaceOwner = workspaceData?.owner_id === user.id;
 
-        // If not workspace owner, check if user is admin
         if (!isWorkspaceOwner) {
           const { data: memberData, error: memberError } = await supabase
             .from("workspace_members")
@@ -813,7 +793,6 @@ export default async function handler(
           }
         }
 
-        // Get lead names for notification
         const { data: leadsToDelete, error: fetchError } = await supabase
           .from("leads")
           .select("id, name")
@@ -825,15 +804,13 @@ export default async function handler(
           return res.status(400).json({ error: fetchError.message });
         }
 
-        // Store lead names before deletion
         const leadNames = leadsToDelete
-          ? leadsToDelete.map((lead) => lead.name)
+          ? leadsToDelete.map((lead: any) => lead.name)
           : [];
         const leadIds = leadsToDelete
-          ? leadsToDelete.map((lead) => lead.id)
+          ? leadsToDelete.map((lead: any) => lead.id)
           : [];
 
-        // Proceed with deletion if authorized
         const { data, error } = await supabase
           .from("leads")
           .delete()
@@ -845,7 +822,6 @@ export default async function handler(
           return res.status(400).json({ error: error.message });
         }
 
-        // Create notification for deleted leads
         await notifyLeadChange(
           "multiple",
           "leads_deleted",

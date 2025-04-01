@@ -7,6 +7,7 @@ export interface Lead {
 export const leadsApis = leadsApi.injectEndpoints({
   endpoints: (builder) => ({
     getLeads: builder.query<Lead[], { userId: string; sourceId: string }>({
+      extraOptions: { maxRetries: 3 },
       query: ({ userId, sourceId }) => ({
         url: `?action=getLeads&userId=${userId}&sourceId=${sourceId}`,
       }),
@@ -17,6 +18,7 @@ export const leadsApis = leadsApi.injectEndpoints({
       }),
     }),
     getLeadsByWorkspace: builder.query<Lead[], { workspaceId: string }>({
+      extraOptions: { maxRetries: 3 },
       query: ({ workspaceId }) => ({
         url: `?action=getLeadsByWorkspace&workspaceId=${workspaceId}`,
       }),
@@ -24,6 +26,7 @@ export const leadsApis = leadsApi.injectEndpoints({
       providesTags: () => [{ type: "Lead" as const, id: "LIST" }] as any,
     }),
     getLeadById: builder.query<Lead, { id: string }>({
+      extraOptions: { maxRetries: 2 },
       query: ({ id }) => ({
         url: `?action=getLeadById&id=${id}`,
       }),
@@ -88,6 +91,7 @@ export const leadsApis = leadsApi.injectEndpoints({
       }),
     }),
     leadNotification: builder.query<void, { workspaceId: any }>({
+      extraOptions: { maxRetries: 2 },
       query: ({ workspaceId }) => ({
         url: `?action=getNotifications&workspaceId=${workspaceId}`,
         method: "GET",
