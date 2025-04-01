@@ -1,18 +1,21 @@
 "use client";
 
-import { UserNav } from "@/components/layout/user-nav";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { Button } from "@/components/ui/button";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { supabase } from "@/lib/supabaseClient";
 import { User } from "@supabase/supabase-js";
-import { Menu } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
+import { MobileNav } from "./mobile-nav";
+
+const navigation = [
+  { name: "Dashboard", href: "/dashboard" },
+  { name: "Leads Sources", href: "/leads-sources" },
+  { name: "Leads", href: "/leads" },
+  { name: "Contact", href: "/contact" },
+  { name: "Analytics", href: "/analytics" },
+];
 
 export function Navbar() {
-  const pathname = usePathname();
   const [user, setUser] = useState<User | null>(null);
 
   useEffect(() => {
@@ -34,71 +37,17 @@ export function Navbar() {
     };
   }, []);
 
-  const navigation = [
-    { name: "Dashboard", href: "/dashboard" },
-    { name: "Leads Sources", href: "/leads-sources" },
-    { name: "Leads", href: "/leads" },
-    { name: "Contact", href: "/contact" },
-    { name: "Analytics", href: "/analytics" },
-  ];
-
   return (
     <>
-      {/* Mobile Navbar */}
-      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden lg:hidden fixed top-0 left-0 right-0 z-50 ">
+      <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden lg:hidden fixed top-0 left-0 right-0 z-50">
         <div className="flex h-16 items-center justify-between px-4">
-          {/* Logo */}
           <Link href="/" className="font-bold text-xl">
             CRM
           </Link>
 
           <div className="flex items-center space-x-4">
-            {/* Theme Toggle */}
             <ThemeToggle />
-
-            {/* Menu Button */}
-            <Sheet>
-              <SheetTrigger>
-                <Button variant="ghost" size="icon">
-                  <Menu className="h-5 w-5" />
-                  <span className="sr-only">Toggle menu</span>
-                </Button>
-              </SheetTrigger>
-
-              <SheetContent side="left" className="w-64 p-0">
-                <div className="flex flex-col h-full">
-                  <div className="border-b p-4">
-                    <Link href="/" className="font-bold text-xl">
-                      CRM
-                    </Link>
-                  </div>
-
-                  <div className="flex-1 overflow-y-auto py-4">
-                    <nav className="space-y-1 px-2">
-                      {navigation.map((item) => (
-                        <Link
-                          key={item.name}
-                          href={item.href}
-                          className={`flex items-center px-3 py-2 text-sm rounded-md transition-colors ${
-                            pathname === item.href
-                              ? "bg-secondary text-foreground"
-                              : "text-muted-foreground hover:bg-secondary/50"
-                          }`}
-                        >
-                          {item.name}
-                        </Link>
-                      ))}
-                    </nav>
-                  </div>
-
-                  {user && (
-                    <div className="border-t p-4">
-                      <UserNav />
-                    </div>
-                  )}
-                </div>
-              </SheetContent>
-            </Sheet>
+            <MobileNav user={user} navigation={navigation} />
           </div>
         </div>
       </nav>

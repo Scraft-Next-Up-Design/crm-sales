@@ -175,6 +175,10 @@ const FormMessage = React.forwardRef<
 });
 FormMessage.displayName = "FormMessage";
 
+// Export the hook directly since it cannot be dynamically imported
+export { useFormField };
+
+// Export form components for dynamic imports
 export {
   Form,
   FormControl,
@@ -183,5 +187,15 @@ export {
   FormItem,
   FormLabel,
   FormMessage,
-  useFormField,
+};
+
+// Default export for dynamic imports
+export default {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 };
