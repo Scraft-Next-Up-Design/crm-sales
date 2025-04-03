@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { supabase } from "@/lib/supabaseServer"; // Import the Supabase client
+import { supabase } from "@/lib/supabaseServer"; 
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 
 export default async function handler(
@@ -42,7 +42,6 @@ export default async function handler(
           }
 
           try {
-            // First create the workspace and get its ID
             const { data: workspaceData, error: workspaceError } =
               await supabase
                 .from("workspaces")
@@ -58,13 +57,12 @@ export default async function handler(
                     owner_id: user?.id,
                   },
                 ])
-                .select(); // Add .select() to return the inserted data
+                .select(); 
 
             if (workspaceError) {
               return res.status(500).json({ error: workspaceError.message });
             }
 
-            // Now create the workspace member entry using the new workspace's ID
             const { error: memberError } = await supabase
               .from("workspace_members")
               .insert({
@@ -77,8 +75,6 @@ export default async function handler(
               });
 
             if (memberError) {
-              // If member creation fails, you might want to rollback the workspace creation
-              // or handle the error appropriately
               return res.status(500).json({ error: memberError.message });
             }
 
@@ -287,9 +283,7 @@ export default async function handler(
               .eq("status", "accepted")
               .single();
 
-            // If no active workspace found, set the first available one as active
             if (!activeWorkspace || activeError) {
-              // Get the first workspace where user is a member
               const { data: firstWorkspace, error: firstError } = await supabase
                 .from("workspace_members")
                 .select(
@@ -314,13 +308,11 @@ export default async function handler(
               }
 
               if (firstWorkspace) {
-                // Deactivate all workspaces first
                 await supabase
                   .from("workspace_members")
                   .update({ is_active: false })
                   .eq("user_id", user.id);
 
-                // Set the first workspace as active
                 const { error: setActiveError } = await supabase
                   .from("workspace_members")
                   .update({ is_active: true })
@@ -329,7 +321,6 @@ export default async function handler(
                 if (setActiveError) {
                   throw setActiveError;
                 }
-                // Return the newly activated workspace
                 return res.status(200).json({
                   data: {
                     ...firstWorkspace.workspaces,
@@ -341,9 +332,7 @@ export default async function handler(
 
               return res.status(404).json({ error: "No workspaces found" });
             }
-            console.log(activeWorkspace);
 
-            // Return the existing active workspace
             return res.status(200).json({
               data: {
                 ...activeWorkspace.workspaces,
@@ -352,7 +341,6 @@ export default async function handler(
               },
             });
           } catch (error) {
-            console.error("Error getting active workspace:", error);
             return res
               .status(500)
               .json({ error: "Failed to get active workspace" });
@@ -379,14 +367,10 @@ export default async function handler(
               return res.status(400).json({ error: statusError.message });
             }
 
-            // Extract status names that should be counted
             const qualifiedStatusNames = qualifiedStatuses.map(
               (status) => status.name
             );
-            console.log(qualifiedStatusNames);
 
-            // Count leads that match the qualified status names for the given workspace
-            // Using ->> operator to access the name field within the status JSON object
             const { data: leadsCount, error: leadsError } = await supabase
               .from("leads")
               .select("id", { count: "exact" })
@@ -413,7 +397,6 @@ export default async function handler(
             return res.status(400).json({ error: "Workspace ID is required" });
           }
 
-          // Convert workspaceId to integer
           const workspaceIdInt = parseInt(workspaceId as string);
           if (isNaN(workspaceIdInt)) {
             return res
@@ -441,12 +424,10 @@ export default async function handler(
           const { workspaceId } = query;
           const token = authHeader.split(" ")[1];
 
-          // Validate workspace ID presence
           if (!workspaceId) {
             return res.status(400).json({ error: "Workspace ID is required" });
           }
 
-          // Parse and validate workspace ID format
           const workspaceIdInt = parseInt(workspaceId as string);
           if (isNaN(workspaceIdInt)) {
             return res
@@ -455,7 +436,6 @@ export default async function handler(
           }
 
           try {
-            // Get user from token
             const {
               data: { user },
               error: userError,
@@ -478,10 +458,8 @@ export default async function handler(
                 .json({ error: "Failed to fetch webhooks" });
             }
 
-            // Get lead counts for each webhook
             const webhookAnalytics = await Promise.all(
               webhooks.map(async (webhook) => {
-                // Extract source_id from webhook URL
                 const url = new URL(webhook.webhook_url);
                 const sourceId = url.searchParams.get("sourceId");
 
@@ -493,7 +471,6 @@ export default async function handler(
                   };
                 }
 
-                // Fetch leads count for this webhook's source
                 const { count, error: leadsError } = await supabase
                   .from("leads")
                   .select("*", { count: "exact", head: true })
@@ -534,15 +511,13 @@ export default async function handler(
             return res.status(400).json({ error: "Workspace ID is required" });
           }
 
-          // Convert workspaceId to bigint
           const workspaceIdBigInt = BigInt(workspaceId as string);
-          console.log(workspaceIdBigInt);
 
           try {
             const { data, error } = await supabase.rpc(
               "calculate_conversion_metrics_with_monthly",
               {
-                workspace_id: workspaceId, // Pass as string since JS BigInt isn't directly supported
+                workspace_id: workspaceId, 
               }
             );
 
@@ -569,7 +544,6 @@ export default async function handler(
 
       switch (action) {
         case "updateWorkspaceStatus": {
-          console.log(body);
           const { id: workspace_id, status } = body;
           const {
             data: { user },
@@ -584,7 +558,6 @@ export default async function handler(
           }
 
           try {
-            // First deactivate all workspaces for this user
             const { error: resetError } = await supabase
               .from("workspace_members")
               .update({ is_active: false })
@@ -592,7 +565,6 @@ export default async function handler(
 
             if (resetError) throw resetError;
 
-            // Then activate only the specified workspace
             const { data: activated, error: activateError } = await supabase
               .from("workspace_members")
               .update({ is_active: status })
@@ -606,7 +578,6 @@ export default async function handler(
               `
               )
               .single();
-            console.log(activated);
             if (activateError) throw activateError;
 
             return res.status(200).json({
@@ -649,7 +620,6 @@ export default async function handler(
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
 
-            // Ensure the workspace belongs to the user
             const workspaceExists = await supabase
               .from("workspaces")
               .select("id")
@@ -663,12 +633,11 @@ export default async function handler(
                 .json({ error: "Workspace not found or access denied" });
             }
 
-            // Update the workspace with the data from the request body
             const updateWorkspace = await supabase
               .from("workspaces")
               .update(data)
               .eq("id", workspace_id)
-              .eq("owner_id", user.id); // Ensure ownership
+              .eq("owner_id", user.id); 
 
             if (updateWorkspace.error) {
               throw new Error(updateWorkspace?.error?.message);

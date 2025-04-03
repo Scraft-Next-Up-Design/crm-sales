@@ -137,7 +137,6 @@
       
 //       // If we've exhausted all retries, use fallback processing
 //       if (attempt === MAX_RETRIES) {
-//         console.log("AI processing failed after all retries, using fallback processing");
 //         return createFallbackData(inputData);
 //       }
       
@@ -243,7 +242,6 @@
 //     try {
 //       processedData = await processWithAI(data);
 //     } catch (error) {
-//       console.log("AI processing failed, using fallback");
 //       processedData = createFallbackData(data);
 //     }
 
@@ -278,7 +276,6 @@
 
 //     const isEmailValid = await validateEmail(processedData.email);
 //     const isPhoneValid = await validatePhoneNumber(processedData.phone);
-//     console.log(isEmailValid, isPhoneValid);
 //     // Add metadata
 //     const leadData = {
 //       ...processedData,
@@ -674,7 +671,6 @@ export default async function handler(
     
     // Step 2: If that fails, use AI (more expensive)
     if (!processedData) {
-      console.log("Structured processing failed, using AI processing");
       processedData = await processWithAI(body);
     }
     

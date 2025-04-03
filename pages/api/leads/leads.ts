@@ -1,9 +1,8 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
+import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../../lib/supabaseServer";
 import { validateEmail, validatePhoneNumber } from "../leads";
 
-// Notification interfaces
 interface NotificationDetails {
   [key: string]: any;
 }
@@ -30,26 +29,25 @@ async function notifyLeadChange(
   details: NotificationDetails = {}
 ): Promise<Notification[] | undefined> {
   try {
-    // Fetch user information from workspace_members for this specific workspace
-    const { data: workspaceMemberData, error: workspaceMemberError } = await supabase
-      .from("workspace_members")
-      .select("name")
-      .eq("user_id", userId)
-      .eq("workspace_id", workspaceId) // Add this to get only the relevant workspace membership
-      .single();
-    
+    const { data: workspaceMemberData, error: workspaceMemberError } =
+      await supabase
+        .from("workspace_members")
+        .select("name")
+        .eq("user_id", userId)
+        .eq("workspace_id", workspaceId)
+        .single();
+
     let userDisplayName = "Unknown user";
-    
+
     if (workspaceMemberError) {
-      console.error("Failed to fetch workspace member data:", workspaceMemberError.message);
-      
-      // Fallback: try to get the name from other sources if available
-      // For example, you might have a separate users or profiles table
+      console.error(
+        "Failed to fetch workspace member data:",
+        workspaceMemberError.message
+      );
     } else if (workspaceMemberData) {
       userDisplayName = workspaceMemberData.name;
     }
-    
-    // Enrich the details with names for various user IDs
+
     const enrichedDetails = { ...details };
     enrichedDetails.actor_name = userDisplayName;
 
@@ -60,13 +58,12 @@ async function notifyLeadChange(
         .eq("user_id", details.updated_by)
         .eq("workspace_id", workspaceId)
         .single();
-        
+
       if (!updaterError && updaterData) {
         enrichedDetails.updated_by_name = updaterData.name;
       }
     }
-    
-    // For deleted_by
+
     if (details.deleted_by) {
       const { data: deleterData, error: deleterError } = await supabase
         .from("workspace_members")
@@ -74,13 +71,12 @@ async function notifyLeadChange(
         .eq("user_id", details.deleted_by)
         .eq("workspace_id", workspaceId)
         .single();
-        
+
       if (!deleterError && deleterData) {
         enrichedDetails.deleted_by_name = deleterData.name;
       }
     }
-    
-    // For new_assignee (if present)
+
     if (details.new_assignee) {
       const { data: assigneeData, error: assigneeError } = await supabase
         .from("workspace_members")
@@ -88,33 +84,27 @@ async function notifyLeadChange(
         .eq("user_id", details.new_assignee)
         .eq("workspace_id", workspaceId)
         .single();
-        
+
       if (!assigneeError && assigneeData) {
         enrichedDetails.new_assignee_name = assigneeData.name;
       }
     }
-    
+
     // For previous_assignee (if present)
     if (details.previous_assignee) {
-      const { data: prevAssigneeData, error: prevAssigneeError } = await supabase
-        .from("workspace_members")
-        .select("name")
-        .eq("user_id", details.previous_assignee)
-        .eq("workspace_id", workspaceId)
-        .single();
-        
+      const { data: prevAssigneeData, error: prevAssigneeError } =
+        await supabase
+          .from("workspace_members")
+          .select("name")
+          .eq("user_id", details.previous_assignee)
+          .eq("workspace_id", workspaceId)
+          .single();
+
       if (!prevAssigneeError && prevAssigneeData) {
         enrichedDetails.previous_assignee_name = prevAssigneeData.name;
       }
     }
     
-    console.log({
-      leadId,
-      action,
-      userId,
-      workspaceId,
-      details: enrichedDetails,
-    });
     
     const { data:notification, error } = await supabase.from("notifications").insert([
       {
@@ -141,17 +131,16 @@ async function notifyLeadChange(
       console.error("Failed to fetch workspace members:", membersError.message);
       return;
     } 
-    console.log(notification)
     const { error: readStatusError } = await supabase
-    .from("notification_read_status")
-    .insert([
-      {
-        notification_id: notification[0].id,
-        user_id: userId,
-        read: false,
-        read_at: new Date().toISOString(),
-      },
-    ]);
+      .from("notification_read_status")
+      .insert([
+        {
+          notification_id: notification[0].id,
+          user_id: userId,
+          read: false,
+          read_at: new Date().toISOString(),
+        },
+      ]);
     return notification || undefined;
   } catch (err) {
     console.error("Notification error:", err);
@@ -165,19 +154,18 @@ export default async function handler(
   const { method, query, headers } = req;
   const action = query.action as string;
   const authHeader = headers.authorization;
-  
+
   if (!authHeader || !authHeader.startsWith("Bearer ")) {
     return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
   }
-  
+
   const token = authHeader.split(" ")[1];
-  
+
   switch (method) {
     case "POST":
       switch (action) {
         case "createLead": {
           const body = req.body;
-         
 
           if (!body || !body.name || !body.email) {
             return res
@@ -227,7 +215,6 @@ export default async function handler(
           // Step 2: Validate email and phone
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
-          console.log(isValidEmail, isValidPhone);
          
           const { data, error } = await supabase.from("leads").insert([
             {
@@ -250,20 +237,20 @@ export default async function handler(
               is_phone_valid: isValidPhone,
               created_at: new Date().toISOString(),
             },
-          ])
+          ]);
 
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-            
+
           await notifyLeadChange(
             body.name,
             "created",
             user.id,
             req.query.workspaceId as string,
-            { 
+            {
               lead_name: body.name,
-              lead_email: body.email
+              lead_email: body.email,
             }
           );
 
@@ -272,7 +259,6 @@ export default async function handler(
 
         case "createManyLead": {
           const body = req.body;
-          console.log(body);
 
           if (!Array.isArray(body) || body.length === 0) {
             return res
@@ -333,18 +319,20 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          
+
           await notifyLeadChange(
             "bulk",
             "bulk_created",
             user.id,
             req.query.workspaceId as string,
-            { 
+            {
               count: filteredLeads.length,
-              lead_names: filteredLeads.filter(lead => lead !== null).map(lead => lead.name)
+              lead_names: filteredLeads
+                .filter((lead) => lead !== null)
+                .map((lead) => lead.name),
             }
           );
-          
+
           return res.status(201).json({ data });
         }
 
@@ -381,18 +369,17 @@ export default async function handler(
             console.error("Supabase Update Error:", error.message);
             return res.status(400).json({ error: error.message });
           }
-            console.log(data)
           await notifyLeadChange(
             id as string,
             "notes_updated",
             user.id,
             req.query.workspaceId as string,
-            { 
+            {
               lead_id: id,
-              updated_by: user.id
+              updated_by: user.id,
             }
           );
-          
+
           return res.status(200).json({ data });
         }
         default:
@@ -404,7 +391,6 @@ export default async function handler(
         case "updateLeadById": {
           const { id } = query;
           const body = req.body;
-          console.log(body, id); // Debug to check received data
 
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -421,18 +407,18 @@ export default async function handler(
           if (!body || Object.keys(body).length === 0) {
             return res.status(400).json({ error: "Update data is required" });
           }
-          
+
           // Get current lead data to determine changes
           const { data: currentLead, error: fetchError } = await supabase
             .from("leads")
             .select("*")
             .eq("id", id)
             .single();
-            
+
           if (fetchError) {
             return res.status(400).json({ error: fetchError.message });
           }
-          
+
           const updatedBody = {
             ...body, // Spread other fields dynamically
             status: body.status,
@@ -447,37 +433,40 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          
+
           // Determine what changed
           const changes: Record<string, { old: any; new: any }> = {};
-          Object.keys(updatedBody).forEach(key => {
-            if (JSON.stringify(currentLead[key]) !== JSON.stringify(updatedBody[key]) && updatedBody[key] !== undefined) {
+          Object.keys(updatedBody).forEach((key) => {
+            if (
+              JSON.stringify(currentLead[key]) !==
+                JSON.stringify(updatedBody[key]) &&
+              updatedBody[key] !== undefined
+            ) {
               changes[key] = {
                 old: currentLead[key],
-                new: updatedBody[key]
+                new: updatedBody[key],
               };
             }
           });
-          console.log("data", data);
           
           await notifyLeadChange(
             id as string,
             "updated",
             user.id,
             req.query.workspaceId as string,
-            { 
+            {
               lead_id: id,
               lead_name: currentLead.name,
               updated_by: user.id,
-              changes: changes
+              changes: changes,
             }
           );
-          
+
           return res.status(200).json({ data });
         }
 
         case "  ": {
-          const { id,workspaceId } = query;
+          const { id, workspaceId } = query;
           const body = req.body;
           if (!id) {
             return res.status(400).json({ error: "Lead ID is required" });
@@ -501,7 +490,7 @@ export default async function handler(
             .select("name, assign_to")
             .eq("id", id)
             .single();
-            
+
           if (fetchError) {
             return res.status(400).json({ error: fetchError.message });
           }
@@ -514,24 +503,23 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          console.log(workspaceId);
           await notifyLeadChange(
             id as string,
             "assigned",
             user.id,
             workspaceId as string,
-            { 
+            {
               lead_id: id,
               lead_name: currentLead.name,
               previous_assignee: currentLead.assign_to,
               new_assignee: body,
-              assigned_by: user.id
+              assigned_by: user.id,
             }
           );
 
           return res.status(200).json({ data });
         }
-        
+
         case "updateLeadData": {
           const { id } = query;
           const body = req.body;
@@ -550,14 +538,14 @@ export default async function handler(
           if (!body) {
             return res.status(400).json({ error: "Update data is required" });
           }
-          
+
           // Get current lead data to determine changes
           const { data: currentLead, error: fetchError } = await supabase
             .from("leads")
             .select("*")
             .eq("id", id)
             .single();
-            
+
           if (fetchError) {
             return res.status(400).json({ error: fetchError.message });
           }
@@ -570,34 +558,36 @@ export default async function handler(
           if (error) {
             return res.status(400).json({ error: error.message });
           }
-          
+
           // Determine what changed
           const changes: Record<string, { old: any; new: any }> = {};
-          Object.keys(body).forEach(key => {
-            if (JSON.stringify(currentLead[key]) !== JSON.stringify(body[key])) {
+          Object.keys(body).forEach((key) => {
+            if (
+              JSON.stringify(currentLead[key]) !== JSON.stringify(body[key])
+            ) {
               changes[key] = {
                 old: currentLead[key],
-                new: body[key]
+                new: body[key],
               };
             }
           });
-          
+
           await notifyLeadChange(
             id as string,
             "data_updated",
             user.id,
             currentLead?.work_id,
-            { 
+            {
               lead_id: id,
               lead_name: currentLead.name,
               updated_by: user.id,
-              changes: changes
+              changes: changes,
             }
           );
 
           return res.status(200).json({ data });
         }
-        
+
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
@@ -670,8 +660,8 @@ export default async function handler(
             return res.status(400).json({ error: error.message });
           }
           //send notification
-          
-          return res.status(200).json({ data});
+
+          return res.status(200).json({ data });
         }
 
         case "getLeadById": {
@@ -693,7 +683,7 @@ export default async function handler(
             .from("leads")
             .select("*")
             .eq("id", id);
-            
+
           if (error) {
             return res.status(400).json({ error: error.message });
           }
@@ -703,7 +693,6 @@ export default async function handler(
 
         case "getNotesById": {
           const id = query.id as string;
-          console.log(query);
 
           const {
             data: { user },
@@ -728,12 +717,14 @@ export default async function handler(
           }
 
           if (!data || data.length === 0) {
-            return res.status(404).json({ error: "No notes found for this lead" });
+            return res
+              .status(404)
+              .json({ error: "No notes found for this lead" });
           }
 
           return res.status(200).json({ data });
         }
-        case "getNotifications": {  
+        case "getNotifications": {
           const {
             data: { user },
           } = await supabase.auth.getUser(token);
@@ -746,11 +737,11 @@ export default async function handler(
             return res.status(400).json({ error: "Workspace ID is required" });
           }
           const { data, error } = await supabase
-          .from("notifications")
-          .select("*")
-          .eq("workspace_id", workspaceId)
-          .order("created_at", { ascending: false })
-          .limit(20);
+            .from("notifications")
+            .select("*")
+            .eq("workspace_id", workspaceId)
+            .order("created_at", { ascending: false })
+            .limit(20);
           if (error) {
             return res.status(400).json({ error: error.message });
           }
@@ -760,7 +751,7 @@ export default async function handler(
         default:
           return res.status(400).json({ error: `Unknown action: ${action}` });
       }
-      
+
     case "DELETE": {
       if (action === "deleteLeads") {
         const { id, workspaceId } = req.body;
@@ -821,22 +812,26 @@ export default async function handler(
             });
           }
         }
-        
+
         // Get lead names for notification
         const { data: leadsToDelete, error: fetchError } = await supabase
           .from("leads")
           .select("id, name")
           .in("id", id)
           .eq("work_id", workspaceId);
-          
+
         if (fetchError) {
           console.error("Fetch leads error:", fetchError.message);
           return res.status(400).json({ error: fetchError.message });
         }
-        
+
         // Store lead names before deletion
-        const leadNames = leadsToDelete ? leadsToDelete.map(lead => lead.name) : [];
-        const leadIds = leadsToDelete ? leadsToDelete.map(lead => lead.id) : [];
+        const leadNames = leadsToDelete
+          ? leadsToDelete.map((lead) => lead.name)
+          : [];
+        const leadIds = leadsToDelete
+          ? leadsToDelete.map((lead) => lead.id)
+          : [];
 
         // Proceed with deletion if authorized
         const { data, error } = await supabase
@@ -849,7 +844,7 @@ export default async function handler(
           console.error("Supabase Delete Error:", error.message);
           return res.status(400).json({ error: error.message });
         }
-        
+
         // Create notification for deleted leads
         await notifyLeadChange(
           "multiple",
@@ -860,7 +855,7 @@ export default async function handler(
             deleted_by: user.id,
             lead_count: leadIds.length,
             lead_names: leadNames,
-            lead_ids: leadIds
+            lead_ids: leadIds,
           }
         );
 
@@ -872,7 +867,7 @@ export default async function handler(
 
       return res.status(400).json({ error: `Unknown action: ${action}` });
     }
-    
+
     default:
       return res.status(405).json({
         error: AUTH_MESSAGES.API_ERROR,

@@ -1,8 +1,4 @@
-// app/signup/page.tsx
 "use client";
-import React, { Suspense } from "react";
-import { useEffect } from "react";
-import axios from "axios";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -14,13 +10,15 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import Link from "next/link";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { useSearchParams, useRouter } from "next/navigation";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/lib/supabaseClient";
+import { zodResolver } from "@hookform/resolvers/zod";
+import axios from "axios";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect } from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const signupSchema = z
   .object({
@@ -29,7 +27,7 @@ const signupSchema = z
     password: z.string().min(6),
     confirmPassword: z.string().min(6),
     phone: z.string().optional(),
-    role: z.literal("admin")
+    role: z.literal("admin"),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords don't match",
@@ -50,8 +48,8 @@ function SignUpForm() {
   } = useForm<z.infer<typeof signupSchema>>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
-      role: "admin"
-    }
+      role: "admin",
+    },
   });
 
   useEffect(() => {
@@ -73,9 +71,9 @@ function SignUpForm() {
           emailRedirectTo: window.location.origin,
           data: {
             firstName: data.name,
-            name: data.name,  // Store name as first_name in raw_user_meta_data
+            name: data.name,
             phone: data.phone,
-          }
+          },
         },
       });
 
@@ -164,7 +162,9 @@ function SignUpForm() {
                 disabled={isSubmitting}
               />
               {errors.password && (
-                <p className="text-sm text-red-500">{errors.password.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.password.message}
+                </p>
               )}
             </div>
             <div className="space-y-2">
@@ -177,7 +177,9 @@ function SignUpForm() {
                 disabled={isSubmitting}
               />
               {errors.confirmPassword && (
-                <p className="text-sm text-red-500">{errors.confirmPassword.message}</p>
+                <p className="text-sm text-red-500">
+                  {errors.confirmPassword.message}
+                </p>
               )}
             </div>
             <input type="hidden" {...register("role")} />

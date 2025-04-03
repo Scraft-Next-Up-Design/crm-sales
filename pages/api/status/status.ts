@@ -1,5 +1,5 @@
-import { NextApiRequest, NextApiResponse } from "next";
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
+import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../../lib/supabaseServer";
 
 interface StatusRequest {
@@ -7,7 +7,7 @@ interface StatusRequest {
 }
 
 interface UpdatedStatusRequest extends Partial<StatusRequest> {
-  id: string; // ID is required for updates
+  id: string;
 }
 
 export default async function handler(
@@ -165,7 +165,6 @@ export default async function handler(
           //     });
           //   }
           // }
-          // console.log(name);
           // If we reach here, user is either the owner or an admin
           const { data, error } = await supabase
             .from("status")

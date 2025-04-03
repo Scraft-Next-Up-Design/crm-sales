@@ -7,7 +7,7 @@ interface TagsRequest {
 }
 
 interface UpdatedTagsRequest extends Partial<TagsRequest> {
-  id: string; // ID is required for updates
+  id: string; 
 }
 
 export default async function handler(
@@ -87,7 +87,6 @@ export default async function handler(
                 .json({ error: AUTH_MESSAGES.UNAUTHORIZED });
             }
           }
-          // console.log(body);
           // Insert status into the database
           // const { data, error } = await supabase.from("tags").insert({
           //   name,
@@ -221,7 +220,6 @@ export default async function handler(
             return res.status(404).json({ error: "Tags not found" });
           }
 
-          // console.log(name);
           // If we reach here, user is either the owner or an admin
           const { data, error } = await supabase
             .from("tags")

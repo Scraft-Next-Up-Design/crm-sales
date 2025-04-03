@@ -1,7 +1,7 @@
 import { workspaceApi } from "../base/workspace";
 
 interface WorkspaceRequest {
-  id?: string; // Optional for create/update, required for delete
+  id?: string; 
   name: string;
   description?: string;
   status: boolean;
@@ -13,7 +13,6 @@ interface WorkspaceResponse {
 
 export const workspaceApis = workspaceApi.injectEndpoints({
   endpoints: (builder) => ({
-    // Create a new workspace
     createWorkspace: builder.mutation<WorkspaceRequest, WorkspaceResponse>({
       query: (data) => ({
         url: "?action=createWorkspace",
@@ -22,7 +21,6 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       }),
     }),
 
-    // Update an existing workspace
     updateWorkspace: builder.mutation<WorkspaceRequest, WorkspaceResponse>({
       query: (data) => ({
         url: "?action=updateWorkspaceDetails",
@@ -31,7 +29,6 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       }),
     }),
 
-    // Delete an existing workspace
     deleteWorkspace: builder.mutation<{ id: string }, { id: string }>({
       query: ({ id }) => ({
         url: `?action=deleteWorkspace`,
@@ -40,21 +37,18 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       }),
     }),
 
-    // Fetch all workspaces
     getWorkspaces: builder.query<any, void>({
       query: () => ({
         url: "?action=getWorkspaces",
         method: "GET",
       }),
     }),
-    // Fetch all workspaces
     getWorkspacesById: builder.query<any, void>({
       query: (id) => ({
         url: `?action=getWorkspacesById&workspaceId=${id}`,
         method: "GET",
       }),
     }),
-    // Fetch workspaces by owner ID
     getWorkspacesByOwnerId: builder.query<any, { ownerId: string }>({
       query: ({ ownerId }) => ({
         url: `?action=getWorkspaces&ownerId=${ownerId}`,
@@ -118,7 +112,6 @@ export const workspaceApis = workspaceApi.injectEndpoints({
   }),
 });
 
-// Export hooks for the workspace mutations and queries
 export const {
   useGetActiveWorkspaceQuery,
   useCreateWorkspaceMutation,

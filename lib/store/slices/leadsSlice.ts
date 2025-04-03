@@ -1,4 +1,4 @@
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 
 interface Lead {
   id: string;
@@ -6,7 +6,7 @@ interface Lead {
   email: string;
   phone: string;
   company: string;
-  status: 'new' | 'in_progress' | 'closed';
+  status: "new" | "in_progress" | "closed";
   createdAt: string;
 }
 
@@ -22,18 +22,21 @@ const initialState: LeadsState = {
   selectedLead: null,
   filters: {
     status: [],
-    search: '',
+    search: "",
   },
 };
 
 const leadsSlice = createSlice({
-  name: 'leads',
+  name: "leads",
   initialState,
   reducers: {
     setSelectedLead: (state, action: PayloadAction<Lead | null>) => {
       state.selectedLead = action.payload;
     },
-    setFilters: (state, action: PayloadAction<Partial<LeadsState['filters']>>) => {
+    setFilters: (
+      state,
+      action: PayloadAction<Partial<LeadsState["filters"]>>
+    ) => {
       state.filters = { ...state.filters, ...action.payload };
     },
   },

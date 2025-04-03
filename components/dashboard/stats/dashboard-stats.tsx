@@ -1,10 +1,8 @@
 "use client";
 
-import { Card } from "@/components/ui/card";
 import { DashboardStat } from "./dashboard-stat";
 
 export function DashboardStats() {
-  // Static data simulating leads
   const leads = [
     { status: "in_progress" },
     { status: "closed" },

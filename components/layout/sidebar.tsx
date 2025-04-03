@@ -1,48 +1,19 @@
 "use client";
-import Image from "next/image";
-import React, { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  LayoutDashboard,
-  Users,
-  MessageSquare,
-  Phone,
-  BarChart,
-  Settings,
-  Menu,
-  X,
-  UserCircle,
-  LogOut,
-  ChevronDown,
-  Plus,
-  Podcast,
-  SquareCode,
-  Folder,
-  Contact,
-  Bell,
-  Trash2,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import Link from "next/link";
-import { redirect, usePathname } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -52,32 +23,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  useCreateWorkspaceMutation,
-  useGetActiveWorkspaceQuery,
-  useGetWorkspacesByOwnerIdQuery,
-  useGetWorkspacesQuery,
-  useUpdateWorkspaceStatusMutation,
-} from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
-import { supabase } from "@/lib/supabaseClient";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
-import { useParams } from "next/navigation";
-import { ThemeToggle } from "../theme-toggle";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import {
+  useCreateWorkspaceMutation,
+  useGetActiveWorkspaceQuery,
+  useGetWorkspacesQuery,
+  useUpdateWorkspaceStatusMutation,
+} from "@/lib/store/services/workspace";
+import { supabase } from "@/lib/supabaseClient";
+import { cn } from "@/lib/utils";
 import { skipToken } from "@reduxjs/toolkit/query";
+import {
+  BarChart,
+  Bell,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  Plus,
+  Settings,
+  SquareCode,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ThemeToggle } from "../theme-toggle";
 
-import { RootState } from "@/lib/store/store";
-import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
-import { useDispatch, useSelector } from "react-redux";
 import useLeadNotifications from "@/hooks/useLeadNotifications";
+import { toggleCollapse } from "@/lib/store/slices/sideBar";
+import { RootState } from "@/lib/store/store";
+import { useDispatch, useSelector } from "react-redux";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -108,9 +97,7 @@ export function Sidebar({
   );
   const pathname = usePathname();
   const {unreadCount}=useLeadNotifications();
-  console.log(unreadCount)
   const unreadBadge = unreadCount?unreadCount:'NA'
-  console.log(unreadBadge)  
   const router = useRouter();
   const [updateWorkspaceStatus] = useUpdateWorkspaceStatusMutation();
   const {
@@ -141,23 +128,20 @@ export function Sidebar({
     { skip: !selectedWorkspace?.id }
   );
 
-  // ✅ Ensure activeWorkspace is available before calling status query
   const workspaceId = activeWorkspace?.data?.id;
 
-  // Ensure it's a number before passing it to the query
   const {
     data: statusData,
     isLoading: isLoadingStatus,
     error: statusError,
   } = useGetStatusQuery(workspaceId ? Number(workspaceId) : skipToken);
-  
 
   // **Filter Leads into Contacts**
   const contactStatuses = new Set(
     Array.isArray((statusData as any)?.data)
       ? (statusData as any)?.data
-        .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
-        .map((status: any) => status.name)
+          .filter((status: any) => status.count_statistics) 
+          .map((status: any) => status.name)
       : []
   );
 
@@ -179,7 +163,6 @@ export function Sidebar({
     null
   );
 
-  // Mock total leads count
   const totalLeads = workspaceData?.data?.length || "NA";
 
   const totalContacts = workspaceData?.data?.filter((contact: any) =>
@@ -216,11 +199,11 @@ export function Sidebar({
       href: "/analytics",
     },
     {
-      label:'Notifications',
-      icon:Bell ,
-      href:'/notifications',
-      badge:unreadBadge
-    }
+      label: "Notifications",
+      icon: Bell,
+      href: "/notifications",
+      badge: unreadBadge,
+    },
     // {
     //   label: "Integration",
     //   icon: Settings,
@@ -239,7 +222,7 @@ export function Sidebar({
 
       toast.success("Logout completed");
 
-      window.location.href = "/login"; // Redirect with full page reload
+      window.location.href = "/login"; 
     } catch (error: any) {
       toast.error(error.message);
     }
@@ -252,7 +235,8 @@ export function Sidebar({
       try {
         const { data, error } = await supabase.auth.getUser();
         if (error) {
-          if (isMounted) toast.error("Error fetching user data:", error.message as any);
+          if (isMounted)
+            toast.error("Error fetching user data:", error.message as any);
           return;
         }
         if (data && isMounted) setUser(data.user);
@@ -277,7 +261,6 @@ export function Sidebar({
         name: newWorkspace.name,
         role: "Admin",
       };
-      console.log(newWorkspace.companyType, newWorkspace.companySize);
       try {
         await createWorkspace({
           name: newWorkspace.name,
@@ -325,7 +308,6 @@ export function Sidebar({
     };
   }, [activeWorkspace]);
 
-
   const handleEditWorkspace = (workspace: Workspace) => {
     router.push(`/workspace/${workspace.id}`);
   };
@@ -353,7 +335,7 @@ export function Sidebar({
       await refetch();
 
       // Redirect to appropriate page
-      if (window.location.href.includes('workspace')) {
+      if (window.location.href.includes("workspace")) {
         await router.push(`/workspace/${workspaceId}`);
       } else if (window.location.href.includes("dashboard")) {
         await router.push(`/dashboard`);
@@ -365,14 +347,12 @@ export function Sidebar({
         await router.push(`/analytics`);
       }
 
-      // Force a page reload to ensure all data is fresh
       window.location.reload();
     } catch (error) {
       console.error("Failed to change workspace:", error);
       toast.error("Failed to change workspace");
     }
   };
-  // console.log(user)
   return (
     <>
       {/* Mobile Menu Button */}
@@ -457,7 +437,7 @@ export function Sidebar({
             >
               <SelectTrigger
                 className="w-full"
-              // onClick={() => setIsOpen(!isOpen)}
+                // onClick={() => setIsOpen(!isOpen)}
               >
                 <SelectValue placeholder="Select a workspace">
                   <div className="flex items-center">
@@ -697,8 +677,9 @@ export function Sidebar({
                 <div className="px-4 py-3 text-sm">
                   <p className="font-semibold text-base">
                     {user?.name ||
-                      `${user?.firstName || ""} ${user?.lastName || ""
-                        }`.trim() ||
+                      `${user?.firstName || ""} ${
+                        user?.lastName || ""
+                      }`.trim() ||
                       "User"}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">
@@ -747,7 +728,9 @@ export function Sidebar({
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-semibold text-slate-800 dark:text-white truncate">
-                    {user?.user_metadata.firstName + " " + user?.user_metadata.lastName || user?.user_metadata.name}
+                    {user?.user_metadata.firstName +
+                      " " +
+                      user?.user_metadata.lastName || user?.user_metadata.name}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400 truncate">
                     {user?.email || "Email not available"}

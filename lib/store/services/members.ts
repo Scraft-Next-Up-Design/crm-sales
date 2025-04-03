@@ -1,6 +1,5 @@
 import { membersApi } from "../base/members";
 
-// Request Interfaces
 interface Member {
   id: string;
   email: string;

@@ -31,11 +31,21 @@ const authSlice = createSlice({
       state.token = null;
       state.user = null;
     },
-    signup(state, action: PayloadAction<{ token: string; user: AuthState["user"] }>) {
+    signup(
+      state,
+      action: PayloadAction<{ token: string; user: AuthState["user"] }>
+    ) {
       state.token = action.payload.token;
       state.user = action.payload.user;
     },
-    signin(state, action: PayloadAction<{ token: string; user: AuthState["user"] ,session: string }>) {
+    signin(
+      state,
+      action: PayloadAction<{
+        token: string;
+        user: AuthState["user"];
+        session: string;
+      }>
+    ) {
       state.token = action.payload.token;
       state.user = action.payload.user;
       state.session = action.payload.session;
@@ -46,5 +56,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logout, signup, signin, verify } = authSlice.actions;
+export const { setCredentials, logout, signup, signin, verify } =
+  authSlice.actions;
 export default authSlice.reducer;
