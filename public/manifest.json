@@ -1,0 +1,31 @@
+{
+  "name": "CRM Sales Platform",
+  "short_name": "CRM Sales",
+  "description": "Modern CRM solution for sales teams",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    }
+  ],
+  "orientation": "portrait",
+  "prefer_related_applications": false,
+  "categories": ["business", "productivity"],
+  "shortcuts": [
+    {
+      "name": "Dashboard",
+      "url": "/dashboard",
+      "description": "View your sales dashboard"
+    },
+    {
+      "name": "Leads",
+      "url": "/leads",
+      "description": "Manage your leads"
+    }
+  ]
+}
