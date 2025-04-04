@@ -1,3 +1,4 @@
+
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { NextApiRequest, NextApiResponse } from "next";
 import { supabase } from "../../../lib/supabaseServer";
@@ -104,22 +105,30 @@ async function notifyLeadChange(
         enrichedDetails.previous_assignee_name = prevAssigneeData.name;
       }
     }
-    
-    
-    const { data:notification, error } = await supabase.from("notifications").insert([
-      {
-        lead_id: leadId,
-        action_type: action,
-        user_id: userId,
-        workspace_id: workspaceId,
-        details: enrichedDetails,
-        read: false,
-        created_at: new Date().toISOString(),
-      },
-    ]).select("*");
+
+    const { data: notification, error } = await supabase
+      .from("notifications")
+      .insert([
+        {
+          lead_id: leadId,
+          action_type: action,
+          user_id: userId,
+          workspace_id: workspaceId,
+          details: enrichedDetails,
+          read: false,
+          created_at: new Date().toISOString(),
+        },
+      ])
+      .select("*");
 
     if (error) {
       console.error("Failed to create notification:", error.message);
+      return;
+    }
+
+    if (!notification || notification.length === 0) {
+      console.error("No notification data returned");
+      return;
     }
 
     const { data: members, error: membersError } = await supabase
@@ -130,7 +139,7 @@ async function notifyLeadChange(
     if (membersError) {
       console.error("Failed to fetch workspace members:", membersError.message);
       return;
-    } 
+    }
     const { error: readStatusError } = await supabase
       .from("notification_read_status")
       .insert([
@@ -215,7 +224,7 @@ export default async function handler(
           // Step 2: Validate email and phone
           const isValidEmail = await validateEmail(body.email);
           const isValidPhone = await validatePhoneNumber(body.phone);
-         
+
           const { data, error } = await supabase.from("leads").insert([
             {
               name: body.name,
@@ -448,7 +457,7 @@ export default async function handler(
               };
             }
           });
-          
+
           await notifyLeadChange(
             id as string,
             "updated",
