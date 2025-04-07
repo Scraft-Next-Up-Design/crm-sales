@@ -1,0 +1,21 @@
+# robots.txt for CRM Sales Dashboard
+User-agent: *
+
+# Allow crawling of public pages
+Allow: /
+Allow: /home
+Allow: /api/health
+
+# Prevent crawling of sensitive areas
+Disallow: /api/auth
+Disallow: /api/leads
+Disallow: /api/members
+Disallow: /api/workspace
+Disallow: /api/webhooks
+Disallow: /(auth)/login
+Disallow: /(auth)/signup
+Disallow: /(dashboard)/profile
+Disallow: /(dashboard)/setting
+
+# Sitemap location
+Sitemap: https://your-domain.com/sitemap.xml
