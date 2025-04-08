@@ -75,13 +75,21 @@ export default async function handler(
             email,
             "You have been added to a workspace",
             `
-              <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
-              <p><strong>Note:</strong> Your invitation expires in 2 hours.</p>
-              <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;" role="button" aria-label="Accept workspace invitation">
-                  Accept Invite
-                </button>
-              </form>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: Arial, sans-serif; color: #333333;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin-bottom: 15px; font-size: 16px; line-height: 1.5;">You have been added to a workspace. Please login to your account to view the workspace.</p>
+                    <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;"><strong>Note:</strong> Your invitation expires in 2 hours.</p>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color: #4CAF50; border-radius: 5px;">
+                          <a href="${process.env.PUBLIC_URL}accept-invite?workspaceId=${workspaceId}&email=${email}&status=${status}" style="display: inline-block; color: white; padding: 12px 24px; text-align: center; font-size: 16px; text-decoration: none; font-weight: bold; cursor: pointer;" target="_blank">Accept Invite</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
               `
           );
 
@@ -142,12 +150,21 @@ export default async function handler(
             email,
             "You have been added to a workspace",
             `
-              <p>You have been added to a workspace. Please login to your account to view the workspace.</p>
-              <form action="${process.env.PUBLIC_URL}api/auth?workspaceId=${workspaceId}&email=${email}&status=${status}&action=acceptInvite" method="POST" style="display: inline;">
-                <button type="submit" style="background-color: #4CAF50; color: white; padding: 10px 20px; text-align: center; font-size: 16px; border: none; border-radius: 5px; cursor: pointer;" role="button" aria-label="Accept workspace invitation">
-                  Accept Invite
-                </button>
-              </form>
+              <table cellpadding="0" cellspacing="0" border="0" width="100%" style="font-family: Arial, sans-serif; color: #333333;">
+                <tr>
+                  <td style="padding: 20px;">
+                    <p style="margin-bottom: 15px; font-size: 16px; line-height: 1.5;">You have been added to a workspace. Please login to your account to view the workspace.</p>
+                    <p style="margin-bottom: 20px; font-size: 16px; line-height: 1.5;"><strong>Note:</strong> Your invitation expires in 2 hours.</p>
+                    <table cellpadding="0" cellspacing="0" border="0">
+                      <tr>
+                        <td style="background-color: #4CAF50; border-radius: 5px;">
+                          <a href="${process.env.PUBLIC_URL}accept-invite?workspaceId=${workspaceId}&email=${email}&status=${status}" style="display: inline-block; color: white; padding: 12px 24px; text-align: center; font-size: 16px; text-decoration: none; font-weight: bold; cursor: pointer;" target="_blank">Accept Invite</a>
+                        </td>
+                      </tr>
+                    </table>
+                  </td>
+                </tr>
+              </table>
               `
           );
 
