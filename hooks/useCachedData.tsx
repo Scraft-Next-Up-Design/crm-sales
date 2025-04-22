@@ -11,6 +11,8 @@ import { useEffect, useState } from "react";
  * @param fetcher Function that returns a promise with the data
  * @param options Caching and revalidation options
  */
+import { networkSpeed } from "@/lib/services/networkSpeedService";
+
 export function useCachedData<T>(
   fetcher: () => Promise<T>,
   options: {
@@ -29,12 +31,18 @@ export function useCachedData<T>(
 } {
   const {
     cacheKey: baseKey,
-    cacheTime = 60,
-    cacheStorage = "memory",
+    cacheTime,
+    cacheStorage: userCacheStorage,
     revalidateOnFocus = true,
     revalidateOnReconnect = true,
     params,
   } = options;
+
+  // Determine optimal cache settings based on network conditions
+  const effectiveCacheTime = cacheTime ?? networkSpeed.getOptimalCacheTime();
+  const effectiveCacheStorage =
+    userCacheStorage ??
+    (networkSpeed.shouldUsePersistentCache() ? "local" : "memory");
 
   const fullCacheKey = createCacheKey(baseKey, params);
 
@@ -50,10 +58,10 @@ export function useCachedData<T>(
       const freshData = await fetcher();
       setData(freshData);
 
-      // Update cache
+      // Update cache with network-aware settings
       setCacheItem(fullCacheKey, freshData, {
-        expiresIn: cacheTime,
-        storage: cacheStorage,
+        expiresIn: effectiveCacheTime,
+        storage: effectiveCacheStorage,
       });
 
       return freshData;
@@ -71,8 +79,7 @@ export function useCachedData<T>(
   };
 
   useEffect(() => {
-    // Check cache on mount
-    getCacheItem<T>(fullCacheKey, { storage: cacheStorage })
+    getCacheItem<T>(fullCacheKey, { storage: effectiveCacheStorage })
       .then((cachedData) => {
         if (cachedData) {
           setData(cachedData);

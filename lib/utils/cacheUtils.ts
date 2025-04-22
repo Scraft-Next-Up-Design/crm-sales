@@ -2,12 +2,11 @@ import { getCacheDuration, getCacheStorage } from "../config/cacheConfig";
 import { cacheCleanup } from "../services/cacheCleanup";
 import { cacheErrorRecovery } from "../services/cacheErrorRecovery";
 import { cacheMonitoring } from "../services/cacheMonitoring";
+import { networkSpeed } from "../services/networkSpeedService";
 import { CachedItem, CacheOptions, CacheStorageType } from "../types/cache";
 
-// In-memory cache with improved type safety
 const memoryCache = new Map<string, CachedItem<unknown>>();
 
-// Cache statistics for monitoring and optimization
 const cacheStats = {
   hits: 0,
   misses: 0,
@@ -201,58 +200,84 @@ export async function cachedFetch<T>(
 ): Promise<T> {
   const {
     cacheKey = url,
-    cacheTime = 60,
-    cacheStorage = "memory",
-    timeout = 8000,
+    cacheTime,
+    cacheStorage: userCacheStorage,
+    timeout,
+    retries = 3,
+    retryDelay = 1000,
     ...fetchOptions
   } = options;
 
+  // Determine optimal cache settings based on network conditions
+  const effectiveCacheTime = cacheTime ?? networkSpeed.getOptimalCacheTime();
+  const effectiveCacheStorage =
+    userCacheStorage ??
+    (networkSpeed.shouldUsePersistentCache() ? "local" : "memory");
+  const effectiveTimeout = timeout ?? networkSpeed.getOptimalTimeout();
+
   // Try to get from cache first
   const cachedData = await getCacheItem<T>(cacheKey, {
-    storage: cacheStorage,
+    storage: effectiveCacheStorage,
   });
   if (cachedData) {
     return cachedData;
   }
 
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), timeout);
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < retries; attempt++) {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), effectiveTimeout);
 
-  try {
-    const response = await cacheErrorRecovery.executeWithRecovery<Response>(
-      cacheStorage,
-      async () => {
-        const res = await fetch(url, {
-          ...fetchOptions,
-          signal: controller.signal,
-        });
+    try {
+      const response = await cacheErrorRecovery.executeWithRecovery<Response>(
+        effectiveCacheStorage,
+        async () => {
+          if (attempt > 0) {
+            // Exponential backoff for retries
+            await new Promise((resolve) =>
+              setTimeout(resolve, retryDelay * Math.pow(2, attempt - 1))
+            );
+          }
 
-        if (!res.ok) {
-          throw new Error(`HTTP error! Status: ${res.status}`);
+          const res = await fetch(url, {
+            ...fetchOptions,
+            signal: controller.signal,
+          });
+
+          if (!res.ok) {
+            throw new Error(`HTTP error! Status: ${res.status}`);
+          }
+
+          return res;
+        },
+        async () => {
+          throw new Error("Failed to fetch data");
         }
+      );
 
-        return res;
-      },
-      async () => {
-        throw new Error("Failed to fetch data");
+      clearTimeout(timeoutId);
+      const data = await response.json();
+
+      // Cache the successful response
+      await setCacheItem(cacheKey, data, {
+        expiresIn: effectiveCacheTime,
+        storage: effectiveCacheStorage,
+      });
+
+      return data as T;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      // If this is the last attempt, throw the error
+      if (attempt === retries - 1) {
+        throw lastError;
       }
-    );
-
-    clearTimeout(timeoutId);
-
-    const data = await response.json();
-
-    // Cache the successful response
-    await setCacheItem(cacheKey, data, {
-      expiresIn: cacheTime,
-      storage: cacheStorage,
-    });
-
-    return data as T;
-  } catch (error) {
-    clearTimeout(timeoutId);
-    throw error;
+    }
   }
+
+  // This should never be reached due to the throw in the catch block
+  throw lastError || new Error("Failed to fetch data");
 }
 
 /**
