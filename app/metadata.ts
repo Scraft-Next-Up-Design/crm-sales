@@ -1,11 +1,17 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#000000",
+};
 
 export const metadata: Metadata = {
+  metadataBase: new URL("http://localhost:3000"),
   title: "CRM Sales Dashboard - Manage Your Sales Pipeline",
   description:
     "Powerful CRM solution for managing sales pipeline, leads, and customer relationships efficiently.",
-  viewport: "width=device-width, initial-scale=1",
-  themeColor: "#000000",
+
   robots: "index, follow, max-image-preview:large",
   keywords:
     "CRM, sales, dashboard, lead management, customer relationship, sales pipeline, business management",
