@@ -7,23 +7,34 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  images: { 
+  images: {
     unoptimized: false,
-    domains: ['supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in'],
-    formats: ['image/avif', 'image/webp']
+    domains: ["supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in"],
+    formats: ["image/avif", "image/webp"],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60,
   },
   swcMinify: true,
   compiler: {
-    removeConsole: process.env.NODE_ENV === 'production',
+    removeConsole: process.env.NODE_ENV === "production",
   },
   experimental: {
     optimizeCss: true,
     turbo: {
       rules: {
-        '*.svg': ['@svgr/webpack']
-      }
-    }
-  }
-}
+        "*.svg": ["@svgr/webpack"],
+      },
+    },
+    scrollRestoration: true,
+    optimizePackageImports: ["lucide-react"],
+  },
+  poweredByHeader: false,
+  compress: true,
+  generateEtags: true,
+  httpAgentOptions: {
+    keepAlive: true,
+  },
+};
 
 module.exports = nextConfig;

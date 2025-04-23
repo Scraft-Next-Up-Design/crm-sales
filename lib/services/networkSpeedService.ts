@@ -22,14 +22,15 @@ class NetworkSpeedService {
   };
 
   private readonly thresholds: NetworkConditionThresholds = {
-    slow: { maxDownlink: 1.0, maxRTT: 2500 }, // Adjusted for real-world conditions
-    medium: { maxDownlink: 3, maxRTT: 1500 }, // More lenient thresholds
+    slow: { maxDownlink: 1.5, maxRTT: 2000 }, // Optimized for better user experience
+    medium: { maxDownlink: 4, maxRTT: 1000 }, // Adjusted for modern networks
   };
 
   private rttHistory: Array<{ rtt: number; timestamp: number }> = [];
-  private readonly RTT_HISTORY_WINDOW = 600000; // 10 minutes for better trend analysis
-  private readonly RTT_WEIGHT_DECAY = 0.92; // Adjusted for smoother decay
-  private readonly MIN_RTT_SAMPLES = 3; // Minimum samples for reliable metrics
+  private readonly RTT_HISTORY_WINDOW = 300000; // 5 minutes for more responsive adaptation
+  private readonly RTT_WEIGHT_DECAY = 0.95; // Increased for better responsiveness
+  private readonly MIN_RTT_SAMPLES = 2; // Reduced for faster initial metrics
+  private readonly PERFORMANCE_MONITOR_INTERVAL = 30000; // Monitor every 30 seconds
 
   private constructor() {
     this.initializeMetrics();

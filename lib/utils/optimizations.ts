@@ -1,44 +1,73 @@
 import { useEffect, useState } from "react";
 
 export function useNetworkSpeed() {
-  const [networkSpeed, setNetworkSpeed] = useState<"slow" | "fast">("fast");
+  const [networkSpeed, setNetworkSpeed] = useState<"slow" | "medium" | "fast">(
+    "fast"
+  );
+  const [samples, setSamples] = useState<number[]>([]);
+  const SAMPLE_SIZE = 3;
+  const CHECK_INTERVAL = 30000; // 30 seconds
 
   useEffect(() => {
     const checkNetworkSpeed = async () => {
       try {
         const startTime = performance.now();
-        const response = await fetch("/favicon.ico");
+        const response = await fetch("/favicon.ico", {
+          cache: "no-store",
+          headers: {
+            "Cache-Control": "no-cache",
+            Pragma: "no-cache",
+          },
+        });
         const endTime = performance.now();
         const duration = endTime - startTime;
 
-        setNetworkSpeed(duration > 2000 ? "slow" : "fast");
+        setSamples((prev) => {
+          const newSamples = [...prev, duration].slice(-SAMPLE_SIZE);
+          const avgDuration =
+            newSamples.reduce((a, b) => a + b, 0) / newSamples.length;
+
+          // Optimized thresholds for modern networks
+          if (avgDuration <= 500) setNetworkSpeed("fast");
+          else if (avgDuration <= 1500) setNetworkSpeed("medium");
+          else setNetworkSpeed("slow");
+
+          return newSamples;
+        });
       } catch (error) {
         console.error("Error checking network speed:", error);
-        setNetworkSpeed("slow"); 
+        setNetworkSpeed("slow");
       }
     };
 
     checkNetworkSpeed();
-
-    const interval = setInterval(checkNetworkSpeed, 60000); 
-
+    const interval = setInterval(checkNetworkSpeed, CHECK_INTERVAL);
     return () => clearInterval(interval);
   }, []);
 
   return networkSpeed;
 }
 
-export function getImageConfig(networkSpeed: "slow" | "fast") {
+export function getImageConfig(networkSpeed: "slow" | "medium" | "fast") {
+  const quality = {
+    slow: 60,
+    medium: 75,
+    fast: 85,
+  }[networkSpeed];
+
   return {
-    quality: networkSpeed === "slow" ? 60 : 80, 
+    quality,
     loading: "lazy" as const,
-    sizes: "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw", 
-    placeholder: "blur", 
+    sizes:
+      "(max-width: 640px) 100vw, (max-width: 768px) 75vw, (max-width: 1024px) 50vw, 33vw",
+    placeholder: "blur",
+    formats: ["webp", "avif", "jpg"],
+    deviceSizes: [320, 640, 750, 828, 1080, 1200, 1920, 2048],
+    minimumCacheTTL: 60,
     blurDataURL:
       "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/4gHYSUNDX1BST0ZJTEUAAQEAAAHIAAAAAAQwAABtbnRyUkdCIFhZWiAH4AABAAEAAAAAAABhY3NwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAA9tYAAQAAAADTLQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlkZXNjAAAA8AAAACRyWFlaAAABFAAAABRnWFlaAAABKAAAABRiWFlaAAABPAAAABR3dHB0AAABUAAAABRyVFJDAAABZAAAAChnVFJDAAABZAAAAChiVFJDAAABZAAAAChjcHJ0AAABjAAAADxtbHVjAAAAAAAAAAEAAAAMZW5VUwAAAAgAAAAcAHMAUgBHAEJYWVogAAAAAAAAb6IAADj1AAADkFhZWiAAAAAAAABimQAAt4UAABjaWFlaIAAAAAAAACSgAAAPhAAAts9YWVogAAAAAAAA9tYAAQAAAADTLXBhcmEAAAAAAAQAAAACZmYAAPKnAAANWQAAE9AAAApbAAAAAAAAAABtbHVjAAAAAAAAAAEAAAAMZW5VUwAAACAAAAAcAEcAbwBvAGcAbABlACAASQBuAGMALgAgADIAMAAxADb/2wBDABQODxIPDRQSEBIXFRQdHx4eHRoaHSQtJSEkLzYvLy02LjY2OjY2Njo2NjY2NjY2NjY2NjY2NjY2NjY2NjY2Njb/2wBDAR4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh4eHh7/wAARCAAIAAoDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAb/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFQEBAQAAAAAAAAAAAAAAAAAAAAX/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIRAxEAPwCdABmX/9k=",
   };
 }
-
 
 export function useLazyLoading(threshold = "100px") {
   const [isVisible, setIsVisible] = useState(false);
@@ -108,4 +137,3 @@ export async function fetchWithRetry(
     }
   }
 }
-
