@@ -8,22 +8,26 @@ export function useNetworkSpeed() {
   const [speed, setSpeed] = useState<"slow" | "medium" | "fast">("fast");
 
   useEffect(() => {
-    // Initial network condition
-    setSpeed(networkSpeed.getNetworkCondition());
+    if (typeof window !== "undefined") {
+      try {
+        setSpeed(networkSpeed.getNetworkCondition());
 
-    // Update when network conditions change
-    const updateSpeed = () => {
-      setSpeed(networkSpeed.getNetworkCondition());
-    };
+        const updateSpeed = () => {
+          setSpeed(networkSpeed.getNetworkCondition());
+        };
 
-    if ("connection" in navigator) {
-      (navigator as any).connection.addEventListener("change", updateSpeed);
-      return () => {
-        (navigator as any).connection.removeEventListener(
-          "change",
-          updateSpeed
-        );
-      };
+        if ("connection" in navigator) {
+          (navigator as any).connection.addEventListener("change", updateSpeed);
+          return () => {
+            (navigator as any).connection.removeEventListener(
+              "change",
+              updateSpeed
+            );
+          };
+        }
+      } catch (error) {
+        console.warn("Network speed monitoring not available:", error);
+      }
     }
   }, []);
 
