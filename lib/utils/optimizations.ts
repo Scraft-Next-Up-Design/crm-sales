@@ -1,51 +1,33 @@
+"use client";
+
 import { useEffect, useState } from "react";
 
+import { networkSpeed } from "../services/networkSpeedService";
+
 export function useNetworkSpeed() {
-  const [networkSpeed, setNetworkSpeed] = useState<"slow" | "medium" | "fast">(
-    "fast"
-  );
-  const [samples, setSamples] = useState<number[]>([]);
-  const SAMPLE_SIZE = 3;
-  const CHECK_INTERVAL = 30000; // 30 seconds
+  const [speed, setSpeed] = useState<"slow" | "medium" | "fast">("fast");
 
   useEffect(() => {
-    const checkNetworkSpeed = async () => {
-      try {
-        const startTime = performance.now();
-        const response = await fetch("/favicon.ico", {
-          cache: "no-store",
-          headers: {
-            "Cache-Control": "no-cache",
-            Pragma: "no-cache",
-          },
-        });
-        const endTime = performance.now();
-        const duration = endTime - startTime;
+    // Initial network condition
+    setSpeed(networkSpeed.getNetworkCondition());
 
-        setSamples((prev) => {
-          const newSamples = [...prev, duration].slice(-SAMPLE_SIZE);
-          const avgDuration =
-            newSamples.reduce((a, b) => a + b, 0) / newSamples.length;
-
-          // Optimized thresholds for modern networks
-          if (avgDuration <= 500) setNetworkSpeed("fast");
-          else if (avgDuration <= 1500) setNetworkSpeed("medium");
-          else setNetworkSpeed("slow");
-
-          return newSamples;
-        });
-      } catch (error) {
-        console.error("Error checking network speed:", error);
-        setNetworkSpeed("slow");
-      }
+    // Update when network conditions change
+    const updateSpeed = () => {
+      setSpeed(networkSpeed.getNetworkCondition());
     };
 
-    checkNetworkSpeed();
-    const interval = setInterval(checkNetworkSpeed, CHECK_INTERVAL);
-    return () => clearInterval(interval);
+    if ("connection" in navigator) {
+      (navigator as any).connection.addEventListener("change", updateSpeed);
+      return () => {
+        (navigator as any).connection.removeEventListener(
+          "change",
+          updateSpeed
+        );
+      };
+    }
   }, []);
 
-  return networkSpeed;
+  return speed;
 }
 
 export function getImageConfig(networkSpeed: "slow" | "medium" | "fast") {

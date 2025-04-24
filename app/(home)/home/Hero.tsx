@@ -1,3 +1,5 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { useNetworkSpeed } from "@/lib/utils/optimizations";
 import { ArrowRight } from "lucide-react";
