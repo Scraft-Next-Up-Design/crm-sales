@@ -331,7 +331,7 @@ export default function LoginPage(): JSX.Element {
       <Card className="w-[400px]">
         <CardHeader>
           <CardTitle>Login</CardTitle>
-          <CardDescription>
+          <CardDescription className="font-medium">
             Enter your credentials to access your account
           </CardDescription>
         </CardHeader>
@@ -356,17 +356,18 @@ export default function LoginPage(): JSX.Element {
               <div className="relative">
                 <Input
                   id="password"
-                  type={showPassword ? "text" : "password"} 
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={loginForm.password}
                   onChange={handleLoginChange}
                   placeholder="••••••••"
-                  className="pr-10" 
+                  className="pr-10"
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-3 flex items-center text-gray-500"
                   onClick={togglePasswordVisibility}
+                  aria-label="Toggle password visibility"
                 >
                   {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                 </button>
