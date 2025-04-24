@@ -33,8 +33,10 @@ class NetworkSpeedService {
   private readonly PERFORMANCE_MONITOR_INTERVAL = 30000; // Monitor every 30 seconds
 
   private constructor() {
-    this.initializeMetrics();
-    this.setupEventListeners();
+    if (typeof window !== "undefined") {
+      this.initializeMetrics();
+      this.setupEventListeners();
+    }
   }
 
   public static getInstance(): NetworkSpeedService {
@@ -45,7 +47,11 @@ class NetworkSpeedService {
   }
 
   private initializeMetrics(): void {
-    if ("connection" in navigator) {
+    if (
+      typeof window !== "undefined" &&
+      typeof navigator !== "undefined" &&
+      "connection" in navigator
+    ) {
       const connection = (navigator as any).connection;
       this.updateMetrics({
         rtt: connection.rtt,
@@ -57,7 +63,11 @@ class NetworkSpeedService {
   }
 
   private setupEventListeners(): void {
-    if ("connection" in navigator) {
+    if (
+      typeof window !== "undefined" &&
+      typeof navigator !== "undefined" &&
+      "connection" in navigator
+    ) {
       const connection = (navigator as any).connection;
       connection.addEventListener("change", () => {
         this.updateMetrics({
