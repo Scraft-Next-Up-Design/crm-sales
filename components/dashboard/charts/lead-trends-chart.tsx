@@ -1,7 +1,5 @@
-"use client";
-
 import { Card } from "@/components/ui/card";
-import { useLeadTrendsData } from "@/hooks/use-lead-trends-data";
+import { getLeadTrends } from "@/lib/data/dashboard";
 import {
   CartesianGrid,
   Line,
@@ -12,8 +10,8 @@ import {
   YAxis,
 } from "recharts";
 
-export function LeadTrendsChart() {
-  const data = useLeadTrendsData();
+export async function LeadTrendsChart() {
+  const data = await getLeadTrends();
 
   return (
     <Card className="p-6">

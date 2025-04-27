@@ -1,28 +1,21 @@
-"use client";
-
+import { getLeadStats } from "@/lib/data/dashboard";
 import { DashboardStat } from "./dashboard-stat";
 
-export function DashboardStats() {
-  const leads = [
-    { status: "in_progress" },
-    { status: "closed" },
-    { status: "in_progress" },
-    { status: "closed" },
-    { status: "in_progress" },
-  ];
+export async function DashboardStats() {
+  const { total, active, closed } = await getLeadStats();
 
   const stats = [
     {
       title: "Total Leads",
-      value: leads.length,
+      value: total,
     },
     {
       title: "Active Leads",
-      value: leads.filter((lead) => lead.status === "in_progress").length,
+      value: active,
     },
     {
       title: "Closed Leads",
-      value: leads.filter((lead) => lead.status === "closed").length,
+      value: closed,
     },
   ];
 

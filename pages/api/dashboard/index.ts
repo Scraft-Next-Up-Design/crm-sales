@@ -1,5 +1,6 @@
 import { AUTH_MESSAGES } from "@/lib/constant/auth";
 import { supabase } from "@/lib/supabaseClient";
+import { getCacheItem, setCacheItem } from "@/lib/utils/cacheUtils";
 import { NextApiRequest, NextApiResponse } from "next";
 
 export default async function handler(
@@ -36,50 +37,44 @@ export default async function handler(
       return res.status(401).json({ error: AUTH_MESSAGES.UNAUTHORIZED });
     }
 
-    // Fetch all dashboard data in parallel with optimized queries
-    const [revenue, arrivedLeads, totalLeads, qualifiedLeads] =
-      await Promise.all([
-        // Revenue data - Using sum aggregation
-        supabase
-          .from("leads")
-          .select("sum(revenue)")
-          .eq("workspace_id", workspaceId)
-          .eq("status", "closed")
-          .single(),
+    // Try to get data from cache first
+    const cacheKey = `dashboard_${workspaceId}`;
+    const cachedData = await getCacheItem(cacheKey, { duration: "short" });
 
-        // Arrived leads count
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId)
-          .eq("status", "arrived"),
+    if (cachedData) {
+      res.setHeader(
+        "Cache-Control",
+        "public, s-maxage=60, stale-while-revalidate=30"
+      );
+      return res.status(200).json(cachedData);
+    }
 
-        // Total leads count
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId),
+    // Fetch all dashboard data in parallel with optimized queries using RPC
+    const [revenueData, leadsStats] = await Promise.all([
+      // Revenue data using RPC for better performance
+      supabase.rpc("calculate_workspace_revenue", {
+        workspace_id: workspaceId,
+      }),
 
-        // Qualified leads count
-        supabase
-          .from("leads")
-          .select("id", { count: "exact", head: true })
-          .eq("workspace_id", workspaceId)
-          .eq("status", "qualified"),
-      ]);
+      // Combined leads stats using RPC
+      supabase.rpc("get_workspace_leads_stats", { workspace_id: workspaceId }),
+    ]);
 
-    // Prepare response data with optimized calculations
     const dashboardData = {
-      revenue: revenue.data?.sum || 0,
-      arrivedLeadsCount: arrivedLeads.count || 0,
-      totalLeadsCount: totalLeads.count || 0,
-      qualifiedLeadsCount: qualifiedLeads.count || 0,
+      revenue: revenueData.data || 0,
+      ...leadsStats.data,
     };
 
-    // Set HTTP cache headers for CDN and browser caching
+    // Cache the dashboard data
+    await setCacheItem(cacheKey, dashboardData, {
+      duration: "short",
+      storage: "memory",
+    });
+
+    // Set HTTP cache headers
     res.setHeader(
       "Cache-Control",
-      "public, s-maxage=300, stale-while-revalidate=60"
+      "public, s-maxage=60, stale-while-revalidate=30"
     );
     return res.status(200).json(dashboardData);
   } catch (error: any) {
