@@ -1,22 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Users } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -27,8 +19,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import {
   Table,
@@ -38,31 +28,33 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { Textarea } from "@/components/ui/textarea";
 import {
-  Plus,
-  Pencil,
-  Trash2,
-  Copy,
-  Loader,
-  Loader2,
+  useChangeWebhookStatusMutation,
+  useDeleteWebhookMutation,
+  useGetWebhooksQuery,
+  useUpdateWebhookMutation,
+  useWebhookMutation,
+} from "@/lib/store/services/webhooks";
+import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { RootState } from "@/lib/store/store";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
   ChevronDown,
   ChevronUp,
+  Copy,
+  Loader2,
+  Pencil,
+  Plus,
+  Trash2,
+  Users,
 } from "lucide-react";
+import React, { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import {
-  useDeleteWebhookMutation,
-  useWebhookMutation,
-  useChangeWebhookStatusMutation,
-  useUpdateWebhookMutation,
-} from "@/lib/store/services/webhooks";
-import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
-import { v4 as uuidv4 } from "uuid";
-import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
-import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
+import { v4 as uuidv4 } from "uuid";
+import * as z from "zod";
 // Zod validation schema
 const sourceSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters" }),

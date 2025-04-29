@@ -87,6 +87,7 @@
     "@types/bcrypt": "^5.0.2",
     "@types/cors": "^2.8.17",
     "@types/jest": "^29.5.14",
+    "@types/lodash": "^4.17.16",
     "@types/node": "^20.17.10",
     "@types/nodemailer": "^6.4.17",
     "@types/papaparse": "^5.3.15",

@@ -1,39 +1,33 @@
-'use client';
+"use client";
 
-import React, { useMemo } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
 import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle
-} from '@/components/ui/card';
+  useGetActiveWorkspaceQuery,
+  useGetCountByWorkspaceQuery,
+  useGetRevenueByWorkspaceQuery,
+  useGetROCByWorkspaceQuery,
+  useGetWorkspaceDetailsAnalyticsQuery,
+} from "@/lib/store/services/workspace";
+import { RootState } from "@/lib/store/store";
+import { IndianRupee, Loader2, TrendingUp, Users } from "lucide-react";
+import { useMemo } from "react";
+import { useSelector } from "react-redux";
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
+  Bar,
+  BarChart,
   CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
   Cell,
   Legend,
-  BarChart,
-  Bar
-} from 'recharts';
-import {
-  Users,
-  TrendingUp,
-  DollarSign,
-  Loader2,
-  IndianRupee
-} from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
-import { useGetActiveWorkspaceQuery, useGetRevenueByWorkspaceQuery, useGetROCByWorkspaceQuery, useGetCountByWorkspaceQuery, useGetWorkspaceDetailsAnalyticsQuery } from '@/lib/store/services/workspace';
-import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 // Enhanced TypeScript Interfaces
 interface LeadMetrics {
@@ -58,69 +52,92 @@ interface AnalyticsData {
   }>;
 }
 
-const CHART_COLORS = ['#0088FE', '#f1c232', '#38761d', '#FF8042'];
+const CHART_COLORS = ["#0088FE", "#f1c232", "#38761d", "#FF8042"];
 
 export default function AdvancedAnalyticsDashboard() {
-  const isCollapsed = useSelector((state: RootState) => state.sidebar.isCollapsed);
-  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
-  const { data: analyticsDetails, isLoading: isLoadingAnalytics } = useGetRevenueByWorkspaceQuery(
-    activeWorkspace?.data?.id,
-    { skip: !activeWorkspace?.data?.id }
+  const isCollapsed = useSelector(
+    (state: RootState) => state.sidebar.isCollapsed
   );
-  const { data: totalLeads, isLoading: loadingTotalLeads } = useGetLeadsByWorkspaceQuery(
-    { workspaceId: activeWorkspace?.data?.id },
-    { skip: !activeWorkspace?.data?.id }
-  );
-  const { data: analyticsDatas, isLoading: isLoadingAnalyticsData } = useGetWorkspaceDetailsAnalyticsQuery(
-    activeWorkspace?.data?.id,
-    { skip: !activeWorkspace?.data?.id }
-  );
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
+    useGetActiveWorkspaceQuery();
+  const { data: analyticsDetails, isLoading: isLoadingAnalytics } =
+    useGetRevenueByWorkspaceQuery(activeWorkspace?.data?.id, {
+      skip: !activeWorkspace?.data?.id,
+    });
+  const { data: totalLeads, isLoading: loadingTotalLeads } =
+    useGetLeadsByWorkspaceQuery(
+      { workspaceId: activeWorkspace?.data?.id },
+      { skip: !activeWorkspace?.data?.id }
+    );
+  const { data: analyticsDatas, isLoading: isLoadingAnalyticsData } =
+    useGetWorkspaceDetailsAnalyticsQuery(activeWorkspace?.data?.id, {
+      skip: !activeWorkspace?.data?.id,
+    });
   const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
     activeWorkspace?.data?.id,
     {
       skip: !activeWorkspace?.data?.id,
     }
   );
-  const { data: workspaceCount, isLoading: isCountLoading } = useGetCountByWorkspaceQuery(
-    activeWorkspace?.data?.id,
-    { skip: !activeWorkspace?.data?.id }
-  );
+  const { data: workspaceCount, isLoading: isCountLoading } =
+    useGetCountByWorkspaceQuery(activeWorkspace?.data?.id, {
+      skip: !activeWorkspace?.data?.id,
+    });
   const arrivedLeadsCount = workspaceCount?.arrivedLeadsCount ?? 0;
 
-  const analyticsData = useMemo(() => ({
-    leads: {
-      total: ROC?.total_leads ?? 0,
-      monthlyGrowth: 12.5,
-      byStatus: [
-        { status: 'Converted', count: ROC?.converted_leads ?? 0 },
-        { status: 'Arrived', count: arrivedLeadsCount },
-        { status: 'Processed', count: (ROC?.total_leads ?? 0) - arrivedLeadsCount },
-        { status: 'Total Leads', count: ROC?.total_leads ?? 0 }
-      ],
-      bySource: Array.isArray(analyticsDatas)
-        ? analyticsDatas.map((data) => ({
-          source: data?.webhook_name ?? 'Unknown',
-          count: data?.lead_count ?? 0
-        }))
-        : []
-    },
-    revenue: {
-      total: analyticsDetails?.totalRevenue || 0,
-      monthlyGrowth: 8.3
-    },
-    chartData: Array.isArray(ROC?.monthly_stats)
-      ? ROC.monthly_stats.map((stat: { month: string; totalLeads: number; conversionRate: string }) => ({
-        month: stat?.month?.split(" ")[0] ?? 'Unknown',
-        leads: stat?.totalLeads ?? 0,
-        revenue: analyticsDetails?.totalRevenue,
-        processedLeads: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
-        conversionRate: parseFloat(stat?.conversionRate?.replace('%', '') ?? '0')
-      }))
-      : []
-  }), [ROC, analyticsDetails, arrivedLeadsCount, analyticsDatas]);
+  const analyticsData = useMemo(
+    () => ({
+      leads: {
+        total: ROC?.total_leads ?? 0,
+        monthlyGrowth: 12.5,
+        byStatus: [
+          { status: "Converted", count: ROC?.converted_leads ?? 0 },
+          { status: "Arrived", count: arrivedLeadsCount },
+          {
+            status: "Processed",
+            count: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
+          },
+          { status: "Total Leads", count: ROC?.total_leads ?? 0 },
+        ],
+        bySource: Array.isArray(analyticsDatas)
+          ? analyticsDatas.map((data) => ({
+              source: data?.webhook_name ?? "Unknown",
+              count: data?.lead_count ?? 0,
+            }))
+          : [],
+      },
+      revenue: {
+        total: analyticsDetails?.totalRevenue || 0,
+        monthlyGrowth: 8.3,
+      },
+      chartData: Array.isArray(ROC?.monthly_stats)
+        ? ROC.monthly_stats.map(
+            (stat: {
+              month: string;
+              totalLeads: number;
+              conversionRate: string;
+            }) => ({
+              month: stat?.month?.split(" ")[0] ?? "Unknown",
+              leads: stat?.totalLeads ?? 0,
+              revenue: analyticsDetails?.totalRevenue,
+              processedLeads: (ROC?.total_leads ?? 0) - arrivedLeadsCount,
+              conversionRate: parseFloat(
+                stat?.conversionRate?.replace("%", "") ?? "0"
+              ),
+            })
+          )
+        : [],
+    }),
+    [ROC, analyticsDetails, arrivedLeadsCount, analyticsDatas]
+  );
 
   // Show loading state while any critical data is loading
-  if (isLoadingAnalytics || isLoadingWorkspace || isRocLoading || isLoadingAnalyticsData) {
+  if (
+    isLoadingAnalytics ||
+    isLoadingWorkspace ||
+    isRocLoading ||
+    isLoadingAnalyticsData
+  ) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -132,7 +149,9 @@ export default function AdvancedAnalyticsDashboard() {
   if (!activeWorkspace?.data?.id) {
     return (
       <div className="w-full h-screen flex items-center justify-center">
-        <p className="text-lg text-muted-foreground">Please select a workspace to view analytics</p>
+        <p className="text-lg text-muted-foreground">
+          Please select a workspace to view analytics
+        </p>
       </div>
     );
   }
@@ -140,7 +159,11 @@ export default function AdvancedAnalyticsDashboard() {
   return (
     <div
       className={`transition-all duration-300 px-4 py-6 
-      ${isCollapsed ? "lg:ml-[80px] md:ml-[80px]" : "lg:ml-[250px] md:ml-[250px]"} w-auto`}
+      ${
+        isCollapsed
+          ? "lg:ml-[80px] md:ml-[80px]"
+          : "lg:ml-[250px] md:ml-[250px]"
+      } w-auto`}
     >
       {/* Rest of the component remains the same */}
       <h1 className="text-3xl font-bold mb-6">Sales Analytics</h1>
@@ -170,7 +193,7 @@ export default function AdvancedAnalyticsDashboard() {
             <div>
               <p className="text-sm text-muted-foreground">Total Revenue</p>
               <p className="text-2xl font-bold">
-                ₹{analyticsData.revenue.total.toLocaleString('en-US')}
+                ₹{analyticsData.revenue.total.toLocaleString("en-US")}
               </p>
               {/* <Badge
                 variant={analyticsData.revenue.monthlyGrowth > 0 ? 'default' : 'destructive'}
@@ -218,7 +241,10 @@ export default function AdvancedAnalyticsDashboard() {
                   label
                 >
                   {analyticsData.leads.byStatus.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />
@@ -269,7 +295,10 @@ export default function AdvancedAnalyticsDashboard() {
                   label
                 >
                   {analyticsData.leads.bySource.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={CHART_COLORS[index % CHART_COLORS.length]}
+                    />
                   ))}
                 </Pie>
                 <Tooltip />

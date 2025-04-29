@@ -1,12 +1,14 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "sonner";
-import { Resizable } from "react-resizable";
-import "react-resizable/css/styles.css";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -16,59 +18,38 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  ChevronLeft,
-  ChevronRight,
-  Search,
-  Mail,
-  Phone,
-  User,
-  UserPlus,
-  MoreVertical,
-  Loader2,
-  MessageCircle,
-  Send,
-  Plus,
-  MessageSquare,
-  ChevronUp,
-  ChevronDown,
-} from "lucide-react";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { useGetTagsQuery } from "@/lib/store/services/tags";
-import {
   useGetLeadsByWorkspaceQuery,
   useUpdateLeadMutation,
 } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import { useGetTagsQuery } from "@/lib/store/services/tags";
 import {
   useGetActiveWorkspaceQuery,
   useGetWorkspaceMembersQuery,
 } from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
+import {
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  Loader2,
+  Mail,
+  MessageSquare,
+  Phone,
+  Plus,
+  Search,
+  Send,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { Resizable } from "react-resizable";
+import "react-resizable/css/styles.css";
+import { toast } from "sonner";
 
-import { Label } from "@/components/ui/label";
-import WebhookStatus from "@/components/ui/WebhookStatus";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
 import { CardTitle } from "@/components/ui/card";
-import { ResizableHandle } from "@/components/ui/resizable";
+import WebhookStatus from "@/components/ui/WebhookStatus";
+import { RootState } from "@/lib/store/store";
+import { useSelector } from "react-redux";
 // import { useRouter } from "next/router";
 // import { Loader2} from "@/components/ui";
 

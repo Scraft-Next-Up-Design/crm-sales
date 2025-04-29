@@ -1,24 +1,20 @@
 "use client";
+import { Button } from "@/components/ui/button";
 import {
-  Filter,
-  Loader2,
-  UserIcon,
-  ListFilter,
-  SquareCode,
-} from "lucide-react";
-import FilterComponent from "./filter";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import Papa from "papaparse";
-import React, { useState, useMemo, useEffect, useCallback } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Check } from "lucide-react";
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
+  DialogClose,
   DialogContent,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
-  DialogClose,
 } from "@/components/ui/dialog";
 import {
   Form,
@@ -29,7 +25,6 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -45,52 +40,55 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  Plus,
-  Pencil,
-  Trash2,
-  FileDown,
-  FileUp,
-  Phone,
-  MessageCircle,
-  Send,
-  Eye,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import * as XLSX from "xlsx";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
 import { CRM_MESSAGES } from "@/lib/constant/crm";
+import { useAppSelector } from "@/lib/store/hooks"; // Assuming the typed hook is here
 import {
-  useGetLeadsByWorkspaceQuery,
-  useUpdateLeadMutation,
-  useUpdateLeadDataMutation,
   useAssignRoleMutation,
   useBulkDeleteLeadsMutation,
   useCreateLeadMutation,
   useCreateManyLeadMutation,
+  useGetLeadsByWorkspaceQuery,
+  useUpdateLeadDataMutation,
+  useUpdateLeadMutation,
 } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
 import {
   useGetActiveWorkspaceQuery,
   useGetWorkspaceMembersQuery,
 } from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
-import { CardDescription } from "@/components/ui/card";
-import { calculateDaysAgo } from "@/utils/diffinFunc";
-import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
-import { useSelector } from "react-redux";
-import { RootState } from "@/lib/store/store";
-import { X } from "lucide-react";
 import { formatDate } from "@/utils/date";
-import { useGetWebhooksQuery } from "@/lib/store/services/webhooks";
+import { zodResolver } from "@hookform/resolvers/zod";
 import { skipToken } from "@reduxjs/toolkit/query";
 import { throttle } from "lodash";
+import {
+  Check,
+  ChevronDown,
+  ChevronUp,
+  Eye,
+  FileDown,
+  FileUp,
+  Filter,
+  ListFilter,
+  Loader2,
+  MessageCircle,
+  Pencil,
+  Phone,
+  Plus,
+  Send,
+  SquareCode,
+  Trash2,
+  UserIcon,
+  X,
+} from "lucide-react";
+import { useRouter } from "next/navigation";
+import Papa from "papaparse";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
+import * as XLSX from "xlsx";
+import * as z from "zod";
+import FilterComponent from "./filter";
 
 // Zod validation schema for lead
 const leadSchema = z.object({
@@ -106,7 +104,7 @@ const leadSchema = z.object({
 });
 
 const initialFilters = {
-  leadSource: "",
+  leadSource: "", // Ensure this is 'leadSource' consistently
   owner: "",
   status: "",
   contact_method: "",
@@ -117,35 +115,37 @@ const initialFilters = {
 };
 
 const LeadManagement = () => {
-  const isCollapsed = useSelector(
-    (state) => state.sidebar.isCollapsed
-  );
-  
-  // RTK Query hooks
+  const isCollapsed = useAppSelector((state) => state.sidebar.isCollapsed);
+
   const [createLead, { isLoading: isCreateLoading }] = useCreateLeadMutation();
-  const [createManyLead, { isLoading: isCreateManyLoading }] = useCreateManyLeadMutation();
-  const [updateLeadData, { isLoading: isUpdateLoading }] = useUpdateLeadDataMutation();
+  const [createManyLead, { isLoading: isCreateManyLoading }] =
+    useCreateManyLeadMutation();
+  const [updateLeadData, { isLoading: isUpdateLoading }] =
+    useUpdateLeadDataMutation();
   const [updateLead] = useUpdateLeadMutation();
   const [assignRole, { isLoading: isAssignLoading }] = useAssignRoleMutation();
   const [deleteLeadsData] = useBulkDeleteLeadsMutation();
-  
+
   // State hooks
   const [searchQuery, setSearchQuery] = useState("");
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState("");
   const [expandedRow, setExpandedRow] = useState(null);
   const [filters, setFilters] = useState(initialFilters);
-  const [leads, setLeads] = useState([]);
-  const [selectedLeads, setSelectedLeads] = useState([]);
-  const [dialogMode, setDialogMode] = useState(null);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [selectedLeads, setSelectedLeads] = useState<any[]>([]);
+  const [dialogMode, setDialogMode] = useState<
+    "create" | "edit" | "delete" | null
+  >(null);
   const [currentPage, setCurrentPage] = useState(1);
-  const [editingLead, setEditingLead] = useState(null);
+  const [editingLead, setEditingLead] = useState<any>(null);
   const [showFilters, setShowFilters] = useState(false);
-  
+
   // Router
   const router = useRouter();
-  
+
   // Workspace data
-  const { data: activeWorkspace, isLoading: isLoadingWorkspace } = useGetActiveWorkspaceQuery();
+  const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
+    useGetActiveWorkspaceQuery();
   const workspaceId = activeWorkspace?.data?.id;
 
   // Implement debounce for search
@@ -153,7 +153,7 @@ const LeadManagement = () => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
     }, 300);
-    
+
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
@@ -162,28 +162,29 @@ const LeadManagement = () => {
     throttle((id) => {
       setExpandedRow((prev) => (prev === id ? null : id));
     }, 300),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     []
   );
 
   // Fetch lead sources
-  const { data: leadSources, isLoading: isLoadingSources } = useGetWebhooksQuery(
-    workspaceId ? { id: workspaceId } : skipToken
-  );
+  const { data: leadSources, isLoading: isLoadingSources } =
+    useGetWebhooksQuery(workspaceId ? { id: workspaceId } : skipToken);
 
   // Fetch leads data with optimized polling
-  const { data: workspaceData, isLoading: isLoadingLeads } = useGetLeadsByWorkspaceQuery(
-    workspaceId ? { workspaceId: workspaceId.toString() } : skipToken,
-    {
-      skip: !workspaceId || isLoadingWorkspace,
-      pollingInterval: 30000, // Increased to 30 seconds to reduce server load
-    }
-  );
+  const { data: workspaceData, isLoading: isLoadingLeads } =
+    useGetLeadsByWorkspaceQuery(
+      workspaceId ? { workspaceId: workspaceId.toString() } : skipToken,
+      {
+        skip: !workspaceId || isLoadingWorkspace,
+        pollingInterval: 30000, // Increased to 30 seconds to reduce server load
+      }
+    );
 
   // Fetch workspace members
-  const { data: workspaceMembers, isLoading: isLoadingMembers } = useGetWorkspaceMembersQuery(
-    workspaceId ? workspaceId : skipToken,
-    { skip: !workspaceId }
-  );
+  const { data: workspaceMembers, isLoading: isLoadingMembers } =
+    useGetWorkspaceMembersQuery(workspaceId ? workspaceId : skipToken, {
+      skip: !workspaceId,
+    });
 
   // Fetch status data
   const { data: statusData, isLoading: isLoadingStatus } = useGetStatusQuery(
@@ -193,9 +194,13 @@ const LeadManagement = () => {
 
   // Process leads data once when it's loaded
   useEffect(() => {
-    if (!isLoadingLeads && workspaceData?.data) {
+    if (!isLoadingLeads && workspaceData) {
       const processLeads = () => {
-        let fetchedLeads = workspaceData.data.map((lead, index) => ({
+        // Safely access the leads array, assuming it's nested under 'data'
+        const leadsArray: any[] = Array.isArray((workspaceData as any)?.data)
+          ? (workspaceData as any).data
+          : [];
+        let fetchedLeads = leadsArray.map((lead: any, index: any) => ({
           id: lead.id || index + 1,
           Name: lead.name || "",
           email: lead.email || "",
@@ -218,9 +223,9 @@ const LeadManagement = () => {
 
         // Find duplicates
         const duplicates = new Set();
-        fetchedLeads.forEach((lead) => {
+        fetchedLeads.forEach((lead: any) => {
           const duplicate = fetchedLeads.find(
-            (l) =>
+            (l: any) =>
               l.id !== lead.id &&
               (l.email === lead.email || l.phone === lead.phone)
           );
@@ -231,7 +236,7 @@ const LeadManagement = () => {
         });
 
         // Mark duplicates
-        const updatedLeads = fetchedLeads.map((lead) => ({
+        const updatedLeads = fetchedLeads.map((lead: any) => ({
           ...lead,
           isDuplicate: duplicates.has(lead.id),
         }));
@@ -239,7 +244,7 @@ const LeadManagement = () => {
         // Sort by most recent
         setLeads(
           updatedLeads.sort(
-            (a, b) =>
+            (a: any, b: any) =>
               new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
           )
         );
@@ -280,15 +285,18 @@ const LeadManagement = () => {
         return false;
 
       // Lead source filter
-      if (filters.leadsSource && filters.leadsSource !== "all") {
+      if (
+        (filters as any).leadsSource &&
+        (filters as any).leadsSource !== "all"
+      ) {
         // Find the leadSourceId
         const leadSourceId = leadSources?.data.find(
-          (source) => source?.name === filters?.leadsSource
+          (source: any) => source?.name === (filters as any)?.leadsSource
         )?.id;
 
         // Find webhook_url
         const webhook_url = leadSources?.data.find(
-          (entry) => entry?.id === leadSourceId
+          (entry: any) => entry?.id === leadSourceId
         )?.webhook_url;
 
         // Extract sourceId from webhook_url
@@ -335,24 +343,12 @@ const LeadManagement = () => {
 
       return true;
     });
-  }, [
-    leads,
-    debouncedSearchQuery,
-    filters.owner,
-    filters.leadsSource,
-    filters.status,
-    filters.contact_method,
-    filters.contactType,
-    filters.startDate,
-    filters.endDate,
-    filters.showDuplicates,
-    leadSources?.data
-  ]);
+  }, [leads, debouncedSearchQuery, filters, leadSources?.data]);
 
   // Pagination implementation
   const leadsPerPage = 10;
   const totalPages = Math.ceil(filteredLeads.length / leadsPerPage);
-  
+
   const paginatedLeads = useMemo(() => {
     const startIndex = (currentPage - 1) * leadsPerPage;
     return filteredLeads.slice(startIndex, startIndex + leadsPerPage);
@@ -394,35 +390,31 @@ const LeadManagement = () => {
   }, [resetDialog]);
 
   // Open edit dialog
-  const openEditDialog = useCallback((lead) => {
-    form.reset({
-      name: lead.Name,
-      email: lead.email,
-      phone: lead.phone,
-      company: lead.company,
-      position: lead.position,
-      contact_method: lead.contact_method,
-      revenue: lead.revenue,
-    });
-    setEditingLead(lead);
-    setDialogMode("edit");
-  }, [form]);
+  const openEditDialog = useCallback(
+    (lead: any) => {
+      // Add type for lead
+      resetDialog();
+      setEditingLead(lead);
+      form.reset(lead); // Populate form with lead data
+      setDialogMode("edit"); // Correct mode string
+    },
+    [form, resetDialog]
+  );
 
   // Handle form submission
-  const onSubmit = async (data) => {
+  const onSubmit = async (data: any) => {
     if (dialogMode === "create") {
       try {
-        const response = await createLead({
-          workspaceId: workspaceId,
-          body: data,
-        });
+        const response = await createLead({ ...data, workspaceId }).unwrap();
 
         if (response.error) {
-          let errorMessage = "An unknown error occurred";
-          let errorParts = [];
+          let errorMessage = "An unexpected error occurred.";
+          let errorParts: string[] = []; // Explicitly type as string[]
 
-          if ("data" in response.error && response.error.data) {
-            errorMessage = JSON.stringify(response.error.data);
+          if (typeof response.error === "string") {
+            errorMessage = response.error;
+          } else if ("data" in response.error && response.error.data?.message) {
+            errorMessage = response.error.data.message;
             errorParts = errorMessage.split(":");
           } else if ("error" in response.error) {
             errorMessage = response.error.error;
@@ -441,7 +433,7 @@ const LeadManagement = () => {
         // Update local state (let RTK Query handle refetching)
         toast.success("Lead created successfully");
         resetDialog();
-      } catch (error) {
+      } catch (error: any) {
         toast.error("An error occurred while creating the lead.");
       }
     } else if (dialogMode === "edit" && editingLead) {
@@ -450,16 +442,16 @@ const LeadManagement = () => {
         await updateLeadData({ id: editingLead.id, leads: data });
         // Let RTK Query handle the data update
         toast.success(CRM_MESSAGES.LEAD_UPDATED_SUCCESS);
-      } catch (error) {
+      } catch (error: any) {
         toast.error(CRM_MESSAGES.LEAD_UPDATED_ERROR);
       }
     }
-    
+
     resetDialog();
   };
 
   // Handle filter changes
-  const handleFilterChange = useCallback((newFilters) => {
+  const handleFilterChange = useCallback((newFilters: any) => {
     setFilters(newFilters);
     setCurrentPage(1); // Reset to first page on filter change
   }, []);
@@ -483,7 +475,8 @@ const LeadManagement = () => {
       setSelectedLeads([]);
       setDialogMode(null);
       toast.success("Selected leads deleted successfully");
-    } catch (error) {
+    } catch (error: any) {
+      // Add type for error
       const errorMessage =
         error.data?.message ||
         error.data?.error ||
@@ -495,7 +488,7 @@ const LeadManagement = () => {
   };
 
   // Toggle lead selection - optimized
-  const toggleLeadSelection = useCallback((leadId) => {
+  const toggleLeadSelection = useCallback((leadId: any) => {
     setSelectedLeads((prev) =>
       prev.includes(leadId)
         ? prev.filter((id) => id !== leadId)
@@ -510,14 +503,16 @@ const LeadManagement = () => {
 
   // Select all leads on current page
   const toggleSelectAllOnPage = useCallback(() => {
-    const currentPageLeadIds = paginatedLeads.map((lead) => lead.id);
-    const allSelected = currentPageLeadIds.every((id) =>
-      selectedLeads.includes(id)
+    const currentPageLeadIds = paginatedLeads.map((lead: any) => lead.id);
+    const allSelected = currentPageLeadIds.every(
+      (
+        id: any // Ensure id is any
+      ) => selectedLeads.includes(id)
     );
 
-    setSelectedLeads((prev) =>
+    setSelectedLeads((prev: any[]) =>
       allSelected
-        ? prev.filter((id) => !currentPageLeadIds.includes(id))
+        ? prev.filter((id: any) => !currentPageLeadIds.includes(id)) // Ensure id is any
         : Array.from(new Set([...prev, ...currentPageLeadIds]))
     );
   }, [paginatedLeads, selectedLeads]);
@@ -525,15 +520,15 @@ const LeadManagement = () => {
   // Export to CSV with chunking for large datasets
   const exportToCSV = useCallback(() => {
     // Function to process leads in chunks
-    const processLeadsInChunks = (allLeads, chunkSize = 100) => {
-      let processed = [];
-      
+    const processLeadsInChunks = (allLeads: any[], chunkSize = 100) => {
+      let processed: any[] = []; // Explicitly type as any[]
+
       for (let i = 0; i < allLeads.length; i += chunkSize) {
         const chunk = allLeads.slice(i, i + chunkSize);
-        
-        const formattedChunk = chunk.map((lead) => {
+
+        const formattedChunk = chunk.map((lead: any) => {
           // Find the matching lead source based on sourceId
-          const matchedSource = leadSources?.data.find((source) =>
+          const matchedSource = leadSources?.data.find((source: any) =>
             source.webhook_url?.includes(lead.sourceId)
           );
 
@@ -579,16 +574,16 @@ const LeadManagement = () => {
               : "No Source",
           };
         });
-        
+
         processed = [...processed, ...formattedChunk];
       }
-      
+
       return processed;
     };
-    
+
     // Process leads in chunks
     const formattedLeads = processLeadsInChunks(leads);
-    
+
     // Create and download workbook
     const worksheet = XLSX.utils.json_to_sheet(formattedLeads);
     const workbook = XLSX.utils.book_new();
@@ -598,17 +593,18 @@ const LeadManagement = () => {
 
   // Export to JSON with chunking
   const exportToJSON = useCallback(() => {
-    const processInChunks = (data, chunkSize = 100) => {
-      let result = [];
-      
+    const processInChunks = (data: any[], chunkSize = 100) => {
+      // Add type for data
+      let result: any[] = []; // Explicitly type as any[]
+
       for (let i = 0; i < data.length; i += chunkSize) {
         const chunk = data.slice(i, i + chunkSize);
         result = [...result, ...chunk];
       }
-      
+
       return result;
     };
-    
+
     const processedData = processInChunks(leads);
     const dataStr = JSON.stringify(processedData, null, 2);
     const dataUri =
@@ -622,103 +618,117 @@ const LeadManagement = () => {
   }, [leads]);
 
   // Import leads
-  const handleImportCSV = useCallback((event) => {
-    const file = event.target.files?.[0];
-    if (!file) return;
+  const handleImportCSV = useCallback(
+    (event: any) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      try {
-        const csvData = e.target?.result;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        try {
+          const csvData = e.target?.result;
+          if (typeof csvData !== "string") {
+            // Add check for string type
+            toast.error("Failed to read file content.");
+            return;
+          }
 
-        Papa.parse(csvData, {
-          header: true,
-          skipEmptyLines: true,
-          complete: async (result) => {
-            const normalizedData = result.data.map((lead) => ({
-              id: lead.id,
-              name: lead.Name?.trim() || "",
-              email: lead.email,
-              phone: String(lead.phone)
-                .replace(/[^\d+]/g, "")
-                .replace(/^([^+])/, "+$1")
-                .trim(),
-              company: lead.company || "",
-              position: lead.position || "",
-              contact_method: lead.contact_method || "",
-              owner: lead.owner || "Unknown",
-              status: lead.status || "Pending",
-              revenue: Number(lead.revenue) || 0,
-              assign_to: lead.assign_to || "",
-              createdAt: lead.createdAt
-                ? new Date(lead.createdAt).toISOString()
-                : new Date().toISOString(),
-              isDuplicate: lead.isDuplicate === "TRUE",
-              is_email_valid: lead.is_email_valid === "TRUE",
-              is_phone_valid: lead.is_phone_valid === "TRUE",
-              sourceId: lead.sourceId,
-            }));
+          Papa.parse(csvData, {
+            // Pass the checked csvData
+            header: true,
+            skipEmptyLines: true,
+            complete: async (result) => {
+              const normalizedData = result.data.map((lead: any) => ({
+                id: lead.id,
+                name: lead.Name?.trim() || "",
+                email: lead.email,
+                phone: String(lead.phone)
+                  .replace(/[^\d+]/g, "")
+                  .replace(/^([^+])/, "+$1")
+                  .trim(),
+                company: lead.company || "",
+                position: lead.position || "",
+                contact_method: lead.contact_method || "",
+                owner: lead.owner || "Unknown",
+                status: lead.status || "Pending",
+                revenue: Number(lead.revenue) || 0,
+                assign_to: lead.assign_to || "",
+                createdAt: lead.createdAt
+                  ? new Date(lead.createdAt).toISOString()
+                  : new Date().toISOString(),
+                isDuplicate: lead.isDuplicate === "TRUE",
+                is_email_valid: lead.is_email_valid === "TRUE",
+                is_phone_valid: lead.is_phone_valid === "TRUE",
+                sourceId: lead.sourceId,
+              }));
 
-            // Validate data (process in chunks for large imports)
-            const processInChunks = (data, chunkSize = 50) => {
-              let validLeads = [];
-              
-              for (let i = 0; i < data.length; i += chunkSize) {
-                const chunk = data.slice(i, i + chunkSize);
-                
-                // Validate leads in this chunk
-                const validChunk = chunk.filter((lead) => {
-                  try {
-                    leadSchema.parse(lead);
-                    return true;
-                  } catch (error) {
-                    return false;
-                  }
-                });
-                
-                validLeads = [...validLeads, ...validChunk];
+              // Validate data (process in chunks for large imports)
+              const processInChunks = (data: any[], chunkSize = 50) => {
+                let validLeads: any[] = []; // Explicitly type as any[]
+
+                for (let i = 0; i < data.length; i += chunkSize) {
+                  const chunk = data.slice(i, i + chunkSize);
+
+                  // Validate leads in this chunk
+                  const validChunk = chunk.filter((lead: any) => {
+                    try {
+                      leadSchema.parse(lead);
+                      return true;
+                    } catch (error) {
+                      return false;
+                    }
+                  });
+
+                  validLeads = [...validLeads, ...validChunk];
+                }
+
+                return validLeads;
+              };
+
+              const validLeads = processInChunks(normalizedData);
+
+              if (validLeads.length === 0) {
+                toast.error("No valid leads found.");
+                return;
               }
-              
-              return validLeads;
-            };
-            
-            const validLeads = processInChunks(normalizedData);
 
-            if (validLeads.length === 0) {
-              toast.error("No valid leads found.");
-              return;
-            }
+              try {
+                await createManyLead({
+                  workspaceId,
+                  body: validLeads,
+                });
 
-            try {
-              await createManyLead({
-                workspaceId,
-                body: validLeads,
-              });
+                toast.success(
+                  `${validLeads.length} leads created successfully`
+                );
+              } catch (error) {
+                toast.error("Error adding leads to database");
+              }
 
-              toast.success(`${validLeads.length} leads created successfully`);
-            } catch (error) {
-              toast.error("Error adding leads to database");
-            }
-            
-            // Reset input value
-            event.target.value = "";
-          },
-        });
-      } catch (error) {
-        toast.error("Invalid file format");
-      }
-    };
+              // Reset input value
+              event.target.value = "";
+            },
+          });
+        } catch (error) {
+          toast.error("Invalid file format");
+        }
+      };
 
-    reader.readAsText(file);
-  }, [workspaceId, createManyLead]);
+      reader.readAsText(file);
+    },
+    [workspaceId, createManyLead]
+  );
 
   // Handle view
-  const handleView = useCallback((id) => {
-    router.push(`/leads/${id}`);
-  }, [router]);
+  const handleView = useCallback(
+    (id: any) => {
+      router.push(`/leads/${id}`);
+    },
+    [router]
+  );
 
   // Contact methods
-  const initiateDirectContact = useCallback((lead, method) => {
+  const initiateDirectContact = useCallback((lead: any, method: any) => {
     const sanitizedPhone = lead.phone.replace(/\D/g, "");
 
     switch (method) {
@@ -736,36 +746,44 @@ const LeadManagement = () => {
   }, []);
 
   // Handle status change
-  const handleStatusChange = useCallback(async (id, value) => {
-    const { name, color } = JSON.parse(value);
+  const handleStatusChange = useCallback(
+    async (id: any, value: any) => {
+      const { name, color } = JSON.parse(value);
 
-    try {
-      await updateLead({ id, leads: { status: { name, color } } });
-      // Let RTK Query handle the data update
-      toast.success(`Lead status updated to ${name}`);
-    } catch (error) {
-      toast.error("Failed to update lead status");
-    }
-  }, [updateLead]);
+      try {
+        await updateLead({ id, leads: { status: { name, color } } });
+        // Let RTK Query handle the data update
+        toast.success(`Lead status updated to ${name}`);
+      } catch (error: any) {
+        // Add type for error
+        toast.error("Failed to update lead status");
+      }
+    },
+    [updateLead]
+  );
 
   // Handle assign change
-  const handleAssignChange = useCallback(async (id, assign) => {
-    const { name, role } = JSON.parse(assign);
+  const handleAssignChange = useCallback(
+    async (id: any, assign: any) => {
+      const { name, role } = JSON.parse(assign);
 
-    try {
-      await assignRole({ id, data: { name, role } });
-      // Let RTK Query handle the data update
-      toast.success(`Lead assigned to ${name}`);
-    } catch (error) {
-      toast.error("Failed to assign lead");
-    }
-  }, [assignRole]);
+      try {
+        await assignRole({ id, data: { name, role } });
+        // Let RTK Query handle the data update
+        toast.success(`Lead assigned to ${name}`);
+      } catch (error: any) {
+        // Add type for error
+        toast.error("Failed to assign lead");
+      }
+    },
+    [assignRole]
+  );
 
   const handleGoBack = useCallback(() => {
     router.push("/dashboard");
   }, [router]);
 
-  if (workspaceData?.data.length === 0) {
+  if ((workspaceData as any)?.data.length === 0) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
         <Card className="max-w-lg w-full p-8 bg-white shadow-xl rounded-lg flex flex-col items-center">
@@ -806,7 +824,7 @@ const LeadManagement = () => {
             values={filters}
             onChange={handleFilterChange}
             onReset={handleFilterReset}
-            status={statusData?.data}
+            status={(statusData as any)?.data}
             owner={workspaceMembers?.data}
             leadSources={leadSources?.data}
           />
@@ -1164,7 +1182,7 @@ const LeadManagement = () => {
                             </SelectTrigger>
 
                             <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                              {statusData?.data.map(
+                              {(statusData as any)?.data.map(
                                 (status: { name: string; color: string }) => (
                                   <SelectItem
                                     key={status.name}
@@ -1424,7 +1442,7 @@ const LeadManagement = () => {
                         </SelectTrigger>
 
                         <SelectContent className="overflow-hidden rounded-xl border-0 bg-white p-2 shadow-2xl dark:bg-gray-800">
-                          {statusData?.data.map(
+                          {(statusData as any)?.data.map(
                             (status: { name: string; color: string }) => (
                               <SelectItem
                                 key={status.name}

@@ -1,16 +1,7 @@
 "use client";
 
-import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip,
-  ResponsiveContainer,
-} from "recharts";
-import { Award, Users, TrendingUp, IndianRupee, Loader2 } from "lucide-react";
+import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
 import {
   useGetActiveWorkspaceQuery,
   useGetCountByWorkspaceQuery,
@@ -18,10 +9,24 @@ import {
   useGetRevenueByWorkspaceQuery,
   useGetROCByWorkspaceQuery,
 } from "@/lib/store/services/workspace";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import { UserPlus } from "lucide-react";
-import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "@/lib/store/store";
+import {
+  Award,
+  IndianRupee,
+  Loader2,
+  TrendingUp,
+  UserPlus,
+  Users,
+} from "lucide-react";
+import { useSelector } from "react-redux";
+import {
+  Bar,
+  BarChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
 
 interface Workspace {
   id: string;
