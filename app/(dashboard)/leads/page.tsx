@@ -762,17 +762,14 @@ const LeadManagement = () => {
     [updateLead]
   );
 
-  // Handle assign change
   const handleAssignChange = useCallback(
     async (id: any, assign: any) => {
       const { name, role } = JSON.parse(assign);
 
       try {
-        await assignRole({ id, data: { name, role } });
-        // Let RTK Query handle the data update
+        await assignRole({ id, data: { name, role } } as any);
         toast.success(`Lead assigned to ${name}`);
       } catch (error: any) {
-        // Add type for error
         toast.error("Failed to assign lead");
       }
     },
