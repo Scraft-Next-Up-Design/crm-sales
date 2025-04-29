@@ -1,21 +1,25 @@
-name: (Production) - CRM-Sales
+name: Next.js Website (Production) - CRM Sales
 
 on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
 
 jobs:
   information:
     name: GitHub Context
     runs-on: ubuntu-latest
     steps:
-      - name: Show GitHub Context
+      - name: Info
         run: echo "$GITHUB_CONTEXT"
 
   generate_git_tags:
-    name: Generate Git Tags
     runs-on: ubuntu-latest
+    name: "Generate Git Tags"
     outputs:
       output_new_tag: ${{ steps.taggerFinal.outputs.new_tag }}
     steps:
@@ -32,50 +36,51 @@ jobs:
           WITH_V: true
 
       - name: Echo New Tag
-        run: "echo The next new tag will be: ${{ steps.taggerFinal.outputs.new_tag }}"
+        run: |
+          echo "The next new tag will be: ${{ steps.taggerFinal.outputs.new_tag }}"
 
   generate_git_release:
-    name: GitHub Release
     needs: generate_git_tags
+    name: "GitHub Release"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
 
-      - name: Create GitHub Release
+      - name: Release Action
         uses: ncipollo/release-action@v1.14.0
         with:
           tag: ${{ needs.generate_git_tags.outputs.output_new_tag }}
           token: ${{ secrets.CHANGELOG_RELEASE }}
 
   generate_sentry_release:
-    name: Sentry Release
     needs: [generate_git_tags, generate_git_release]
+    name: "Sentry Release"
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
+      - name: Checkout
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
 
-      - name: Split Repository Name
-        id: split_repo_name
+      - name: Split Repo Name
         uses: jungwinter/split@v2.0.0
+        id: split_repo_name
         with:
           separator: '/'
           msg: ${{ github.repository }}
 
-      - name: Echo Repository Name
+      - name: Echo Repo name
         run: echo "${{ steps.split_repo_name.outputs._1 }}"
 
-      - name: Create Sentry Release
+      - name: Sentry Release
         uses: getsentry/action-release@v1.7.0
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
           SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
         with:
-          environment: production
+          environment: 'production'
           version: '${{ steps.split_repo_name.outputs._1 }}@${{ needs.generate_git_tags.outputs.output_new_tag }}'
           sourcemaps: './.next'
           url_prefix: '~'
