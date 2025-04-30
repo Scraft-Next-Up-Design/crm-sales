@@ -53,7 +53,6 @@ import { useSelector } from "react-redux";
 // import { useRouter } from "next/router";
 // import { Loader2} from "@/components/ui";
 
-// Mock data for contacts
 const mockContacts = Array.from({ length: 50 }, (_, i) => ({
   id: i + 1,
   name: `Contact ${i + 1}`,
