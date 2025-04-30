@@ -83,4 +83,5 @@ jobs:
           version: '${{ steps.split_repo_name.outputs._1 }}@${{ needs.generate_git_tags.outputs.output_new_tag }}'
           sourcemaps: './.next'
           url_prefix: '~'
-          args: "--ignore-missing"
+          ignore_missing: true 
+          set_commits: true 
