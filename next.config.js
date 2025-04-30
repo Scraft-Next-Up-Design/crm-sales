@@ -22,16 +22,16 @@ const coreConfig = {
     },
   },
 };
-import { withSentryConfig } from "@sentry/nextjs";
+
+const { withSentryConfig } = require("@sentry/nextjs");
 
 const config = withSentryConfig(coreConfig, {
   org: "scraft-4g",
   project: "crm-cms",
-
   silent: !process.env.CI,
   widenClientFileUpload: true,
   disableLogger: true,
   automaticVercelMonitors: true,
 });
 
-export default config;
+module.exports = config;
