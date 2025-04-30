@@ -5,6 +5,7 @@ on:
     branches:
       - main
   pull_request:
+    types: [closed]
     branches:
       - main
   workflow_dispatch:
@@ -13,13 +14,15 @@ jobs:
   information:
     name: GitHub Context
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     steps:
       - name: Info
         run: echo "$GITHUB_CONTEXT"
 
   generate_git_tags:
-    runs-on: ubuntu-latest
     name: "Generate Git Tags"
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
     outputs:
       output_new_tag: ${{ steps.taggerFinal.outputs.new_tag }}
     steps:
@@ -40,9 +43,10 @@ jobs:
           echo "The next new tag will be: ${{ steps.taggerFinal.outputs.new_tag }}"
 
   generate_git_release:
-    needs: generate_git_tags
     name: "GitHub Release"
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    needs: generate_git_tags
     steps:
       - name: Checkout
         uses: actions/checkout@v3
@@ -54,9 +58,10 @@ jobs:
           token: ${{ secrets.CHANGELOG_RELEASE }}
 
   generate_sentry_release:
-    needs: [generate_git_tags, generate_git_release]
     name: "Sentry Release"
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.pull_request.merged == true)
+    needs: [generate_git_tags, generate_git_release]
     steps:
       - name: Checkout
         uses: actions/checkout@v3
