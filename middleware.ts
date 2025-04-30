@@ -12,12 +12,10 @@ export async function middleware(req: NextRequest) {
   const isAuthRoute = ["/login", "/signup"].includes(req.nextUrl.pathname);
   const isDashboardRoute = req.nextUrl.pathname.startsWith("/dashboard");
 
-  // If user is already logged in and on an auth route, redirect to dashboard
   if (session && isAuthRoute) {
     return NextResponse.redirect(new URL("/dashboard", req.url));
   }
 
-  // If user is not logged in and trying to access a protected route, redirect to login
   if (!session && !isAuthRoute) {
     return NextResponse.redirect(new URL("/login", req.url));
   }
