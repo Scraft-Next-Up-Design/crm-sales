@@ -1,11 +1,9 @@
 name: Next.js Website (Production) - CRM Sales
-
 on:
   push:
     branches:
       - main
   workflow_dispatch:
-
 jobs:
   information:
     name: GitHub Context
@@ -13,7 +11,6 @@ jobs:
     steps:
       - name: Info
         run: echo "$GITHUB_CONTEXT"
-
   generate_git_tags:
     name: "Generate Git Tags"
     runs-on: ubuntu-latest
@@ -23,19 +20,16 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
-
+          fetch-depth: 0
       - name: Generate Final Version
         id: taggerFinal
         uses: anothrNick/github-tag-action@1.67.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WITH_V: true
-
       - name: Echo New Tag
         run: |
           echo "The next new tag will be: ${{ steps.taggerFinal.outputs.new_tag }}"
-
   generate_git_release:
     name: "GitHub Release"
     runs-on: ubuntu-latest
@@ -44,14 +38,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
-
+          fetch-depth: 0
       - name: Release Action
         uses: ncipollo/release-action@v1.14.0
         with:
           tag: ${{ needs.generate_git_tags.outputs.output_new_tag }}
           token: ${{ secrets.CHANGELOG_RELEASE }}
-
   generate_sentry_release:
     name: "Sentry Release"
     runs-on: ubuntu-latest
@@ -60,18 +52,15 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  
-
+          fetch-depth: 0
       - name: Split Repo Name
         uses: jungwinter/split@v2.0.0
         id: split_repo_name
         with:
           separator: '/'
           msg: ${{ github.repository }}
-
       - name: Echo Repo name
         run: echo "${{ steps.split_repo_name.outputs._1 }}"
-
       - name: Sentry Release
         uses: getsentry/action-release@v1.7.0
         env:
@@ -84,4 +73,14 @@ jobs:
           sourcemaps: './.next'
           url_prefix: '~'
           ignore_missing: true
-          set_commits: "auto"  
+          set_commits: "auto"
+  cloudflare_purge:
+    name: Purge CloudFlare Cache
+    needs: generate_sentry_release  
+    runs-on: ubuntu-latest
+    steps:
+      - name: Purge cache (Cloudflare)
+        uses: jakejarvis/cloudflare-purge-action@master
+        env:
+          CLOUDFLARE_ZONE: ${{ secrets.CLOUDFLARE_ZONE }}
+          CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
