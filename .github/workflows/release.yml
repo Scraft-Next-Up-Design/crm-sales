@@ -76,7 +76,7 @@ jobs:
           set_commits: "auto"
   cloudflare_purge:
     name: Purge CloudFlare Cache
-    needs: generate_sentry_release  
+    needs: generate_sentry_release
     runs-on: ubuntu-latest
     steps:
       - name: Purge cache (Cloudflare)
@@ -84,3 +84,4 @@ jobs:
         env:
           CLOUDFLARE_ZONE: ${{ secrets.CLOUDFLARE_ZONE }}
           CLOUDFLARE_TOKEN: ${{ secrets.CLOUDFLARE_TOKEN }}
+          PURGE_EVERYTHING: "true"
