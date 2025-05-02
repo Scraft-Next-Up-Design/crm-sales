@@ -1,27 +1,25 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { useGetWebhooksBySourceIdQuery } from "@/lib/store/services/webhooks";
-import {
-  useGetActiveWorkspaceQuery,
-  useGetCountByWorkspaceQuery,
-  useGetQualifiedCountQuery,
-  useGetRevenueByWorkspaceQuery,
-  useGetROCByWorkspaceQuery,
-} from "@/lib/store/services/workspace";
 import { RootState } from "@/lib/store/store";
 import { Award, IndianRupee, TrendingUp, UserPlus, Users } from "lucide-react";
-import { memo, useMemo } from "react";
+import { memo, useMemo, Suspense, lazy } from "react";
 import { useSelector } from "react-redux";
-import {
-  Bar,
-  BarChart,
-  ResponsiveContainer,
-  Tooltip,
-  XAxis,
-  YAxis,
-} from "recharts";
+import useDashboardData from "@/hooks/api/useDashboardData";
 
+// Dynamically import chart components for better code splitting
+const ChartComponents = lazy(() => import("./components/ChartComponents"));
+
+// Icon map for stat cards
+const ICON_MAP = {
+  revenue: <IndianRupee className="text-green-500" />,
+  qualified: <UserPlus className="text-orange-500" />,
+  'new-leads': <Users className="text-blue-500" />,
+  conversion: <TrendingUp className="text-purple-500" />,
+  award: <Award className="text-yellow-500" />,
+};
+
+// Memoized skeleton components with proper type definitions
 const SkeletonCard = memo(() => (
   <Card className="animate-pulse">
     <CardContent className="p-4 sm:p-6 flex items-center justify-between space-x-4 sm:space-x-6">
@@ -47,127 +45,77 @@ const SkeletonChart = memo(() => (
 ));
 SkeletonChart.displayName = "SkeletonChart";
 
-const StatCard = memo(({ stat, index, totalStats }: any) => (
+// Properly typed interface for StatCard props
+interface StatCardProps {
+  stat: {
+    id: string;
+    icon: string;
+    title: string;
+    value: string | number;
+    change?: string;
+  };
+  index: number;
+  totalStats: number;
+}
+
+const StatCard = memo(({ stat, index, totalStats }: StatCardProps) => (
   <Card
     className={`hover:shadow-md transition-shadow ${
       index === totalStats - 1 ? "col-span-full sm:col-auto" : ""
     }`}
   >
     <CardContent className="p-4 sm:p-6 flex items-center justify-between space-x-4 sm:space-x-6">
-      <div className="shrink-0">{stat.icon}</div>
+      <div className="shrink-0">{ICON_MAP[stat.icon as keyof typeof ICON_MAP]}</div>
       <div className="min-w-0 md:flex-grow">
         <p className="text-xs sm:text-sm text-muted-foreground truncate mb-1">
           {stat.title}
         </p>
-        <p
-          className="text-lg sm:text-xl font-semibold truncate cursor-pointer"
-        >
+        <p className="text-lg sm:text-xl font-semibold truncate cursor-pointer">
           {stat.value}
         </p>
+        {stat.change && (
+          <p className="text-xs text-muted-foreground">{stat.change}</p>
+        )}
       </div>
     </CardContent>
   </Card>
 ));
 StatCard.displayName = "StatCard";
 
-interface Workspace {
-  id: string;
-  name: string;
-  role: string;
-  industry?: string;
-  status?: boolean;
-  type?: string;
-}
+// Error component for better error handling
+const ErrorDisplay = memo(() => (
+  <div className="bg-red-50 border border-red-200 rounded-md p-4 my-4">
+    <h3 className="text-red-800 font-medium text-sm">Error loading dashboard data</h3>
+    <p className="text-red-600 text-xs mt-1">
+      Please check your connection and try again
+    </p>
+    <button 
+      className="mt-2 bg-red-100 text-red-800 px-3 py-1 rounded text-xs hover:bg-red-200 transition-colors"
+      onClick={() => window.location.reload()}
+    >
+      Refresh
+    </button>
+  </div>
+));
+ErrorDisplay.displayName = "ErrorDisplay";
 
+// Dashboard component with optimized data fetching
 const SalesDashboard = memo(() => {
+  // Get sidebar collapsed state from Redux
   const isCollapsed = useSelector(
     (state: RootState) => state.sidebar.isCollapsed
   );
 
-  const { data: activeWorkspace, isLoading: isWorkspaceLoading } =
-    useGetActiveWorkspaceQuery();
-  const workspaceId = activeWorkspace?.data?.id;
+  // Use our optimized data hook
+  const { 
+    dashboardStats, 
+    salesData, 
+    isLoading, 
+    isError,
+    refetchAll 
+  } = useDashboardData();
 
-  const { data: workspaceRevenue, isLoading: isRevenueLoading } =
-    useGetRevenueByWorkspaceQuery(workspaceId, { skip: !workspaceId });
-  const { data: ROC, isLoading: isRocLoading } = useGetROCByWorkspaceQuery(
-    workspaceId,
-    { skip: !workspaceId }
-  );
-  const { data: qualifiedCount, isLoading: isQualifiedCountLoading } =
-    useGetQualifiedCountQuery(workspaceId, { skip: !workspaceId });
-  const { data: workspaceCount, isLoading: isCountLoading } =
-    useGetCountByWorkspaceQuery(workspaceId, { skip: !workspaceId });
-  const { data: webhooks, isLoading: isWebhooksLoading } =
-    useGetWebhooksBySourceIdQuery(
-      { workspaceId, id: ROC?.top_source_id },
-      { skip: !workspaceId || !ROC?.top_source_id }
-    );
-
-  const isLoading = useMemo(
-    () =>
-      isWorkspaceLoading ||
-      (workspaceId &&
-        (isRevenueLoading ||
-          isRocLoading ||
-          isCountLoading ||
-          isQualifiedCountLoading ||
-          isWebhooksLoading)),
-    [
-      isWorkspaceLoading,
-      workspaceId,
-      isRevenueLoading,
-      isRocLoading,
-      isCountLoading,
-      isQualifiedCountLoading,
-      isWebhooksLoading,
-    ]
-  );
-
-  const dashboardStats = useMemo(
-    () => [
-      {
-        icon: <IndianRupee className="text-green-500" />,
-        title: "Revenue",
-        value: workspaceRevenue?.totalRevenue.toFixed(2) || "0",
-        change: workspaceRevenue?.change || "+0%",
-      },
-      {
-        icon: <UserPlus className="text-orange-500" />,
-        title: "Qualified Leads",
-        value: qualifiedCount?.qualifiedLeadsCount || "0",
-      },
-      {
-        icon: <Users className="text-blue-500" />,
-        title: "New Leads",
-        value: workspaceCount?.arrivedLeadsCount || 0,
-        change: "+8.3%",
-      },
-      {
-        icon: <TrendingUp className="text-purple-500" />,
-        title: "Conversion Rate",
-        value: `${ROC?.conversion_rate || 0}%`,
-        change: "+3.2%",
-      },
-      {
-        icon: <Award className="text-yellow-500" />,
-        title: "Top Performing Sources",
-        value: webhooks?.name || "N/A",
-        change: "5 Deals",
-      },
-    ],
-    [workspaceRevenue, qualifiedCount, workspaceCount, ROC, webhooks]
-  );
-
-  const salesData = useMemo(
-    () =>
-      (ROC?.monthly_stats || []).map(({ month, convertedLeads }: any) => ({
-        month,
-        sales: convertedLeads,
-      })),
-    [ROC]
-  );
-
+  // Memoized container class name
   const containerClassName = useMemo(
     () =>
       `grid grid-rows-2 md:grid-rows-[25%_75%] gap-0 md:gap-2 transition-all duration-500 ease-in-out px-2 py-6 w-auto ${
@@ -176,6 +124,21 @@ const SalesDashboard = memo(() => {
     [isCollapsed]
   );
 
+  // Memoized chart configuration for better performance
+  const chartConfig = useMemo(() => ({
+    margin: { top: 5, right: 5, bottom: 5, left: 0 }
+  }), []);
+
+  // Show error state if needed
+  if (isError) {
+    return (
+      <div className={containerClassName}>
+        <ErrorDisplay />
+      </div>
+    );
+  }
+
+  // Render optimized loading state
   if (isLoading) {
     return (
       <div className={containerClassName}>
@@ -194,7 +157,7 @@ const SalesDashboard = memo(() => {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4 sm:gap-6 h-[322px] md:h-auto">
         {dashboardStats.map((stat, index) => (
           <StatCard
-            key={stat.title} // Use title as a stable key
+            key={`stat-${stat.id}`} // More stable key with ID
             stat={stat}
             index={index}
             totalStats={dashboardStats.length}
@@ -210,17 +173,9 @@ const SalesDashboard = memo(() => {
         </CardHeader>
         <CardContent className="p-4 sm:p-6">
           <div className="w-full h-[250px] sm:h-[300px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={salesData}
-                margin={{ top: 5, right: 5, bottom: 5, left: 0 }}
-              >
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="sales" fill="#8884d8" />
-              </BarChart>
-            </ResponsiveContainer>
+            <Suspense fallback={<div className="w-full h-full bg-gray-100 animate-pulse rounded" />}>
+              <ChartComponents data={salesData} config={chartConfig} />
+            </Suspense>
           </div>
         </CardContent>
       </Card>

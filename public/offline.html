@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offline - CRM Sales</title>
+  <style>
+    :root {
+      --primary-color: #4f46e5;
+      --text-color: #1f2937;
+      --bg-color: #f9fafb;
+      --card-bg: #ffffff;
+      --border-color: #e5e7eb;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      line-height: 1.5;
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 1rem;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 2rem auto;
+      padding: 2rem;
+      background-color: var(--card-bg);
+      border-radius: 0.5rem;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+      text-align: center;
+      animation: fadeIn 0.5s ease-in-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(-20px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 1.5rem;
+      margin-bottom: 1rem;
+      color: var(--primary-color);
+    }
+
+    p {
+      margin-bottom: 1.5rem;
+      color: var(--text-color);
+    }
+
+    .icon {
+      font-size: 4rem;
+      margin-bottom: 1.5rem;
+      color: var(--primary-color);
+    }
+
+    .status {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      background-color: #dc2626;
+      border-radius: 50%;
+      margin-right: 0.5rem;
+    }
+
+    .status-text {
+      font-size: 0.875rem;
+      font-weight: 500;
+    }
+
+    .button {
+      display: inline-block;
+      padding: 0.5rem 1rem;
+      background-color: var(--primary-color);
+      color: white;
+      border-radius: 0.25rem;
+      font-weight: 500;
+      text-decoration: none;
+      cursor: pointer;
+      border: none;
+      transition: background-color 0.2s;
+    }
+
+    .button:hover {
+      background-color: #4338ca;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 1rem;
+      margin-top: 2rem;
+    }
+
+    .feature {
+      padding: 1rem;
+      background-color: rgba(79, 70, 229, 0.05);
+      border-radius: 0.25rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .feature-title {
+      font-weight: 500;
+      margin-bottom: 0.5rem;
+      font-size: 0.875rem;
+    }
+
+    .feature-description {
+      font-size: 0.75rem;
+      color: #6b7280;
+    }
+
+    footer {
+      margin-top: auto;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #6b7280;
+      padding: 1rem 0;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 480px) {
+      .container {
+        padding: 1.5rem;
+      }
+      h1 {
+        font-size: 1.25rem;
+      }
+      .features {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon">📡</div>
+    <h1>You're currently offline</h1>
+    
+    <div class="status">
+      <div class="status-dot"></div>
+      <div class="status-text">No internet connection</div>
+    </div>
+    
+    <p>The CRM Sales app requires an internet connection to function properly. Some previously visited pages may be available in offline mode.</p>
+    
+    <button class="button" onclick="retryConnection()">Try Again</button>
+    
+    <div class="features">
+      <div class="feature">
+        <div class="feature-title">Cached Pages</div>
+        <div class="feature-description">Previously visited pages may be available offline</div>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Auto-Reconnect</div>
+        <div class="feature-description">We'll automatically reconnect when your connection is restored</div>
+      </div>
+      <div class="feature">
+        <div class="feature-title">Offline Forms</div>
+        <div class="feature-description">Any forms submitted while offline will be sent when you're back online</div>
+      </div>
+    </div>
+  </div>
+  
+  <footer>
+    CRM Sales &copy; 2023-2025. All rights reserved.
+  </footer>
+
+  <script>
+    // Check connection status periodically
+    function checkConnection() {
+      if (navigator.onLine) {
+        document.querySelector('.status-dot').style.backgroundColor = '#10b981';
+        document.querySelector('.status-text').textContent = 'Connection restored';
+        
+        // Wait a moment before refreshing to show the "restored" state
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
+    }
+    
+    // Try to reconnect
+    function retryConnection() {
+      document.querySelector('.button').textContent = 'Checking...';
+      
+      // Check connection
+      setTimeout(() => {
+        if (navigator.onLine) {
+          window.location.reload();
+        } else {
+          document.querySelector('.button').textContent = 'Try Again';
+          alert('Still offline. Please check your internet connection.');
+        }
+      }, 1000);
+    }
+    
+    // Set up event listeners
+    window.addEventListener('online', checkConnection);
+    
+    // Check connection status every 5 seconds
+    setInterval(checkConnection, 5000);
+  </script>
+</body>
+</html>
