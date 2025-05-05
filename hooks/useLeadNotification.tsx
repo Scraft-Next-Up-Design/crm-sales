@@ -28,7 +28,7 @@ export default function useLeadNotifications() {
   const [unreadCount, setUnreadCount] = useState(0);
   const { toast } = useToast();
 
-  const { data: activeWorkspace } = useGetActiveWorkspaceQuery();
+  const { data: activeWorkspace } = useGetActiveWorkspaceQuery<any>(undefined);
   const workspaceId = activeWorkspace?.data?.id;
 
   // Get current user ID from Supabase auth
