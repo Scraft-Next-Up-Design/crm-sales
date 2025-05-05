@@ -15,7 +15,14 @@ export const workspaceApi = createApi({
       return headers;
     },
   }),
+  tagTypes: [
+    "Workspace",
+    "WorkspaceStats",
+    "WorkspaceRevenue",
+    "WorkspaceCount",
+  ],
   endpoints: () => ({}),
-  keepUnusedDataFor: 60,
+  keepUnusedDataFor: 300, // Increase cache time to 5 minutes
   refetchOnReconnect: true,
+  refetchOnFocus: false, // Only refetch when explicitly needed
 });
