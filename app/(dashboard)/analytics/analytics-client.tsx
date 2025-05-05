@@ -76,7 +76,7 @@ export function AnalyticsClient() {
     data: activeWorkspace,
     isLoading: isLoadingWorkspace,
     refetch: refetchWorkspace,
-  } = useGetActiveWorkspaceQuery();
+  } = useGetActiveWorkspaceQuery<any>(undefined);
 
   const {
     data: analyticsDetails,

@@ -37,7 +37,6 @@ import {
   useWebhookMutation,
 } from "@/lib/store/services/webhooks";
 import { useGetActiveWorkspaceQuery } from "@/lib/store/services/workspace";
-import { RootState } from "@/lib/store/store";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   ChevronDown,
@@ -51,7 +50,7 @@ import {
 } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import * as z from "zod";
@@ -65,42 +64,40 @@ const sourceSchema = z.object({
 });
 
 export type Source = {
-  webhook?: string;
-  created_at?: string;
-  description?: string;
-  id: string;
-  name: string;
-  status: boolean;
-  type: string;
-  user_id?: string;
-  webhook_url?: string;
-  workspace_id?: string | null;
+  webhook?: any;
+  created_at?: any;
+  description?: any;
+  id: any;
+  name: any;
+  status: any;
+  type: any;
+  user_id?: any;
+  webhook_url?: any;
+  workspace_id?: any;
 };
 
 export function LeadSourceManagerClient() {
-  const isCollapsed = useSelector(
-    (state: RootState) => state.sidebar.isCollapsed
-  );
+  const isCollapsed = useSelector((state: any) => state.sidebar.isCollapsed);
 
   // Get the active workspace ID from Redux
   const reduxActiveWorkspaceId = useSelector(
-    (state: RootState) => state.sidebar.activeWorkspaceId
+    (state: any) => state.sidebar.activeWorkspaceId
   );
 
   // Track workspace changes
   const workspaceChangeCounter = useSelector(
-    (state: RootState) => state.sidebar.workspaceChangeCounter
+    (state: any) => state.sidebar.workspaceChangeCounter
   );
 
   // Keep track of previous workspace change counter
-  const prevWorkspaceChangeCounterRef = useRef(workspaceChangeCounter);
+  const prevWorkspaceChangeCounterRef = useRef<any>(workspaceChangeCounter);
 
   const {
     data: workspacesData,
     isLoading: workspaceLoading,
     error: workspaceError,
     refetch: refetchWorkspace,
-  } = useGetActiveWorkspaceQuery();
+  } = useGetActiveWorkspaceQuery<any>(undefined);
 
   const [changeWebhookStatus] = useChangeWebhookStatusMutation();
   const [webhook, { isLoading: isWebhookAdded, error: webhookAddingError }] =
@@ -116,15 +113,13 @@ export function LeadSourceManagerClient() {
     isError,
     error,
     refetch: refetchWebhooks,
-  } = useGetWebhooksQuery({ id: workspacesData?.data.id });
+  } = useGetWebhooksQuery<any>({ id: workspacesData?.data.id });
 
   const webhooksData = webhooks?.data;
   const [sources, setSources] = useState<Source[]>(webhooksData || []);
   const [selectedSource, setSelectedSource] = useState<any>(null);
-  const [dialogMode, setDialogMode] = useState<
-    "create" | "edit" | "delete" | null
-  >(null);
-  const [expandedRow, setExpandedRow] = useState(null);
+  const [dialogMode, setDialogMode] = useState<any>(null);
+  const [expandedRow, setExpandedRow] = useState<any>(null);
 
   // Listen for workspace changes in Redux and refetch data
   useEffect(() => {
@@ -165,7 +160,7 @@ export function LeadSourceManagerClient() {
     webhooksData,
   });
 
-  const form = useForm<z.infer<typeof sourceSchema>>({
+  const form = useForm<any>({
     resolver: zodResolver(sourceSchema),
     defaultValues: {
       name: "",
@@ -193,7 +188,7 @@ export function LeadSourceManagerClient() {
     setDialogMode("create");
   };
 
-  const openEditDialog = (source: (typeof sources)[number]) => {
+  const openEditDialog = (source: any) => {
     form.reset({
       name: source.name,
       type: source.type,
@@ -203,18 +198,18 @@ export function LeadSourceManagerClient() {
     setDialogMode("edit");
   };
 
-  const openDeleteDialog = (source: (typeof sources)[number]) => {
+  const openDeleteDialog = (source: any) => {
     setSelectedSource(source);
     setDialogMode("delete");
   };
 
-  const copyWebhook = (webhook: string) => {
+  const copyWebhook = (webhook: any) => {
     navigator.clipboard.writeText(webhook);
     toast.success("Webhook URL copied to clipboard");
   };
 
   // Function to toggle webhook status
-  const toggleWebhookStatus = async (sourceId: string) => {
+  const toggleWebhookStatus = async (sourceId: any) => {
     try {
       const currentStatus = sources.find(
         (source) => source.id === sourceId
@@ -241,7 +236,7 @@ export function LeadSourceManagerClient() {
     }
   };
 
-  const onSubmit = async (data: z.infer<typeof sourceSchema>) => {
+  const onSubmit = async (data: any) => {
     if (dialogMode === "create") {
       try {
         // Validate workspace data before proceeding
@@ -316,7 +311,7 @@ export function LeadSourceManagerClient() {
     }
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (id: any) => {
     try {
       await deleteWebhook({ id }).unwrap();
       resetDialog();

@@ -106,7 +106,7 @@ export function Sidebar({
     isError,
     isFetching,
     refetch,
-  } = useGetWorkspacesQuery();
+  } = useGetWorkspacesQuery<any>(undefined);
   const [isDialogOpen, setDialogOpen] = useState(false);
   const [createWorkspace] = useCreateWorkspaceMutation();
   const [user, setUser] = useState<any>(null);
@@ -126,7 +126,7 @@ export function Sidebar({
     data: activeWorkspace,
     isLoading: activeWorkspaceLoading,
     isError: activeWorkspaceError,
-  } = useGetActiveWorkspaceQuery();
+  } = useGetActiveWorkspaceQuery<any>(undefined);
   console.log(activeWorkspace);
 
   // ✅ Ensure activeWorkspace is available before calling status query

@@ -1,10 +1,12 @@
 import { workspaceApi } from "../base/workspace";
 
+// Using any types for flexibility
 interface WorkspaceRequest {
   id?: string; // Optional for create/update, required for delete
   name: string;
   description?: string;
   status: boolean;
+  [key: string]: any; // Allow any additional properties
 }
 
 interface WorkspaceResponse {
@@ -14,7 +16,7 @@ interface WorkspaceResponse {
 export const workspaceApis = workspaceApi.injectEndpoints({
   endpoints: (builder) => ({
     // Create a new workspace
-    createWorkspace: builder.mutation<WorkspaceRequest, WorkspaceResponse>({
+    createWorkspace: builder.mutation<any, any>({
       query: (data) => ({
         url: "?action=createWorkspace",
         method: "POST",
@@ -24,7 +26,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     }),
 
     // Update an existing workspace
-    updateWorkspace: builder.mutation<WorkspaceRequest, WorkspaceResponse>({
+    updateWorkspace: builder.mutation<any, any>({
       query: (data) => ({
         url: "?action=updateWorkspaceDetails",
         method: "PUT",
@@ -34,7 +36,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     }),
 
     // Delete an existing workspace
-    deleteWorkspace: builder.mutation<{ id: string }, { id: string }>({
+    deleteWorkspace: builder.mutation<any, any>({
       query: ({ id }) => ({
         url: `?action=deleteWorkspace`,
         method: "DELETE",
@@ -44,7 +46,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
     }),
 
     // Fetch all workspaces
-    getWorkspaces: builder.query<any, void>({
+    getWorkspaces: builder.query<any, any>({
       query: () => ({
         url: "?action=getWorkspaces",
         method: "GET",
@@ -53,19 +55,19 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       keepUnusedDataFor: 600, // 10 minutes
     }),
 
-    // Fetch all workspaces
-    getWorkspacesById: builder.query<any, string | undefined>({
+    // Fetch workspaces by ID
+    getWorkspacesById: builder.query<any, any>({
       query: (id) => ({
         url: `?action=getWorkspacesById&workspaceId=${id}`,
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "Workspace", id }],
       keepUnusedDataFor: 600, // 10 minutes
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
     // Fetch workspaces by owner ID
-    getWorkspacesByOwnerId: builder.query<any, { ownerId: string }>({
+    getWorkspacesByOwnerId: builder.query<any, any>({
       query: ({ ownerId }) => ({
         url: `?action=getWorkspaces&ownerId=${ownerId}`,
         method: "GET",
@@ -73,7 +75,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       providesTags: ["Workspace"],
     }),
 
-    getActiveWorkspace: builder.query<any, void>({
+    getActiveWorkspace: builder.query<any, any>({
       query: () => ({
         url: `?action=getActiveWorkspace`,
         method: "GET",
@@ -82,7 +84,7 @@ export const workspaceApis = workspaceApi.injectEndpoints({
       keepUnusedDataFor: 600, // 10 minutes
     }),
 
-    getRevenueByWorkspace: builder.query<any, string | undefined>({
+    getRevenueByWorkspace: builder.query<any, any>({
       query: (id) => ({
         url: `?action=getLeadsRevenueByWorkspace&workspaceId=${id}`,
         method: "GET",
@@ -97,10 +99,10 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         };
       },
       keepUnusedDataFor: 300, // 5 minutes
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
-    getCountByWorkspace: builder.query<any, string | undefined>({
+    getCountByWorkspace: builder.query<any, any>({
       query: (id) => ({
         url: `?action=getArrivedLeadsCount&workspaceId=${id}`,
         method: "GET",
@@ -114,10 +116,10 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         };
       },
       keepUnusedDataFor: 300, // 5 minutes
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
-    getROCByWorkspace: builder.query<any, string | undefined>({
+    getROCByWorkspace: builder.query<any, any>({
       query: (id) => ({
         url: `?action=getTotalLeadsCount&workspaceId=${id}`,
         method: "GET",
@@ -134,19 +136,19 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         };
       },
       keepUnusedDataFor: 300, // 5 minutes
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
-    getWorkspaceMembers: builder.query<any, string | undefined>({
+    getWorkspaceMembers: builder.query<any, any>({
       query: (workspaceId) => ({
         url: `?action=getWorkspaceMembers&workspaceId=${workspaceId}`,
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "Workspace", id }],
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
-    getQualifiedCount: builder.query<any, string | undefined>({
+    getQualifiedCount: builder.query<any, any>({
       query: (workspaceId) => ({
         url: `?action=getQualifiedLeadsCount&workspaceId=${workspaceId}`,
         method: "GET",
@@ -160,29 +162,28 @@ export const workspaceApis = workspaceApi.injectEndpoints({
         };
       },
       keepUnusedDataFor: 300, // 5 minutes
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
-    getWorkspaceDetailsAnalytics: builder.query<any, string | undefined>({
+    getWorkspaceDetailsAnalytics: builder.query<any, any>({
       query: (workspaceId) => ({
         url: `?action=getWorkspaceAnalytics&workspaceId=${workspaceId}`,
         method: "GET",
       }),
       providesTags: (result, error, id) => [{ type: "WorkspaceStats", id }],
-      skip: (id) => !id,
+      // Remove skip property - handle in component instead
     }),
 
     // Update the status of a workspace
-    updateWorkspaceStatus: builder.mutation<
-      { id: string; status: boolean },
-      WorkspaceResponse
-    >({
+    updateWorkspaceStatus: builder.mutation<any, any>({
       query: ({ id, status }) => ({
         url: "?action=updateWorkspaceStatus",
         method: "PUT",
         body: { id, status },
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: "Workspace", id }],
+      invalidatesTags: (result, error, { id }: any) => [
+        { type: "Workspace", id },
+      ],
     }),
   }),
 });

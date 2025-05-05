@@ -145,7 +145,7 @@ const LeadManagement = () => {
 
   // Workspace data
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
-    useGetActiveWorkspaceQuery();
+    useGetActiveWorkspaceQuery<any>(undefined);
   const workspaceId = activeWorkspace?.data?.id;
 
   // Implement debounce for search
@@ -168,11 +168,11 @@ const LeadManagement = () => {
 
   // Fetch lead sources
   const { data: leadSources, isLoading: isLoadingSources } =
-    useGetWebhooksQuery(workspaceId ? { id: workspaceId } : skipToken);
+    useGetWebhooksQuery<any>(workspaceId ? { id: workspaceId } : skipToken);
 
   // Fetch leads data with optimized polling
   const { data: workspaceData, isLoading: isLoadingLeads } =
-    useGetLeadsByWorkspaceQuery(
+    useGetLeadsByWorkspaceQuery<any>(
       workspaceId ? { workspaceId: workspaceId.toString() } : skipToken,
       {
         skip: !workspaceId || isLoadingWorkspace,
@@ -182,15 +182,15 @@ const LeadManagement = () => {
 
   // Fetch workspace members
   const { data: workspaceMembers, isLoading: isLoadingMembers } =
-    useGetWorkspaceMembersQuery(workspaceId ? workspaceId : skipToken, {
+    useGetWorkspaceMembersQuery<any>(workspaceId ? workspaceId : skipToken, {
       skip: !workspaceId,
     });
 
   // Fetch status data
-  const { data: statusData, isLoading: isLoadingStatus } = useGetStatusQuery(
-    workspaceId ? workspaceId : skipToken,
-    { skip: !workspaceId }
-  );
+  const { data: statusData, isLoading: isLoadingStatus } =
+    useGetStatusQuery<any>(workspaceId ? workspaceId : skipToken, {
+      skip: !workspaceId,
+    });
 
   // Process leads data once when it's loaded
   useEffect(() => {

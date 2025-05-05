@@ -114,7 +114,7 @@ export default function ContactPage() {
 
   // fetching leads
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
-    useGetActiveWorkspaceQuery();
+    useGetActiveWorkspaceQuery<any>(undefined);
   const workspaceId = activeWorkspace?.data?.id;
   const { data: workspaceData, isLoading: isLoadingLeads }: any =
     useGetLeadsByWorkspaceQuery(

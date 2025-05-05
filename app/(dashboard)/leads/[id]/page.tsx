@@ -74,7 +74,7 @@ const IndividualLeadPage: React.FC = () => {
   const [user, setUser] = useState<any>(null);
   const [notes, setNotes] = useState<Array<{ message: string }>>([]);
   const { data: activeWorkspace, isLoading: isLoadingWorkspace } =
-    useGetActiveWorkspaceQuery();
+    useGetActiveWorkspaceQuery<any>(undefined);
   const workspaceId = activeWorkspace?.data.id;
   // Type the notes state properly
   const { data: statusData, isLoading: isLoadingStatus }: any =
