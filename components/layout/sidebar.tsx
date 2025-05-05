@@ -1,48 +1,19 @@
 "use client";
-import Image from "next/image";
-import React, { useEffect, useState } from "react";
-import { cn } from "@/lib/utils";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  LayoutDashboard,
-  Users,
-  MessageSquare,
-  Phone,
-  BarChart,
-  Settings,
-  Menu,
-  X,
-  UserCircle,
-  LogOut,
-  ChevronDown,
-  Plus,
-  Podcast,
-  SquareCode,
-  Folder,
-  Contact,
-  Bell,
-  Trash2,
-  Zap,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
-import Link from "next/link";
-import { redirect, usePathname } from "next/navigation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-  DialogDescription,
-  DialogFooter,
 } from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -52,32 +23,51 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import {
-  useCreateWorkspaceMutation,
-  useGetActiveWorkspaceQuery,
-  useGetWorkspacesByOwnerIdQuery,
-  useGetWorkspacesQuery,
-  useUpdateWorkspaceStatusMutation,
-} from "@/lib/store/services/workspace";
-import { useGetStatusQuery } from "@/lib/store/services/status";
-import { supabase } from "@/lib/supabaseClient";
-import { toast } from "sonner";
-import { useRouter } from "next/navigation";
-import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
-import { useParams } from "next/navigation";
-import { ThemeToggle } from "../theme-toggle";
 import {
   Tooltip,
   TooltipContent,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { useGetLeadsByWorkspaceQuery } from "@/lib/store/services/leadsApi";
+import { useGetStatusQuery } from "@/lib/store/services/status";
+import {
+  useCreateWorkspaceMutation,
+  useGetActiveWorkspaceQuery,
+  useGetWorkspacesQuery,
+  useUpdateWorkspaceStatusMutation,
+} from "@/lib/store/services/workspace";
+import { supabase } from "@/lib/supabaseClient";
+import { cn } from "@/lib/utils";
 import { skipToken } from "@reduxjs/toolkit/query";
+import {
+  BarChart,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Folder,
+  LayoutDashboard,
+  LogOut,
+  MessageSquare,
+  Plus,
+  Settings,
+  SquareCode,
+  Users,
+  X,
+  Zap,
+} from "lucide-react";
+import Image from "next/image";
+import Link from "next/link";
+import { useParams, usePathname, useRouter } from "next/navigation";
+import React, { useEffect, useState } from "react";
+import { toast } from "sonner";
+import { ThemeToggle } from "../theme-toggle";
 
+import {
+  setActiveWorkspaceId,
+  toggleCollapse,
+} from "@/lib/store/slices/sideBar";
 import { RootState } from "@/lib/store/store";
-import { toggleCollapse, setCollapse } from "@/lib/store/slices/sideBar";
 import { useDispatch, useSelector } from "react-redux";
-import { workerData } from "worker_threads";
 
 interface SidebarProps extends React.HTMLAttributes<HTMLDivElement> {
   logoSrc?: string;
@@ -316,27 +306,50 @@ export function Sidebar({
       const workspace = workspaces.find((w) => w.id === workspaceId);
       if (!workspace) return;
 
+      // Update workspace status in the backend
       await updateWorkspaceStatus({ id: workspaceId, status: true });
+
+      // Update local state
       setSelectedWorkspace(workspace);
+
+      // Update Redux state with the new active workspace ID
+      dispatch(setActiveWorkspaceId(workspaceId));
+
+      // Show loading toast
+      const loadingToast = toast.loading("Switching workspace...");
 
       // Refetch all relevant data
       await refetch();
-      
-      // Redirect to appropriate page
-      if (window.location.href.includes('workspace')) {
-        await router.push(`/workspace/${workspaceId}`);
-      } else if (window.location.href.includes("dashboard")) {
-        await router.push(`/dashboard`);
-      } else if (window.location.href.includes("leads-sources")) {
-        await router.push(`/leads-sources`);
-      } else if (window.location.href.includes("leads")) {
-        await router.push(`/leads`);
-      } else if (window.location.href.includes("analytics")) {
-        await router.push(`/analytics`);
+
+      // Determine the current route to maintain it after workspace change
+      let currentRoute = "/dashboard"; // Default route
+
+      // Check if pathname is not null before using includes()
+      if (pathname) {
+        if (pathname.includes("workspace")) {
+          currentRoute = `/workspace/${workspaceId}`;
+        } else if (pathname.includes("dashboard")) {
+          currentRoute = "/dashboard";
+        } else if (pathname.includes("leads-sources")) {
+          currentRoute = "/leads-sources";
+        } else if (pathname.includes("leads")) {
+          currentRoute = "/leads";
+        } else if (pathname.includes("analytics")) {
+          currentRoute = "/analytics";
+        }
       }
 
-      // Force a page reload to ensure all data is fresh
-      window.location.reload();
+      // Use Next.js router for client-side navigation without full page reload
+      router.push(currentRoute);
+
+      // Dismiss loading toast and show success message
+      toast.dismiss(loadingToast);
+      toast.success("Workspace switched successfully");
+
+      // Close mobile sidebar if open
+      if (isOpen) {
+        setIsOpen(false);
+      }
     } catch (error) {
       console.error("Failed to change workspace:", error);
       toast.error("Failed to change workspace");

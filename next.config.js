@@ -1,12 +1,16 @@
 /** @type {import('next').NextConfig} */
 const coreConfig = {
   reactStrictMode: true,
+  compress: true, // Enable response compression
   eslint: {
     ignoreDuringBuilds: true,
   },
   images: {
     unoptimized: false,
-    domains: ["supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in"],
+    domains: [
+      "supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in",
+      "your-image-domain.com",
+    ],
     formats: ["image/avif", "image/webp"],
   },
   swcMinify: true,
@@ -15,6 +19,7 @@ const coreConfig = {
   },
   experimental: {
     optimizeCss: true,
+    optimizeServerReact: true, 
     turbo: {
       rules: {
         "*.svg": ["@svgr/webpack"],

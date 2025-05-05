@@ -20,6 +20,7 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "POST",
         body: credentials,
       }),
+      invalidatesTags: ["Webhook"],
     }),
 
     // Update an existing webhook
@@ -29,6 +30,10 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "PUT",
         body: data,
       }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Webhook", id },
+        "WebhookSource",
+      ],
     }),
 
     // Delete an existing webhook
@@ -38,6 +43,10 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "DELETE",
         body: { id },
       }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Webhook", id },
+        "WebhookSource",
+      ],
     }),
 
     // Fetch webhooks
@@ -46,16 +55,38 @@ export const webhookApis = webhookApi.injectEndpoints({
         url: `?action=getWebhooks&id=${id}`, // Include the id as a query parameter
         method: "GET",
       }),
+      providesTags: (result, error, { id }) => [
+        { type: "Webhook", id },
+        "WebhookSource",
+      ],
+      transformResponse: (response: any) => {
+        if (!response) return [];
+        return response;
+      },
+      keepUnusedDataFor: 300, // 5 minutes
     }),
+
     getWebhooksBySourceId: builder.query<
       any,
-      { id: string; workspaceId: string }
+      { id?: string; workspaceId?: string }
     >({
       query: ({ id, workspaceId }) => ({
-        url: `?action=getWebhooksBySourceId&sourceId=${id}&workspaceId=${workspaceId}`, // Include the id as a query parameter
+        url: `?action=getWebhooksBySourceId&sourceId=${id || ""}&workspaceId=${
+          workspaceId || ""
+        }`,
         method: "GET",
       }),
+      providesTags: (result, error, { id }) => [
+        { type: "WebhookSource", id: id || "LIST" },
+      ],
+      transformResponse: (response: any) => {
+        if (!response) return { name: "None" };
+        return response;
+      },
+      keepUnusedDataFor: 300, // 5 minutes
+      skip: (arg) => !arg.id || !arg.workspaceId,
     }),
+
     changeWebhookStatus: builder.mutation<
       { id: string; status: boolean },
       { id: string; status: boolean }
@@ -65,6 +96,7 @@ export const webhookApis = webhookApi.injectEndpoints({
         method: "PUT",
         body: { id, status },
       }),
+      invalidatesTags: (result, error, { id }) => [{ type: "Webhook", id }],
     }),
   }),
 });

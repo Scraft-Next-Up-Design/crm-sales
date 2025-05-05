@@ -104,7 +104,7 @@ const leadSchema = z.object({
 });
 
 const initialFilters = {
-  leadSource: "", // Ensure this is 'leadSource' consistently
+  leadSource: "",
   owner: "",
   status: "",
   contact_method: "",
