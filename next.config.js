@@ -9,7 +9,6 @@ const coreConfig = {
     unoptimized: false,
     domains: [
       "supabasekong-pgo8c80w04gcoo4w88kgsw0s.breaktheice.in",
-      "your-image-domain.com",
     ],
     formats: ["image/avif", "image/webp"],
   },

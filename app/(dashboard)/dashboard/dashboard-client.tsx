@@ -68,21 +68,18 @@ export default function DashboardClient() {
     isLoading: isWorkspaceLoading,
     refetch: refetchActiveWorkspace,
   } = useGetActiveWorkspaceQuery(undefined, {
-    pollingInterval: 300000, // Poll every 5 minutes
+    pollingInterval: 300000, 
   });
 
   const workspaceId = activeWorkspace?.data?.id;
 
-  // Update the active workspace ID in the sidebar state
   useEffect(() => {
     if (workspaceId && workspaceId !== reduxActiveWorkspaceId) {
       dispatch(setActiveWorkspaceId(workspaceId));
     }
   }, [workspaceId, reduxActiveWorkspaceId, dispatch]);
 
-  // Listen for workspace changes in Redux and refetch data
   useEffect(() => {
-    // Only run this effect if the workspace change counter has increased
     if (workspaceChangeCounter > prevWorkspaceChangeCounterRef.current) {
       prevWorkspaceChangeCounterRef.current = workspaceChangeCounter;
 
