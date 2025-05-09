@@ -1,24 +1,25 @@
-import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
 import { cookies } from "next/headers";
 import { Suspense } from "react";
 import DashboardClient from "./dashboard-client";
+import { DashboardSkeleton } from "@/components/dashboard/dashboard-skeleton";
+import type { Metadata } from "next";
 
 export const runtime = "edge";
 
-export const revalidate = 300;
+const REVALIDATION_TIME = 300;
 
-export const dynamic = "force-dynamic";
+const CACHE_HEADERS = {
+  "Cache-Control": "max-age=300, stale-while-revalidate=600",
+};
 
-export async function generateMetadata() {
+export async function generateMetadata(): Promise<Metadata> {
+  const fallbackMetadata = getDefaultMetadata();
+
   try {
     const cookieStore = cookies();
     const token = cookieStore.get("session")?.value;
 
-    if (!token) {
-      return {
-        title: "Dashboard | CRM Sales",
-      };
-    }
+    if (!token) return fallbackMetadata;
 
     const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
     const response = await fetch(
@@ -27,23 +28,35 @@ export async function generateMetadata() {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
+          ...CACHE_HEADERS,
         },
-        next: { revalidate: 300 },
+        next: { revalidate: REVALIDATION_TIME },
       }
     );
 
+    if (!response.ok) {
+      console.error("API error:", response.status);
+      return fallbackMetadata;
+    }
+
     const data = await response.json();
+    const workspaceName = data?.data?.name || "CRM Sales";
 
     return {
-      title: `Dashboard | ${data?.data?.name || "CRM Sales"}`,
+      title: `Dashboard | ${workspaceName}`,
       description: "Sales performance dashboard with real-time analytics",
     };
   } catch (error) {
-    console.error("Error fetching metadata:", error);
-    return {
-      title: "Dashboard | CRM Sales",
-    };
+    console.error("Metadata fetch error:", error);
+    return fallbackMetadata;
   }
+}
+
+function getDefaultMetadata(): Metadata {
+  return {
+    title: "Dashboard | CRM Sales",
+    description: "Sales performance dashboard with real-time analytics",
+  };
 }
 
 export default function DashboardPage() {

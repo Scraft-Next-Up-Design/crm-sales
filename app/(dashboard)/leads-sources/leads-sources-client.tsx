@@ -54,6 +54,7 @@ import { useSelector } from "react-redux";
 import { toast } from "sonner";
 import { v4 as uuidv4 } from "uuid";
 import * as z from "zod";
+import { LeadSourcesSkeleton } from "./leads-sources-skeleton";
 
 // Zod validation schema
 const sourceSchema = z.object({
@@ -79,17 +80,14 @@ export type Source = {
 export function LeadSourceManagerClient() {
   const isCollapsed = useSelector((state: any) => state.sidebar.isCollapsed);
 
-  // Get the active workspace ID from Redux
   const reduxActiveWorkspaceId = useSelector(
     (state: any) => state.sidebar.activeWorkspaceId
   );
 
-  // Track workspace changes
   const workspaceChangeCounter = useSelector(
     (state: any) => state.sidebar.workspaceChangeCounter
   );
 
-  // Keep track of previous workspace change counter
   const prevWorkspaceChangeCounterRef = useRef<any>(workspaceChangeCounter);
 
   const {
@@ -121,7 +119,6 @@ export function LeadSourceManagerClient() {
   const [dialogMode, setDialogMode] = useState<any>(null);
   const [expandedRow, setExpandedRow] = useState<any>(null);
 
-  // Listen for workspace changes in Redux and refetch data
   useEffect(() => {
     if (workspaceChangeCounter > prevWorkspaceChangeCounterRef.current) {
       prevWorkspaceChangeCounterRef.current = workspaceChangeCounter;
@@ -130,7 +127,6 @@ export function LeadSourceManagerClient() {
         "Workspace changed in Redux, refetching lead sources data..."
       );
 
-      // Force refetch all data
       refetchWorkspace();
       if (workspacesData?.data.id) {
         refetchWebhooks();
@@ -324,12 +320,9 @@ export function LeadSourceManagerClient() {
     }
   };
 
-  if (workspaceLoading)
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
+  if (workspaceLoading || isLoading) {
+    return <LeadSourcesSkeleton />;
+  }
 
   return (
     <div

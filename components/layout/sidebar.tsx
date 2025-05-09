@@ -46,6 +46,7 @@ import {
   ChevronRight,
   Folder,
   LayoutDashboard,
+  Loader2,
   LogOut,
   MessageSquare,
   Plus,
@@ -145,7 +146,7 @@ export function Sidebar({
   const contactStatuses = new Set(
     Array.isArray((statusData as any)?.data)
       ? (statusData as any)?.data
-          .filter((status: any) => status.count_statistics) // ✅ Only keep statuses where count_statistics is true
+          .filter((status: any) => status.count_statistics) 
           .map((status: any) => status.name)
       : []
   );
@@ -301,15 +302,19 @@ export function Sidebar({
     }
   }, [workspacesData?.data]);
 
+  const [isWorkspaceSwitching, setIsWorkspaceSwitching] = useState<
+    string | null
+  >(null);
+
   const handleWorkspaceChange = async (workspaceId: string) => {
     try {
       const workspace = workspaces.find((w) => w.id === workspaceId);
       if (!workspace) return;
 
-      // Update workspace status in the backend
+      setIsWorkspaceSwitching(workspaceId);
+
       await updateWorkspaceStatus({ id: workspaceId, status: true });
 
-      // Update local state
       setSelectedWorkspace(workspace);
 
       // Update Redux state with the new active workspace ID
@@ -340,7 +345,7 @@ export function Sidebar({
       }
 
       // Use Next.js router for client-side navigation without full page reload
-      router.push(currentRoute);
+      await router.push(currentRoute);
 
       // Dismiss loading toast and show success message
       toast.dismiss(loadingToast);
@@ -353,6 +358,9 @@ export function Sidebar({
     } catch (error) {
       console.error("Failed to change workspace:", error);
       toast.error("Failed to change workspace");
+    } finally {
+      // Clear loading state
+      setIsWorkspaceSwitching(null);
     }
   };
   return (
@@ -453,11 +461,24 @@ export function Sidebar({
                   <SelectItem
                     key={workspace.id}
                     value={workspace.id}
-                    className="relative flex items-center py-2 cursor-pointer"
-                    onClick={() => setIsOpen(!isOpen)}
+                    className={cn(
+                      "relative flex items-center py-2",
+                      isWorkspaceSwitching === workspace.id
+                        ? "cursor-not-allowed opacity-70"
+                        : "cursor-pointer"
+                    )}
+                    onClick={() => {
+                      if (isWorkspaceSwitching) return;
+                      setIsOpen(!isOpen);
+                    }}
+                    disabled={isWorkspaceSwitching !== null}
                   >
                     <div className="flex items-center flex-1 mr-8">
-                      <Folder className="shrink-0 mr-2 h-4 w-4" />
+                      {isWorkspaceSwitching === workspace.id ? (
+                        <Loader2 className="shrink-0 mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Folder className="shrink-0 mr-2 h-4 w-4" />
+                      )}
                       <span className="break-words">{workspace.name}</span>
                     </div>
                     <Button
