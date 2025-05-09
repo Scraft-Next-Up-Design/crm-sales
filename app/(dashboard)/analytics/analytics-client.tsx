@@ -10,7 +10,7 @@ import {
   useGetWorkspaceDetailsAnalyticsQuery,
 } from "@/lib/store/services/workspace";
 import { RootState } from "@/lib/store/store";
-import { IndianRupee, Loader2, TrendingUp, Users } from "lucide-react";
+import { IndianRupee, TrendingUp, Users } from "lucide-react";
 import { useEffect, useMemo, useRef } from "react";
 import { useSelector } from "react-redux";
 import {
@@ -229,20 +229,6 @@ export function AnalyticsClient() {
     [ROC, arrivedLeadsCount, analyticsDatas, analyticsDetails]
   );
 
-  if (
-    isLoadingWorkspace ||
-    isLoadingAnalytics ||
-    loadingTotalLeads ||
-    isLoadingAnalyticsData ||
-    isRocLoading ||
-    isCountLoading
-  ) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-8 w-8 animate-spin" />
-      </div>
-    );
-  }
 
   return (
     <div
